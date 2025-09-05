@@ -1,5 +1,4 @@
-- README
-    
+ 
     # 🌴 코코의 숲 (Coco’s Forest)
     
     ## 탄소 절약 챌린지 × 금융 소비 분석 × 게임화
@@ -46,9 +45,6 @@
       <img src="https://img.shields.io/badge/jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">  
       <img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">  
       <br/>  
-      <!-- API -->  
-      <img src="https://img.shields.io/badge/SSAFY%20금융%20API-0047AB?style=for-the-badge&logoColor=white">  
-      <img src="https://img.shields.io/badge/Kakao%20API-FFCD00?style=for-the-badge&logo=kakao&logoColor=black">  
     </div>
     
     ---
