@@ -1,3 +1,4 @@
+ - README
  
     # 🌴 코코의 숲 (Coco’s Forest)
     
