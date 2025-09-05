@@ -10,7 +10,7 @@
     > 소비 내역 → 탄소 발자국 → 챌린지 → 포인트 → 숲 성장으로 이어지는 선순환 구조를 통해, 사용자가 꾸준히 환경 보호 습관을 만들 수 있도록 돕습니다.
     > 
     - **개발 기간** : 2025.09 ~ (진행 중)
-    - **플랫폼** : Mobile (React Native), Smartwatch
+    - **플랫폼** : Mobile (kotlin), Android SDK 기반 네이티브 앱
     - **개발 인원** : 6명
     
     ---
@@ -37,7 +37,7 @@
       <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">  
       <br/>  
       <!-- Frontend -->  
-      <img src="https://img.shields.io/badge/react%20native-61DAFB?style=for-the-badge&logo=react&logoColor=000000">  
+      <img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">  
       <img src="https://img.shields.io/badge/figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white">  
       <img src="https://img.shields.io/badge/svg-FFB13B?style=for-the-badge&logoColor=white">  
       <br/>  
