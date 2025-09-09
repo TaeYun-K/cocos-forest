@@ -3,14 +3,18 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh './gradlew clean build'
+                // cocos-forest 폴더 안에서 실행하라고 지정
+                dir('cocos-forest') {
+                    sh './gradlew clean build'
+                }
             }
         }
         stage('Build Docker Image') {
             steps {
-                // 빌드가 끝나면 Dockerfile을 이용해 Docker 이미지를 만듭니다.
-                // 이미지 이름은 cocos-forest-app으로 합니다.
-                sh 'docker build -t cocos-forest-app .'
+                // cocos-forest 폴더 안에서 실행하라고 지정
+                dir('cocos-forest') {
+                    sh 'docker build -t cocos-forest-app .'
+                }
             }
         }
         stage('Deploy') {
