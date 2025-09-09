@@ -1,20 +1,21 @@
 pipeline {
     agent any
-
-    // 파이프라인 전체에서 사용할 수 있도록 맨 위에 Credentials를 선언합니다.
-    // Jenkins는 APP_PROPERTIES라는 변수에 Secret 파일의 임시 경로를 담아줍니다.
-    environment {
-        APP_PROPERTIES = credentials('PROD_PROPERTIES')
-    }
-
     stages {
         stage('Build') {
             steps {
-                dir('cocos-forest') {
-                    sh 'chmod +x ./gradlew'
-                    // Gradle 빌드를 실행할 때, -Dspring.config.location 옵션으로
-                    // Jenkins 금고에서 꺼내온 '진짜' 설정 파일의 위치를 직접 알려줍니다.
-                    sh "./gradlew clean build -Dspring.config.location=file://${env.APP_PROPERTIES}"
+                // withCredentials 블록으로 Build 단계를 감싸줍니다.
+                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
+                    dir('cocos-forest') {
+                        // 1. Jenkins 금고의 '진짜' 설정 파일을 테스트 리소스 폴더로 복사합니다.
+                        //    이것이 이번 문제 해결의 핵심입니다!
+                        sh "cp ${APP_PROPERTIES} src/test/resources/application.properties"
+
+                        // 2. gradlew에 실행 권한을 부여합니다.
+                        sh 'chmod +x ./gradlew'
+
+                        // 3. 이제 테스트는 올바른 설정 파일을 읽어 빌드를 실행합니다.
+                        sh './gradlew clean build'
+                    }
                 }
             }
         }
@@ -27,12 +28,20 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                sh 'docker stop cocos-forest-app || true'
-                sh 'docker rm cocos-forest-app || true'
+                // Deploy 단계에서도 Secret file을 사용합니다.
+                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
+                    sh 'docker stop cocos-forest-app || true'
+                    sh 'docker rm cocos-forest-app || true'
 
-                // Deploy 시점에도 똑같은 '진짜' 설정 파일을 컨테이너에 주입합니다.
-                sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${env.APP_PROPERTIES}:/config/application.properties cocos-forest-app"
+                    sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${APP_PROPERTIES}:/config/application.properties cocos-forest-app"
+                }
             }
+        }
+    }
+    post {
+        // 빌드가 성공하면 작업 공간을 정리합니다.
+        success {
+            cleanWs()
         }
     }
 }
