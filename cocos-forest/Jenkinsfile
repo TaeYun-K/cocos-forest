@@ -29,17 +29,24 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
-                    // 기존에 실행 중인 앱 컨테이너가 있다면 중지하고 삭제합니다. (오류가 나도 무시하고 진행)
+                script {
+                    // Credentials에 저장된 PROD_PROPERTIES 파일의 내용을 읽어옵니다.
+                    def props = readProperties file: credentials('PROD_PROPERTIES')
+                    def dbUrl = props['spring.datasource.url']
+                    def dbUsername = props['spring.datasource.username']
+                    def dbPassword = props['spring.datasource.password']
+
+                    // 기존 컨테이너 중지 및 삭제
                     sh 'docker stop cocos-forest-app || true'
                     sh 'docker rm cocos-forest-app || true'
 
-                    // 새로 빌드한 이미지로 컨테이너를 실행합니다.
-                    // --network 옵션으로 다른 컨테이너(DB, Nginx)와 통신할 수 있게 합니다.
-                    // -v 옵션으로 Jenkins의 설정 파일을 컨테이너 내부의 /config/application.properties 경로에 연결(마운트)합니다.
+                    // docker run 명령어에 -e 옵션을 사용하여 환경 변수를 직접 주입합니다.
+                    // Spring Boot는 자동으로 SPRING_DATASOURCE_URL 같은 환경 변수를 인식합니다.
                     sh """
                     docker run -d --name cocos-forest-app --network=cocos-network \
-                               -v \${APP_PROPERTIES}:/config/application.properties \
+                               -e SPRING_DATASOURCE_URL='${dbUrl}' \
+                               -e SPRING_DATASOURCE_USERNAME='${dbUsername}' \
+                               -e SPRING_DATASOURCE_PASSWORD='${dbPassword}' \
                                cocos-forest-app
                     """
                 }
