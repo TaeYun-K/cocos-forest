@@ -22,8 +22,6 @@ pipeline {
         stage('Deploy') {
             steps {
 
-                sh 'docker run -d --name cocos-forest-app -p 8081:8080 cocos-forest-app'
-
                 // withCredentials 블록으로 Jenkins에 등록된 Secret file을 불러옵니다.
                 // APP_PROPERTIES 라는 변수에 파일의 임시 경로가 담기게 됩니다.
                 withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
@@ -39,7 +37,7 @@ pipeline {
                     // docker run 명령어에서 -v 옵션을 사용해
                     // Jenkins가 임시로 생성한 설정파일(${APP_PROPERTIES})을
                     // 컨테이너 안의 특정 경로(/config/application.properties)로 복사(마운트)합니다.
-                    sh "docker run -d --name cocos-forest-app -p 8081:8080 \
+                    sh "docker run -d --name cocos-forest-app --network=cocos-network \
                        -v ${APP_PROPERTIES}:/config/application.properties \
                        cocos-forest-app"
                 }
