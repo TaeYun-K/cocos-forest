@@ -9,4 +9,4 @@ COPY ${JAR_FILE} app.jar
 
 # 4. 컨테이너가 시작될 때 실행될 명령어를 지정합니다.
 # Jenkins에서 주입해준 외부 설정 파일을 사용하도록 경로를 지정합니다.
-ENTRYPOINT ["java","-jar","/app.jar", "--spring.config.location=file:/config/application.properties"]
+ENTRYPOINT ["java","-jar","/app.jar"]
