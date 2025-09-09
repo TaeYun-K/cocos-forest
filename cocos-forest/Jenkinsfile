@@ -25,26 +25,28 @@ pipeline {
         // [수정 완료된 부분] Deploy 스테이지는 그대로 둡니다.
         stage('Deploy') {
             steps {
-                script {
-                    // Credentials에 저장된 PROD_PROPERTIES 파일의 내용을 읽어옵니다.
-                    def props = readProperties file: credentials('PROD_PROPERTIES')
-                    def dbUrl = props['spring.datasource.url']
-                    def dbUsername = props['spring.datasource.username']
-                    def dbPassword = props['spring.datasource.password']
+                // withCredentials 블록으로 PROD_PROPERTIES 파일의 임시 '경로'를 가져옵니다.
+                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'PROPERTIES_FILE_PATH')]) {
+                    script {
+                        // 이제 PROPERTIES_FILE_PATH 변수에 담긴 '파일 경로'를 사용해 내용을 읽습니다.
+                        def props = readProperties file: "${PROPERTIES_FILE_PATH}"
+                        def dbUrl = props['spring.datasource.url']
+                        def dbUsername = props['spring.datasource.username']
+                        def dbPassword = props['spring.datasource.password']
 
-                    // 기존 컨테이너 중지 및 삭제
-                    sh 'docker stop cocos-forest-app || true'
-                    sh 'docker rm cocos-forest-app || true'
+                        // 기존 컨테이너 중지 및 삭제
+                        sh 'docker stop cocos-forest-app || true'
+                        sh 'docker rm cocos-forest-app || true'
 
-                    // docker run 명령어에 -e 옵션을 사용하여 환경 변수를 직접 주입합니다.
-                    // Spring Boot는 자동으로 SPRING_DATASOURCE_URL 같은 환경 변수를 인식합니다.
-                    sh """
-                    docker run -d --name cocos-forest-app --network=cocos-network \
-                               -e SPRING_DATASOURCE_URL='${dbUrl}' \
-                               -e SPRING_DATASOURCE_USERNAME='${dbUsername}' \
-                               -e SPRING_DATASOURCE_PASSWORD='${dbPassword}' \
-                               cocos-forest-app
-                    """
+                        // 환경 변수를 주입하여 컨테이너 실행
+                        sh """
+                        docker run -d --name cocos-forest-app --network=cocos-network \
+                                   -e SPRING_DATASOURCE_URL='${dbUrl}' \
+                                   -e SPRING_DATASOURCE_USERNAME='${dbUsername}' \
+                                   -e SPRING_DATASOURCE_PASSWORD='${dbPassword}' \
+                                   cocos-forest-app
+                        """
+                    }
                 }
             }
         }
