@@ -8,4 +8,4 @@ ARG JAR_FILE=build/libs/*.jar
 COPY ${JAR_FILE} app.jar
 
 # 컨테이너가 시작될 때 app.jar를 실행하는 명령입니다.
-ENTRYPOINT ["java","-jar","/app.jar"]
+ENTRYPOINT ["java","-jar","/app.jar", "--spring.config.location=file:/config/application.properties"]
