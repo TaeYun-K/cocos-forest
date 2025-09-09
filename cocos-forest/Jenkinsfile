@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh './gradlew clean build'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                // 빌드가 끝나면 Dockerfile을 이용해 Docker 이미지를 만듭니다.
+                // 이미지 이름은 cocos-forest-app으로 합니다.
+                sh 'docker build -t cocos-forest-app .'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                // 기존에 실행 중인 앱이 있으면 중지하고 삭제합니다 (무중단 배포를 위해 --rm은 뺍니다)
+                sh 'docker stop cocos-forest-app || true'
+                sh 'docker rm cocos-forest-app || true'
+
+                // 새로 만든 이미지로 컨테이너를 실행합니다.
+                // Nginx 설정(proxy_pass)에서 사용한 8081 포트와 연결합니다.
+                // Spring Boot 앱 자체는 8080 포트를 사용합니다.
+                sh 'docker run -d --name cocos-forest-app -p 8081:8080 cocos-forest-app'
+            }
+        }
+    }
+}
