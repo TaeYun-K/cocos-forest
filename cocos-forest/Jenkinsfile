@@ -5,6 +5,8 @@ pipeline {
             steps {
                 // cocos-forest 폴더 안에서 실행하라고 지정
                 dir('cocos-forest') {
+                    // gradlew 파일에 실행 권한(+x)을 부여합니다.
+                    sh 'chmod +x ./gradlew'
                     sh './gradlew clean build'
                 }
             }
