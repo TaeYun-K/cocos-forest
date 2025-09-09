@@ -4,7 +4,7 @@ pipeline {
     //    또한, 이 작업실은 EC2 서버의 Docker를 제어할 수 있는 권한을 부여받습니다.
     agent {
         docker {
-            image 'cibuilds/github:latest'
+            image 'cibuilds/gitlab:latest'
             args '-v /var/run/docker.sock:/var/run/docker.sock --group-add $(getent group docker | cut -d: -f3)'
         }
     }
