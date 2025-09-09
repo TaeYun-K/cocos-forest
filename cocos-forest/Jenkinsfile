@@ -3,19 +3,11 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                // withCredentials 블록으로 Build 단계를 감싸줍니다.
                 withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
                     dir('cocos-forest') {
-                        // 1. 파일을 복사할 목적지 폴더를 미리 만듭니다. (-p 옵션은 폴더가 있어도 오류를 내지 않습니다)
                         sh 'mkdir -p src/test/resources'
-
-                        // 2. Jenkins 금고의 설정 파일을 테스트 리소스 폴더로 복사합니다.
                         sh "cp ${APP_PROPERTIES} src/test/resources/application.properties"
-
-                        // 3. gradlew에 실행 권한을 부여합니다.
                         sh 'chmod +x ./gradlew'
-
-                        // 4. 이제 테스트는 올바른 설정 파일을 읽어 빌드를 실행합니다.
                         sh './gradlew clean build'
                     }
                 }
@@ -30,18 +22,15 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                // Deploy 단계에서도 Secret file을 사용합니다.
                 withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
                     sh 'docker stop cocos-forest-app || true'
                     sh 'docker rm cocos-forest-app || true'
-
                     sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${APP_PROPERTIES}:/config/application.properties cocos-forest-app"
                 }
             }
         }
     }
     post {
-        // 빌드가 성공하면 작업 공간을 정리합니다.
         success {
             cleanWs()
         }
