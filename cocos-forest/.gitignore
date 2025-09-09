@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# === Properties & Secrets ===
+**/application.properties
+**/application.yml
+**/application-*.yml
+**/application-*.properties
