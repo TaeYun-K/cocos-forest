@@ -1,19 +1,25 @@
 pipeline {
     agent any
+
+    // 파이프라인 전체에서 사용할 수 있도록 맨 위에 Credentials를 선언합니다.
+    // Jenkins는 APP_PROPERTIES라는 변수에 Secret 파일의 임시 경로를 담아줍니다.
+    environment {
+        APP_PROPERTIES = credentials('PROD_PROPERTIES')
+    }
+
     stages {
         stage('Build') {
             steps {
-                // cocos-forest 폴더 안에서 실행하라고 지정
                 dir('cocos-forest') {
-                    // gradlew 파일에 실행 권한(+x)을 부여합니다.
                     sh 'chmod +x ./gradlew'
-                    sh './gradlew clean build'
+                    // Gradle 빌드를 실행할 때, -Dspring.config.location 옵션으로
+                    // Jenkins 금고에서 꺼내온 '진짜' 설정 파일의 위치를 직접 알려줍니다.
+                    sh "./gradlew clean build -Dspring.config.location=file://${env.APP_PROPERTIES}"
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
-                // cocos-forest 폴더 안에서 실행하라고 지정
                 dir('cocos-forest') {
                     sh 'docker build -t cocos-forest-app .'
                 }
@@ -21,26 +27,11 @@ pipeline {
         }
         stage('Deploy') {
             steps {
+                sh 'docker stop cocos-forest-app || true'
+                sh 'docker rm cocos-forest-app || true'
 
-                // withCredentials 블록으로 Jenkins에 등록된 Secret file을 불러옵니다.
-                // APP_PROPERTIES 라는 변수에 파일의 임시 경로가 담기게 됩니다.
-                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
-
-                    // 기존에 실행 중인 앱이 있으면 중지하고 삭제합니다 (무중단 배포를 위해 --rm은 뺍니다)
-                    sh 'docker stop cocos-forest-app || true'
-                    sh 'docker rm cocos-forest-app || true'
-
-                    // 새로 만든 이미지로 컨테이너를 실행합니다.
-                    // Nginx 설정(proxy_pass)에서 사용한 8081 포트와 연결합니다.
-                    // Spring Boot 앱 자체는 8080 포트를 사용합니다.
-
-                    // docker run 명령어에서 -v 옵션을 사용해
-                    // Jenkins가 임시로 생성한 설정파일(${APP_PROPERTIES})을
-                    // 컨테이너 안의 특정 경로(/config/application.properties)로 복사(마운트)합니다.
-                    sh "docker run -d --name cocos-forest-app --network=cocos-network \
-                       -v ${APP_PROPERTIES}:/config/application.properties \
-                       cocos-forest-app"
-                }
+                // Deploy 시점에도 똑같은 '진짜' 설정 파일을 컨테이너에 주입합니다.
+                sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${env.APP_PROPERTIES}:/config/application.properties cocos-forest-app"
             }
         }
     }
