@@ -1,15 +1,29 @@
 pipeline {
-    agent any
+    // 1. 빌드를 실행할 '일회용 작업실'을 지정합니다.
+    //    이 Docker 이미지 안에는 Java, Git, Docker CLI가 모두 설치되어 있습니다.
+    //    또한, 이 작업실은 EC2 서버의 Docker를 제어할 수 있는 권한을 부여받습니다.
+    agent {
+        docker {
+            image 'cibuilds/github:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add $(getent group docker | cut -d: -f3)'
+        }
+    }
+
+    // 2. 파이프라인 전체에서 사용할 비밀 정보를 선언합니다.
+    environment {
+        APP_PROPERTIES = credentials('PROD_PROPERTIES')
+    }
+
     stages {
         stage('Build') {
             steps {
-                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
-                    dir('cocos-forest') {
-                        sh 'mkdir -p src/test/resources'
-                        sh "cp ${APP_PROPERTIES} src/test/resources/application.properties"
-                        sh 'chmod +x ./gradlew'
-                        sh './gradlew clean build'
-                    }
+                // 3. 작업실 안의 'cocos-forest' 폴더로 이동합니다.
+                dir('cocos-forest') {
+                    // 4. 이제 더 이상 권한 문제가 발생하지 않습니다.
+                    sh 'mkdir -p src/test/resources'
+                    sh "cp ${env.APP_PROPERTIES} src/test/resources/application.properties"
+                    sh 'chmod +x ./gradlew'
+                    sh './gradlew clean build'
                 }
             }
         }
@@ -22,11 +36,11 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
-                    sh 'docker stop cocos-forest-app || true'
-                    sh 'docker rm cocos-forest-app || true'
-                    sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${APP_PROPERTIES}:/config/application.properties cocos-forest-app"
-                }
+                sh 'docker stop cocos-forest-app || true'
+                sh 'docker rm cocos-forest-app || true'
+                // 5. Deploy는 이제 Jenkins 본체가 아닌, '일회용 작업실'에서 실행됩니다.
+                //    이 작업실은 EC2 서버의 Docker를 제어할 권한이 있습니다.
+                sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${env.APP_PROPERTIES}:/config/application.properties cocos-forest-app"
             }
         }
     }
