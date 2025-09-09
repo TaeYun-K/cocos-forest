@@ -1,51 +1,54 @@
 pipeline {
-    // 1. 빌드를 실행할 '일회용 작업실'을 지정합니다.
-    //    이 Docker 이미지 안에는 Java, Git, Docker CLI가 모두 설치되어 있습니다.
-    //    또한, 이 작업실은 EC2 서버의 Docker를 제어할 수 있는 권한을 부여받습니다.
-    agent {
-        docker {
-            image 'cibuilds/gitlab:latest'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add $(getent group docker | cut -d: -f3)'
-        }
-    }
-
-    // 2. 파이프라인 전체에서 사용할 비밀 정보를 선언합니다.
-    environment {
-        APP_PROPERTIES = credentials('PROD_PROPERTIES')
-    }
+    agent any
 
     stages {
         stage('Build') {
             steps {
-                // 3. 작업실 안의 'cocos-forest' 폴더로 이동합니다.
-                dir('cocos-forest') {
-                    // 4. 이제 더 이상 권한 문제가 발생하지 않습니다.
-                    sh 'mkdir -p src/test/resources'
-                    sh "cp ${env.APP_PROPERTIES} src/test/resources/application.properties"
-                    sh 'chmod +x ./gradlew'
-                    sh './gradlew clean build'
+                // Jenkins Credentials에 저장한 PROD_PROPERTIES 파일을 임시 경로 변수(APP_PROPERTIES)로 불러옵니다.
+                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
+                    // GitLab에서 받은 프로젝트 폴더(cocos-forest)로 이동합니다.
+                    dir('cocos-forest') {
+                        // 테스트 단계에서 DB 연결을 위해 src/test/resources 폴더를 만들고 설정 파일을 복사합니다.
+                        sh 'mkdir -p src/test/resources'
+                        sh "cp \${APP_PROPERTIES} src/test/resources/application.properties"
+
+                        // Gradle 실행 권한을 부여하고 빌드를 수행합니다.
+                        sh 'chmod +x ./gradlew'
+                        sh './gradlew clean build'
+                    }
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 dir('cocos-forest') {
+                    // 프로젝트 루트의 Dockerfile을 사용하여 Docker 이미지를 빌드합니다.
                     sh 'docker build -t cocos-forest-app .'
                 }
             }
         }
         stage('Deploy') {
             steps {
-                sh 'docker stop cocos-forest-app || true'
-                sh 'docker rm cocos-forest-app || true'
-                // 5. Deploy는 이제 Jenkins 본체가 아닌, '일회용 작업실'에서 실행됩니다.
-                //    이 작업실은 EC2 서버의 Docker를 제어할 권한이 있습니다.
-                sh "docker run -d --name cocos-forest-app --network=cocos-network -v ${env.APP_PROPERTIES}:/config/application.properties cocos-forest-app"
+                withCredentials([file(credentialsId: 'PROD_PROPERTIES', variable: 'APP_PROPERTIES')]) {
+                    // 기존에 실행 중인 앱 컨테이너가 있다면 중지하고 삭제합니다. (오류가 나도 무시하고 진행)
+                    sh 'docker stop cocos-forest-app || true'
+                    sh 'docker rm cocos-forest-app || true'
+
+                    // 새로 빌드한 이미지로 컨테이너를 실행합니다.
+                    // --network 옵션으로 다른 컨테이너(DB, Nginx)와 통신할 수 있게 합니다.
+                    // -v 옵션으로 Jenkins의 설정 파일을 컨테이너 내부의 /config/application.properties 경로에 연결(마운트)합니다.
+                    sh """
+                    docker run -d --name cocos-forest-app --network=cocos-network \
+                               -v \${APP_PROPERTIES}:/config/application.properties \
+                               cocos-forest-app
+                    """
+                }
             }
         }
     }
+    // 파이프라인이 끝나면 항상 작업 공간을 정리하여 서버 용량을 확보합니다.
     post {
-        success {
+        always {
             cleanWs()
         }
     }
