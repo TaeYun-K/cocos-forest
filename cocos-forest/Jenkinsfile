@@ -7,7 +7,7 @@ pipeline {
                 dir('cocos-forest') {
                     // gradlew 파일에 실행 권한(+x)을 부여합니다.
                     sh 'chmod +x ./gradlew'
-                    sh './gradlew clean build
+                    sh './gradlew clean build'
                 }
             }
         }
