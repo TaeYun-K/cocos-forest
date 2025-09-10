@@ -1,15 +1,30 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Gradle 빌드 산출물
+.gradle/
+build/
+
+# 로컬 환경 설정
 local.properties
+
+# IntelliJ / Android Studio 설정 파일
+.idea/
+*.iml
+
+# 로그 / 임시 파일
+*.log
+*.temp
+*.tmp
+
+# 운영체제에서 자동 생성되는 파일
+.DS_Store
+Thumbs.db
+
+# 앱 빌드 산출물 (배포용 파일)
+*.apk
+*.aab
+
+# 보안 관련 (절대 커밋 X)
+*.jks
+*.keystore
+
+# NDK / CMake 빌드 산출물
+.cxx/
