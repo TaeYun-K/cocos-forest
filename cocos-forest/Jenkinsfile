@@ -13,7 +13,7 @@ pipeline {
         stage('Prepare Environment') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'dev') {
+                    if (env.gitlabTargetBranch == 'dev') {
                         echo "### Target branch is 'dev'. Setting DEV environment. ###"
                         // [수정됨] 'env.' 접두사를 사용하여 파이프라인 전역 변수를 변경합니다.
                         env.CREDENTIALS_ID = 'DEV_PROPERTIES'
