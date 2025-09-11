@@ -51,7 +51,7 @@ pipeline {
                 // 동적으로 설정된 Credential ID를 사용합니다.
                 withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'PROPERTIES_FILE_PATH')]) {
                     script {
-                        // 동적으로 설정된 컨테이너 이름을 사용합니다.
+                        // 동적으로 설정된 컨테이너 이름을 사용
                         sh "docker stop ${CONTAINER_NAME} || true"
                         sh "docker rm ${CONTAINER_NAME} || true"
 
