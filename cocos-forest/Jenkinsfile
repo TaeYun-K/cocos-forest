@@ -1,26 +1,24 @@
-// 통합 Jenkinsfile
+// 최종 수정된 Jenkinsfile
 pipeline {
     agent any
 
     environment {
-        // 기본값은 운영(prod) 환경으로 설정합니다. (안전장치)
+        // 기본값은 운영(prod) 환경으로 설정합니다.
         CREDENTIALS_ID = 'PROD_PROPERTIES'
         IMAGE_NAME = 'cocos-forest-app'
-        CONTAINER_NAME = 'cocos-forest-app'
+        CONTAINER_NAME = 'cocos-forest-app' // 일관성을 위해 '-prod'를 붙이는 것을 권장합니다.
     }
 
     stages {
-        // [새로운 단계] 브랜치에 따라 환경 변수를 설정하는 준비 단계
         stage('Prepare Environment') {
             steps {
                 script {
-                    // GitLab Merge Request의 'Target Branch'를 기준으로 분기합니다.
-                    // 이 변수가 더 정확하고 신뢰성 높습니다.
-                    if (env.gitlabTargetBranch == 'dev') {
+                    if (env.BRANCH_NAME == 'dev') {
                         echo "### Target branch is 'dev'. Setting DEV environment. ###"
-                        CREDENTIALS_ID = 'DEV_PROPERTIES'
-                        IMAGE_NAME = 'cocos-forest-app-dev'
-                        CONTAINER_NAME = 'cocos-forest-app-dev'
+                        // [수정됨] 'env.' 접두사를 사용하여 파이프라인 전역 변수를 변경합니다.
+                        env.CREDENTIALS_ID = 'DEV_PROPERTIES'
+                        env.IMAGE_NAME = 'cocos-forest-app-dev'
+                        env.CONTAINER_NAME = 'cocos-forest-app-dev'
                     } else {
                         echo "### Target branch is 'master'. Setting PROD environment. ###"
                     }
@@ -28,11 +26,17 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Test & Build') { // [수정됨] 테스트를 포함하도록 단계 이름을 변경
             steps {
-                dir('cocos-forest') {
-                    sh 'chmod +x ./gradlew'
-                    sh './gradlew clean build -x test'
+                // [수정됨] 테스트 실행을 위해 Credential을 사용하여 properties 파일을 복사합니다.
+                withCredentials([file(credentialsId: "${env.CREDENTIALS_ID}", variable: 'APP_PROPERTIES')]) {
+                    dir('cocos-forest') {
+                        sh 'mkdir -p src/main/resources' // 테스트와 빌드 모두에 적용되도록 main 경로에 복사
+                        sh "cp \\${APP_PROPERTIES} src/main/resources/application.properties"
+                        sh 'chmod +x ./gradlew'
+                        // [수정됨] '-x test' 옵션을 제거하여 테스트를 포함한 전체 빌드를 수행합니다.
+                        sh './gradlew clean build'
+                    }
                 }
             }
         }
@@ -40,25 +44,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('cocos-forest') {
-                    // 동적으로 설정된 이미지 이름을 사용합니다.
-                    sh "docker build -t ${IMAGE_NAME} ."
+                    sh "docker build -t ${env.IMAGE_NAME} ."
                 }
             }
         }
 
         stage('Deploy') {
             steps {
-                // 동적으로 설정된 Credential ID를 사용합니다.
-                withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'PROPERTIES_FILE_PATH')]) {
+                withCredentials([file(credentialsId: "${env.CREDENTIALS_ID}", variable: 'PROPERTIES_FILE_PATH')]) {
                     script {
-                        // 동적으로 설정된 컨테이너 이름을 사용
-                        sh "docker stop ${CONTAINER_NAME} || true"
-                        sh "docker rm ${CONTAINER_NAME} || true"
+                        sh "docker stop ${env.CONTAINER_NAME} || true"
+                        sh "docker rm ${env.CONTAINER_NAME} || true"
 
                         sh """
-                        docker run -d --name ${CONTAINER_NAME} --network=cocos-network \\
+                        docker run -d --name ${env.CONTAINER_NAME} --network=cocos-network \\
                                    --env-file ${PROPERTIES_FILE_PATH} \\
-                                   ${IMAGE_NAME}
+                                   ${env.IMAGE_NAME}
                         """
                     }
                 }
