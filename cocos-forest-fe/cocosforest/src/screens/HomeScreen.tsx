@@ -1,8 +1,10 @@
-import React, { useMemo, useRef, useLayoutEffect, useState } from 'react';
+import React, { useMemo, useRef, useLayoutEffect, useState, Suspense, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Canvas } from '@react-three/fiber/native';
-import { OrthographicCamera, OrbitControls } from '@react-three/drei/native';
+import { OrthographicCamera, OrbitControls, useGLTF } from '@react-three/drei/native';
+import { Asset } from 'expo-asset';
 import * as THREE from 'three';
+
 
 const GRID = 8;
 const TILE = 1;
@@ -145,6 +147,30 @@ function IsoOrthoCamera() {
   return <OrthographicCamera makeDefault position={[d, d, d]} near={0.1} far={5000} zoom={zoom} />;
 }
 
+const TREE_SRC = require('../../assets/low_poly_tree.glb');
+
+function Tree({
+  position = [0, 0, 0] as [number, number, number],
+  scale = 1,
+  rotationY = 0,
+}) {
+  const [uri, setUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    const asset = Asset.fromModule(TREE_SRC);
+    asset.downloadAsync().then(() => {
+      setUri(asset.localUri ?? asset.uri); // file:// or asset://
+    });
+  }, []);
+
+  if (!uri) return null;
+  const gltf: any = useGLTF(uri);
+  return (
+    <primitive object={gltf.scene} position={position} scale={scale} rotation={[0, rotationY, 0]} dispose={null} />
+  );
+}
+
+
 const HomeScreen = () => {
   const [selected, setSelected] = useState<Cell | null>(null);
   const [visible, setVisible] = useState(false);
@@ -175,9 +201,11 @@ const HomeScreen = () => {
 
   const isMarked = selected && markerKeySet.has(`${selected.grid.x},${selected.grid.z}`);
 
+  // 타일 중앙 위치 계산, 나무
+  const centerIdx = Math.floor(GRID / 2) - 1;
+  const centerTilePos = toWorld(centerIdx, centerIdx);
+
   return (
-    <View style={styles.container}>
-      {/* 3D 캔버스 영역 */}
       <View style={styles.canvasWrap}>
         <Canvas shadows>
           <IsoOrthoCamera />
@@ -187,6 +215,11 @@ const HomeScreen = () => {
 
           <CheckerBoard onPick={handlePick} highlighted={selected} />
           <Markers markers={markers} onPick={handlePick} />
+
+          {/* ⬇️ 4) 나무 배치: (7,7) 타일 중앙 위에 올림 */}
+          <Suspense fallback={null}>
+           <Tree position={[centerTilePos.x, THICK, centerTilePos.z]} scale={0.8}/>
+          </Suspense>
 
           <OrbitControls
             makeDefault
@@ -202,8 +235,8 @@ const HomeScreen = () => {
             target={[0, 0, 0]}
           />
         </Canvas>
-      </View>
 
+      {/* 모달 (기존 그대로) */}
       {/* 조건별 모달 */}
       <Modal
         visible={visible}
