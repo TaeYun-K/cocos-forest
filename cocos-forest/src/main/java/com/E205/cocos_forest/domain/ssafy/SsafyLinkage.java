@@ -35,6 +35,10 @@ public class SsafyLinkage {
     @Column(name = "fintech_app_no", nullable = false, length = 10)
     private String fintechAppNo = "001";
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private LinkageStatus status;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -48,6 +52,11 @@ public class SsafyLinkage {
         this.updatedAt = now;
         if (this.institutionCode == null) this.institutionCode = "00100";
         if (this.fintechAppNo == null) this.fintechAppNo = "001";
+        if (this.status == null) this.status = LinkageStatus.ACTIVE;
+    }
+
+    public enum LinkageStatus {
+        ACTIVE, INACTIVE
     }
 
     @PreUpdate

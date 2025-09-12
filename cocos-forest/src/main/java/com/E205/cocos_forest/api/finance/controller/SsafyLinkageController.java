@@ -33,11 +33,11 @@ public class SsafyLinkageController {
 
 
 
-    /** 단건 조회 */
-    @GetMapping("/{userId}")
-    public ResponseEntity<BaseResponse<SsafyLinkageOut>> get(@PathVariable Long userId) {
-        SsafyLinkageOut out = ssafyLinkageService.getByUserId(userId);
-        return ResponseEntity.ok(new BaseResponse<>(out));
+    /** 사용자 검색 */
+    @PostMapping("/search")
+    public BaseResponse<Boolean> searchUser(@RequestBody @Valid SsafyLinkageCreateIn req) {
+        boolean exists = ssafyLinkageService.searchUserByEmail(req);
+        return new BaseResponse<>(exists);
     }
 
     /** 삭제(선택) */

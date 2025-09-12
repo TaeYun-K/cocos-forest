@@ -64,6 +64,16 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
     }
 
     @Override
+    public boolean searchUserByEmail(SsafyLinkageCreateIn in) {
+        if (in == null || in.getUserEmail() == null || in.getUserEmail().isBlank()) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
+        }
+
+        // SSAFY 외부 API 호출 → 사용자 존재 여부 확인
+        return ssafyGateway.searchUser(in.getUserEmail());
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public SsafyLinkageOut getByUserId(Long userId) {
         SsafyLinkage s = repository.findByUserId(userId)

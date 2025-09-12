@@ -8,6 +8,9 @@ public interface SsafyLinkageService {
     // 이메일로 SSAFY 등록 → userKey 수령 → linkage upsert
     SsafyLinkageOut registerByEmail(SsafyLinkageCreateIn in);
 
+    // 이메일로 SSAFY 사용자 검색
+    boolean searchUserByEmail(SsafyLinkageCreateIn in);
+    
     SsafyLinkageOut getByUserId(Long userId);
     void deleteByUserId(Long userId);
 }
