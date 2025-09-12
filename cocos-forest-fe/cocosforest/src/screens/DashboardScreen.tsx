@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchDailyEmissions, fetchMonthlyReport, fetchDayDetails } from '../api/dashboard';
+import type { MonthlyReportData, DayData } from '../types/dashboard'
 
 export default function DashboardScreen() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -10,77 +12,54 @@ export default function DashboardScreen() {
   const [showDetailCard, setShowDetailCard] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current; // 초기값: 높이 0으로 숨겨진 상태
 
-  // 월별 일일 탄소 배출량 데이터 (예시)
-  const dailyEmissions: { [key: number]: number } = {
-    1: 32, 2: 45, 3: 28, 4: 52, 5: 38, 6: 41, 7: 29, 8: 35, 9: 48, 10: 31,
-    11: 44, 12: 36, 13: 27, 14: 39, 15: 33, 16: 42, 17: 30, 18: 46, 19: 34,
-    20: 37, 21: 29, 22: 43, 23: 31, 24: 38, 25: 35, 26: 40, 27: 32, 28: 44,
-    29: 36, 30: 28, 31: 41
+  // API 데이터 상태
+  const [dailyEmissions, setDailyEmissions] = useState<{ [key: number]: number }>({});
+  const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData | null>(null);
+  const [dayData, setDayData] = useState<DayData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // 데이터 로딩 함수들
+  const loadDailyEmissions = async (year: number, month: number) => {
+    try {
+      setLoading(true);
+      const data = await fetchDailyEmissions(year, month + 1); // month는 0부터 시작하므로 +1
+      setDailyEmissions(data.emissions);
+    } catch (error) {
+      console.error('Failed to load daily emissions:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // task2.md 스펙에 맞는 월별 리포트 목업 데이터
-  const getMonthlyReportData = () => {
-    return {
-      cardId: "1003-a139e9f23f1a4cc",
-      yearMonth: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`,
-      currency: "KRW",
-      totals: {
-        amountTotal: 1243500,
-        carbonTotalKg: 18.42,
-        transactionCount: 73,
-        daysActive: 20,
-        avgPerDayAmount: 62175,
-        avgPerDayCarbonKg: 0.92
-      },
-      byCategory: [
-        { 
-          categoryId: "CG-주유", 
-          categoryName: "주유", 
-          amountTotal: 350000, 
-          carbonTotalKg: 7.19, 
-          ratioAmount: 0.281, 
-          ratioCarbon: 0.390,
-          color: '#ef4444' 
-        },
-        { 
-          categoryId: "CG-카페", 
-          categoryName: "카페", 
-          amountTotal: 210000, 
-          carbonTotalKg: 3.42, 
-          ratioAmount: 0.169, 
-          ratioCarbon: 0.186,
-          color: '#f97316' 
-        },
-        { 
-          categoryId: "CG-음식", 
-          categoryName: "음식점", 
-          amountTotal: 285000, 
-          carbonTotalKg: 2.98, 
-          ratioAmount: 0.229, 
-          ratioCarbon: 0.162,
-          color: '#eab308' 
-        },
-        { 
-          categoryId: "CG-쇼핑", 
-          categoryName: "쇼핑", 
-          amountTotal: 198500, 
-          carbonTotalKg: 2.31, 
-          ratioAmount: 0.159, 
-          ratioCarbon: 0.125,
-          color: '#15803d' 
-        },
-        { 
-          categoryId: "CG-교통", 
-          categoryName: "교통", 
-          amountTotal: 200000, 
-          carbonTotalKg: 2.52, 
-          ratioAmount: 0.161, 
-          ratioCarbon: 0.137,
-          color: '#6366f1' 
-        }
-      ]
-    };
+  const loadMonthlyReport = async (year: number, month: number) => {
+    try {
+      setLoading(true);
+      const data = await fetchMonthlyReport(year, month + 1); // month는 0부터 시작하므로 +1
+      setMonthlyReportData(data);
+    } catch (error) {
+      console.error('Failed to load monthly report:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const loadDayDetails = async (year: number, month: number, day: number) => {
+    try {
+      setLoading(true);
+      const data = await fetchDayDetails(year, month + 1, day); // month는 0부터 시작하므로 +1
+      setDayData(data);
+    } catch (error) {
+      console.error('Failed to load day details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 초기 데이터 로딩
+  useEffect(() => {
+    loadDailyEmissions(selectedYear, selectedMonth);
+    loadMonthlyReport(selectedYear, selectedMonth);
+  }, [selectedYear, selectedMonth]);
 
   // 오늘 탄소 배출량 데이터
   const todayEmission = 32; // kg
@@ -88,81 +67,9 @@ export default function DashboardScreen() {
   const emissionDifference = averageEmission - todayEmission;
   const emissionPercentage = (todayEmission / averageEmission) * 100;
 
-  // API 응답 구조에 맞는 목업 데이터
-  const getMockDayData = (day: number) => {
-    const totalEmission = dailyEmissions[day] || 0;
-    return {
-      cardId: "1003-a139e9f23f1a4cc",
-      date: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-      fresh: true,
-      lastSyncedAt: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T15:30:12+09:00`,
-      syncStatus: "DONE",
-      totals: {
-        amountTotal: Math.round(totalEmission * 1000), // kg당 1000원으로 가정
-        carbonTotalKg: totalEmission,
-        transactionCount: Math.round(totalEmission / 10) || 1
-      },
-      transactions: [
-        {
-          externalTransactionId: "20",
-          approvedAt: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T09:44:31+09:00`,
-          txDate: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-          txTime: "09:44:31",
-          amountKrw: Math.round(totalEmission * 400),
-          status: "APPROVED",
-          merchantName: "스타벅스 서면점",
-          categoryId: "CG-카페",
-          categoryName: "카페",
-          cardLast4: "6479",
-          issuerCode: "1005",
-          cardName: "신한 TRAVEL",
-          source: "SSAFY",
-          carbonKg: Math.round(totalEmission * 0.4 * 100) / 100,
-          carbonCoefId: "COEF-CAFE-2025"
-        },
-        {
-          externalTransactionId: "21",
-          approvedAt: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:15:22+09:00`,
-          txDate: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-          txTime: "12:15:22",
-          amountKrw: Math.round(totalEmission * 300),
-          status: "APPROVED",
-          merchantName: "지하철 2호선",
-          categoryId: "CG-교통",
-          categoryName: "교통",
-          cardLast4: "6479",
-          issuerCode: "1005",
-          cardName: "신한 TRAVEL",
-          source: "SSAFY",
-          carbonKg: Math.round(totalEmission * 0.3 * 100) / 100,
-          carbonCoefId: "COEF-TRANSPORT-2025"
-        },
-        {
-          externalTransactionId: "22",
-          approvedAt: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T18:30:15+09:00`,
-          txDate: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
-          txTime: "18:30:15",
-          amountKrw: Math.round(totalEmission * 300),
-          status: "APPROVED",
-          merchantName: "이마트 24",
-          categoryId: "CG-쇼핑",
-          categoryName: "쇼핑",
-          cardLast4: "6479",
-          issuerCode: "1005",
-          cardName: "신한 TRAVEL",
-          source: "SSAFY",
-          carbonKg: Math.round(totalEmission * 0.3 * 100) / 100,
-          carbonCoefId: "COEF-RETAIL-2025"
-        }
-      ]
-    };
-  };
-
-  const handleDayPress = (day: number) => {
+  const handleDayPress = async (day: number) => {
     setSelectedDay(day);
-    // TODO: 실제 API 호출 구현
-    // const apiData = await fetchDayData(day);
-    
+    await loadDayDetails(selectedYear, selectedMonth, day);
     setShowDetailCard(true);
   };
 
@@ -432,48 +339,50 @@ export default function DashboardScreen() {
                 </Text>
                 
                 {/* 월별 요약 섹션 */}
-                <View style={styles.monthlyStatsContainer}>
-                  <View style={styles.statsGrid}>
-                    <View style={styles.statHighlight}>
-                      <Text style={styles.statMainValue}>
-                        ₩{getMonthlyReportData().totals.amountTotal.toLocaleString()}
-                      </Text>
-                      <Text style={styles.statMainLabel}>총 결제금액</Text>
+                {monthlyReportData && (
+                  <View style={styles.monthlyStatsContainer}>
+                    <View style={styles.statsGrid}>
+                      <View style={styles.statHighlight}>
+                        <Text style={styles.statMainValue}>
+                          ₩{monthlyReportData.totals.amountTotal.toLocaleString()}
+                        </Text>
+                        <Text style={styles.statMainLabel}>총 결제금액</Text>
+                      </View>
+                      <View style={styles.statHighlight}>
+                        <Text style={[styles.statMainValue, { color: '#ef4444' }]}>
+                          {monthlyReportData.totals.carbonTotalKg}kg
+                        </Text>
+                        <Text style={styles.statMainLabel}>총 탄소배출</Text>
+                      </View>
                     </View>
-                    <View style={styles.statHighlight}>
-                      <Text style={[styles.statMainValue, { color: '#ef4444' }]}>
-                        {getMonthlyReportData().totals.carbonTotalKg}kg
-                      </Text>
-                      <Text style={styles.statMainLabel}>총 탄소배출</Text>
+                    
+                    <View style={styles.additionalStats}>
+                      <View style={styles.statRow}>
+                        <Text style={styles.statSecondaryLabel}>거래 건수</Text>
+                        <Text style={styles.statSecondaryValue}>
+                          {monthlyReportData.totals.transactionCount}건
+                        </Text>
+                      </View>
+                      <View style={styles.statRow}>
+                        <Text style={styles.statSecondaryLabel}>활성 일수</Text>
+                        <Text style={styles.statSecondaryValue}>
+                          {monthlyReportData.totals.daysActive}일
+                        </Text>
+                      </View>
+                      <View style={styles.statRow}>
+                        <Text style={styles.statSecondaryLabel}>일평균 배출량</Text>
+                        <Text style={[styles.statSecondaryValue, { color: '#ef4444', fontWeight: '600' }]}>
+                          {monthlyReportData.totals.avgPerDayCarbonKg}kg CO₂
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                  
-                  <View style={styles.additionalStats}>
-                    <View style={styles.statRow}>
-                      <Text style={styles.statSecondaryLabel}>거래 건수</Text>
-                      <Text style={styles.statSecondaryValue}>
-                        {getMonthlyReportData().totals.transactionCount}건
-                      </Text>
-                    </View>
-                    <View style={styles.statRow}>
-                      <Text style={styles.statSecondaryLabel}>활성 일수</Text>
-                      <Text style={styles.statSecondaryValue}>
-                        {getMonthlyReportData().totals.daysActive}일
-                      </Text>
-                    </View>
-                    <View style={styles.statRow}>
-                      <Text style={styles.statSecondaryLabel}>일평균 배출량</Text>
-                      <Text style={[styles.statSecondaryValue, { color: '#ef4444', fontWeight: '600' }]}>
-                        {getMonthlyReportData().totals.avgPerDayCarbonKg}kg CO₂
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+                )}
 
                 {/* 카테고리별 상세 분석 */}
                 <Text style={styles.sectionTitle}>카테고리별 분석</Text>
                 <View style={styles.categoryList}>
-                  {getMonthlyReportData().byCategory
+                  {monthlyReportData?.byCategory
                     .sort((a, b) => b.carbonTotalKg - a.carbonTotalKg)
                     .map((item, index) => (
                     <View key={item.categoryId} style={styles.categoryItemDetailed}>
@@ -558,34 +467,37 @@ export default function DashboardScreen() {
               </View>
 
               {/* 총 배출량 및 결제 정보 */}
-              <View style={styles.totalSection}>
-                <View style={styles.totalEmissionCard}>
-                  <Text style={styles.totalEmissionLabel}>총 탄소 배출량</Text>
-                  <Text style={styles.totalEmissionValue}>
-                    {getMockDayData(selectedDay).totals.carbonTotalKg}kg CO₂
-                  </Text>
-                </View>
-                <View style={styles.totalStatsGrid}>
-                  <View style={styles.statCard}>
-                    <Text style={styles.statValue}>
-                      {getMockDayData(selectedDay).totals.amountTotal.toLocaleString()}원
+              {dayData && (
+                <View style={styles.totalSection}>
+                  <View style={styles.totalEmissionCard}>
+                    <Text style={styles.totalEmissionLabel}>총 탄소 배출량</Text>
+                    <Text style={styles.totalEmissionValue}>
+                      {dayData.totals.carbonTotalKg}kg CO₂
                     </Text>
-                    <Text style={styles.statLabel}>총 결제금액</Text>
                   </View>
-                  <View style={styles.statCard}>
-                    <Text style={styles.statValue}>
-                      {getMockDayData(selectedDay).totals.transactionCount}건
-                    </Text>
-                    <Text style={styles.statLabel}>거래 건수</Text>
+                  <View style={styles.totalStatsGrid}>
+                    <View style={styles.statCard}>
+                      <Text style={styles.statValue}>
+                        {dayData.totals.amountTotal.toLocaleString()}원
+                      </Text>
+                      <Text style={styles.statLabel}>총 결제금액</Text>
+                    </View>
+                    <View style={styles.statCard}>
+                      <Text style={styles.statValue}>
+                        {dayData.totals.transactionCount}건
+                      </Text>
+                      <Text style={styles.statLabel}>거래 건수</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
+              )}
 
               {/* 거래 내역 */}
-              <View style={styles.transactionsSection}>
-                <Text style={styles.transactionsTitle}>거래 내역</Text>
-                <ScrollView style={styles.transactionsScrollView} showsVerticalScrollIndicator={false}>
-                  {getMockDayData(selectedDay).transactions.map((transaction, index) => (
+              {dayData && (
+                <View style={styles.transactionsSection}>
+                  <Text style={styles.transactionsTitle}>거래 내역</Text>
+                  <ScrollView style={styles.transactionsScrollView} showsVerticalScrollIndicator={false}>
+                    {dayData.transactions.map((transaction, index) => (
                     <View key={index} style={styles.transactionItem}>
                       <View style={styles.transactionHeader}>
                         <View style={styles.transactionMerchant}>
@@ -610,9 +522,10 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                     </View>
-                  ))}
-                </ScrollView>
-              </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
           </View>
         )}

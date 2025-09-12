@@ -1,16 +1,36 @@
+// App.tsx (최종 버전)
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useEffect } from 'react'; // useEffect를 다시 사용합니다.
 import HomeScreen from './src/screens/HomeScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import ChallengeScreen from './src/screens/ChallengeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+// server를 여기서 import 합니다.
+import { server } from './src/mocks/server';
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  // ❗ 컴포넌트가 마운트된 후에 MSW 서버를 시작합니다.
+  useEffect(() => {
+    if (__DEV__) {
+      server.listen({ onUnhandledRequest: 'warn' });
+      console.log('✅ MSW server started from App.tsx');
+    }
+
+    // 앱이 종료될 때 서버를 정리합니다.
+    return () => {
+      if (__DEV__) {
+        server.close();
+      }
+    };
+  }, []);
+
   return (
     <NavigationContainer>
+      {/* ... 기존의 Tab.Navigator 코드 ... */}
       <Tab.Navigator
         screenOptions={{
           tabBarActiveTintColor: '#15803d',
