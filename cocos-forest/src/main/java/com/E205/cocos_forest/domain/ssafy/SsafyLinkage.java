@@ -29,8 +29,8 @@ public class SsafyLinkage {
     private String userKey;
 
     // DB default: '00100' / '001' (nullable 허용 후 null이면 저장 시 기본값 유지)
-    @Column(name = "org_code", nullable = false, length = 10)
-    private String orgCode = "00100";
+    @Column(name = "institution_code", nullable = false, length = 10)
+    private String institutionCode = "00100";
 
     @Column(name = "fintech_app_no", nullable = false, length = 10)
     private String fintechAppNo = "001";
@@ -46,7 +46,7 @@ public class SsafyLinkage {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-        if (this.orgCode == null) this.orgCode = "00100";
+        if (this.institutionCode == null) this.institutionCode = "00100";
         if (this.fintechAppNo == null) this.fintechAppNo = "001";
     }
 
