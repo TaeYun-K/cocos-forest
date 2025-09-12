@@ -17,7 +17,7 @@ public class SecurityConfig {
             // [핵심 설정] 대부분의 요청은 인증을 요구하도록 설정합니다.
             .authorizeHttpRequests(auth -> auth
                 // 로그인 페이지, CSS/JS 파일 등은 인증 없이 접근 허용
-                .requestMatchers("/login", "/css/**", "/js/**", "/favicon.ico").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/favicon.ico").permitAll()
                 // 그 외 모든 요청은 반드시 인증(로그인)을 거쳐야 함
                 .anyRequest().authenticated()
             )
