@@ -1,7 +1,7 @@
 package com.E205.cocos_forest.global.response;
 
-import org.springframework.http.HttpStatus;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import lombok.Getter;
 
 @Getter
@@ -137,8 +137,10 @@ public enum BaseResponseStatus {
 
   // ===== 토큰/인증 관련 에러 (2100번대) =====
   MISSING_TOKEN(HttpStatus.UNAUTHORIZED, false, 2101, "인증 토큰이 필요합니다."),
-  INVALID_TOKEN_FORMAT(HttpStatus.UNAUTHORIZED, false, 2102, "토큰 형식이 올바르지 않습니다.");
+  INVALID_TOKEN_FORMAT(HttpStatus.UNAUTHORIZED, false, 2102, "토큰 형식이 올바르지 않습니다."),
 
+  EXTERNAL_API_ERROR(HttpStatus.NOT_FOUND, false, 5201, "외부 금융 API 호출 중 오류가 발생했습니다."),
+  LINKAGE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 5203, "해당 유저의 SSAFY 연동 정보가 존재하지 않습니다.");
 
 
   private final HttpStatus httpStatus;
