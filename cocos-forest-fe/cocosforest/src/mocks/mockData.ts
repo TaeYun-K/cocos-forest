@@ -1,8 +1,6 @@
-// src/mocks/dashboard.ts
-import { http, HttpResponse } from 'msw';
-
+// src/mocks/mockData.ts
 // 일일 탄소 배출량 목업 데이터
-const dailyEmissionsData: { [key: string]: { [key: number]: number } } = {
+export const dailyEmissionsData: { [key: string]: { [key: number]: number } } = {
   '2025-01': {
     1: 32, 2: 45, 3: 28, 4: 52, 5: 38, 6: 41, 7: 29, 8: 35, 9: 48, 10: 31,
     11: 44, 12: 36, 13: 27, 14: 39, 15: 33, 16: 42, 17: 30, 18: 46, 19: 34,
@@ -13,11 +11,17 @@ const dailyEmissionsData: { [key: string]: { [key: number]: number } } = {
     1: 35, 2: 42, 3: 29, 4: 48, 5: 33, 6: 39, 7: 26, 8: 45, 9: 37, 10: 30,
     11: 41, 12: 34, 13: 28, 14: 46, 15: 32, 16: 38, 17: 27, 18: 43, 19: 36,
     20: 31, 21: 44, 22: 29, 23: 40, 24: 35, 25: 47, 26: 33, 27: 42, 28: 38
+  },
+  '2025-09': {
+    1: 38, 2: 41, 3: 35, 4: 46, 5: 32, 6: 44, 7: 29, 8: 39, 9: 33, 10: 42,
+    11: 37, 12: 31, 13: 45, 14: 28, 15: 40, 16: 34, 17: 47, 18: 36, 19: 30,
+    20: 43, 21: 38, 22: 32, 23: 41, 24: 35, 25: 48, 26: 29, 27: 44, 28: 37,
+    29: 31, 30: 39
   }
 };
 
-// 월별 리포트 목업 데이터
-const generateMonthlyReportData = (year: number, month: number) => {
+// 월별 리포트 목업 데이터 생성 함수
+export const generateMonthlyReportData = (year: number, month: number) => {
   return {
     cardId: "1003-a139e9f23f1a4cc",
     yearMonth: `${year}-${String(month).padStart(2, '0')}`,
@@ -81,9 +85,10 @@ const generateMonthlyReportData = (year: number, month: number) => {
 };
 
 // 특정 날짜 상세 데이터 생성 함수
-const generateDayData = (year: number, month: number, day: number) => {
+export const generateDayData = (year: number, month: number, day: number) => {
   const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
-  const totalEmission = dailyEmissionsData[yearMonth]?.[day] || 30;
+  // 데이터가 없을 경우 랜덤한 기본값 생성 (25-50 사이)
+  const totalEmission = dailyEmissionsData[yearMonth]?.[day] || Math.floor(Math.random() * 26) + 25;
   
   return {
     cardId: "1003-a139e9f23f1a4cc",
@@ -151,33 +156,3 @@ const generateDayData = (year: number, month: number, day: number) => {
     ]
   };
 };
-
-export const dashboardHandlers = [
-  // 일일 탄소 배출량 조회
-  http.get('/api/dashboard/daily-emissions/:year/:month', ({ params }) => {
-    const { year, month } = params as { year: string; month: string };
-    const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
-    const emissions = dailyEmissionsData[yearMonth] || {};
-    
-    return HttpResponse.json({
-      yearMonth,
-      emissions
-    });
-  }),
-
-  // 월별 리포트 조회
-  http.get('/api/dashboard/monthly-report/:year/:month', ({ params }) => {
-    const { year, month } = params as { year: string; month: string };
-    const reportData = generateMonthlyReportData(parseInt(year), parseInt(month));
-    
-    return HttpResponse.json(reportData);
-  }),
-
-  // 특정 날짜 상세 데이터 조회
-  http.get('/api/dashboard/day-details/:year/:month/:day', ({ params }) => {
-    const { year, month, day } = params as { year: string; month: string; day: string };
-    const dayData = generateDayData(parseInt(year), parseInt(month), parseInt(day));
-    
-    return HttpResponse.json(dayData);
-  })
-];

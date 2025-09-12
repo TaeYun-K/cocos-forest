@@ -67,6 +67,16 @@ export const fetchCurrentMonthData = async (): Promise<{
   return { emissions, report };
 };
 
+// 오늘 날짜의 일별 데이터 가져오기
+export const fetchTodayData = async (): Promise<DayData> => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 0부터 시작하므로 +1
+  const day = now.getDate();
+
+  return fetchDayDetails(year, month, day);
+};
+
 // 여러 월 데이터를 한번에 가져오기
 export const fetchMultipleMonthsData = async (
   startYear: number,

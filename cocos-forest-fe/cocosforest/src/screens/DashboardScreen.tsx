@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchDailyEmissions, fetchMonthlyReport, fetchDayDetails } from '../api/dashboard';
+import { fetchDailyEmissions, fetchMonthlyReport, fetchDayDetails, fetchTodayData } from '../api/dashboard';
 import type { MonthlyReportData, DayData } from '../types/dashboard'
 
 export default function DashboardScreen() {
@@ -16,6 +16,7 @@ export default function DashboardScreen() {
   const [dailyEmissions, setDailyEmissions] = useState<{ [key: number]: number }>({});
   const [monthlyReportData, setMonthlyReportData] = useState<MonthlyReportData | null>(null);
   const [dayData, setDayData] = useState<DayData | null>(null);
+  const [todayData, setTodayData] = useState<DayData | null>(null); // 오늘의 탄소 배출 현황용
   const [loading, setLoading] = useState(false);
 
   // 데이터 로딩 함수들
@@ -26,6 +27,8 @@ export default function DashboardScreen() {
       setDailyEmissions(data.emissions);
     } catch (error) {
       console.error('Failed to load daily emissions:', error);
+      // 기본값으로 빈 객체 설정
+      setDailyEmissions({});
     } finally {
       setLoading(false);
     }
@@ -38,6 +41,8 @@ export default function DashboardScreen() {
       setMonthlyReportData(data);
     } catch (error) {
       console.error('Failed to load monthly report:', error);
+      // 기본값으로 빈 데이터 설정
+      setMonthlyReportData(null);
     } finally {
       setLoading(false);
     }
@@ -45,11 +50,35 @@ export default function DashboardScreen() {
 
   const loadDayDetails = async (year: number, month: number, day: number) => {
     try {
+      console.log(`🔄 Loading day details for ${year}-${month + 1}-${day}`);
       setLoading(true);
       const data = await fetchDayDetails(year, month + 1, day); // month는 0부터 시작하므로 +1
+      console.log(`📊 Day data received:`, data);
       setDayData(data);
+      console.log(`✅ Day data state updated`);
     } catch (error) {
       console.error('Failed to load day details:', error);
+      // 기본값으로 null 설정
+      setDayData(null);
+      throw error; // 에러를 다시 던져서 handleDayPress에서 catch할 수 있도록
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 오늘 데이터 로딩
+  const loadTodayData = async () => {
+    try {
+      console.log(`🔄 Loading today's data`);
+      setLoading(true);
+      const data = await fetchTodayData();
+      console.log(`📊 Today data received:`, data);
+      setTodayData(data);
+      console.log(`✅ Today data state updated`);
+    } catch (error) {
+      console.error('Failed to load today data:', error);
+      // 기본값으로 null 설정
+      setTodayData(null);
     } finally {
       setLoading(false);
     }
@@ -61,16 +90,27 @@ export default function DashboardScreen() {
     loadMonthlyReport(selectedYear, selectedMonth);
   }, [selectedYear, selectedMonth]);
 
-  // 오늘 탄소 배출량 데이터
-  const todayEmission = 32; // kg
-  const averageEmission = 50; // kg
+  // 오늘 탄소 배출량 데이터 (API 연동)
+  const todayEmission = todayData?.totals?.carbonTotalKg || 32; // kg
+  const averageEmission = 50; // kg (평균값은 고정)
   const emissionDifference = averageEmission - todayEmission;
   const emissionPercentage = (todayEmission / averageEmission) * 100;
 
   const handleDayPress = async (day: number) => {
+    console.log(`📅 Day pressed: ${day}`);
+    console.log(`📊 Current states - selectedDay: ${selectedDay}, showDetailCard: ${showDetailCard}`);
+    
     setSelectedDay(day);
-    await loadDayDetails(selectedYear, selectedMonth, day);
-    setShowDetailCard(true);
+    console.log(`📍 Selected day set to: ${day}`);
+    
+    try {
+      await loadDayDetails(selectedYear, selectedMonth, day);
+      console.log(`✅ Day details loaded successfully for ${selectedYear}-${selectedMonth}-${day}`);
+      setShowDetailCard(true);
+      console.log(`🎯 Show detail card set to: true`);
+    } catch (error) {
+      console.error(`❌ Failed to load day details:`, error);
+    }
   };
 
   const handleCloseDetailCard = () => {
@@ -152,7 +192,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* AI 분석 결과 */}
         <View style={styles.section}>
@@ -233,21 +273,54 @@ export default function DashboardScreen() {
             {/* 오늘의 주요 활동 */}
             <View style={styles.todayActivities}>
               <Text style={styles.activitiesTitle}>오늘의 주요 활동</Text>
-              <View style={styles.activityItem}>
-                <Text style={styles.activityIcon}>🚌</Text>
-                <Text style={styles.activityText}>대중교통 이용 (8km)</Text>
-                <Text style={styles.activityEmission}>-12kg</Text>
-              </View>
-              <View style={styles.activityItem}>
-                <Text style={styles.activityIcon}>🍽️</Text>
-                <Text style={styles.activityText}>로컬 식당 방문</Text>
-                <Text style={styles.activityEmission}>-5kg</Text>
-              </View>
-              <View style={styles.activityItem}>
-                <Text style={styles.activityIcon}>💡</Text>
-                <Text style={styles.activityText}>에너지 절약 모드</Text>
-                <Text style={styles.activityEmission}>-1kg</Text>
-              </View>
+              {todayData ? (
+                // API 데이터 기반으로 거래내역 표시
+                todayData.transactions.slice(0, 3).map((transaction, index) => {
+                  const getCategoryIcon = (categoryId: string) => {
+                    switch (categoryId) {
+                      case 'CG-교통': return '🚌';
+                      case 'CG-카페': return '☕';
+                      case 'CG-음식': return '🍽️';
+                      case 'CG-쇼핑': return '🛒';
+                      case 'CG-주유': return '⛽';
+                      default: return '📱';
+                    }
+                  };
+
+                  return (
+                    <View key={index} style={styles.activityItem}>
+                      <Text style={styles.activityIcon}>
+                        {getCategoryIcon(transaction.categoryId)}
+                      </Text>
+                      <Text style={styles.activityText}>
+                        {transaction.merchantName}
+                      </Text>
+                      <Text style={styles.activityEmission}>
+                        {transaction.carbonKg}kg CO₂
+                      </Text>
+                    </View>
+                  );
+                })
+              ) : (
+                // 기본값 표시
+                <>
+                  <View style={styles.activityItem}>
+                    <Text style={styles.activityIcon}>🚌</Text>
+                    <Text style={styles.activityText}>대중교통 이용</Text>
+                    <Text style={styles.activityEmission}>-12kg</Text>
+                  </View>
+                  <View style={styles.activityItem}>
+                    <Text style={styles.activityIcon}>🍽️</Text>
+                    <Text style={styles.activityText}>로컬 식당 방문</Text>
+                    <Text style={styles.activityEmission}>-5kg</Text>
+                  </View>
+                  <View style={styles.activityItem}>
+                    <Text style={styles.activityIcon}>💡</Text>
+                    <Text style={styles.activityText}>에너지 절약 모드</Text>
+                    <Text style={styles.activityEmission}>-1kg</Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -261,7 +334,8 @@ export default function DashboardScreen() {
                 style={[styles.tab, activeTab === 0 && styles.activeTab]}
                 onPress={() => {
                   setActiveTab(0);
-                  // 카테고리별 탭에서 일별 탭으로 돌아올 때는 카드를 유지
+                  // 일별 탭 클릭 시 오늘 데이터 로딩
+                  loadTodayData();
                 }}
               >
                 <Text style={[styles.tabText, activeTab === 0 && styles.activeTabText]}>
@@ -272,6 +346,8 @@ export default function DashboardScreen() {
                 style={[styles.tab, activeTab === 1 && styles.activeTab]}
                 onPress={() => {
                   setActiveTab(1);
+                  // 카테고리별 탭 클릭 시 월별 리포트 로딩
+                  loadMonthlyReport(selectedYear, selectedMonth);
                   if (showDetailCard) {
                     handleCloseDetailCard();
                   }
@@ -441,6 +517,10 @@ export default function DashboardScreen() {
         </View>
 
         {/* 달력 카드 하단 상세 정보 카드 */}
+        {(() => {
+          console.log(`🔍 Render check - showDetailCard: ${showDetailCard}, selectedDay: ${selectedDay}, dayData: ${!!dayData}`);
+          return null;
+        })()}
         {showDetailCard && selectedDay && (
           <View style={styles.inlineDetailCard}>
             <View style={styles.detailCard}>
@@ -542,6 +622,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // 하단에 충분한 여백 추가
   },
   section: {
     paddingHorizontal: 24,
@@ -982,6 +1065,7 @@ const styles = StyleSheet.create({
   inlineDetailCard: {
     marginTop: 16,
     marginHorizontal: 16,
+    marginBottom: 24, // 하단 마진 추가
   },
   detailCard: {
     backgroundColor: '#ffffff',
@@ -1098,7 +1182,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   transactionsScrollView: {
-    maxHeight: 300,
+    maxHeight: 400, // 높이 제한 완화
   },
   transactionItem: {
     backgroundColor: '#f9fafb',
