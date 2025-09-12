@@ -1,29 +1,45 @@
-// 통합 Jenkinsfile
+// develop/master 파이프라인 분리 환경에 최적화된 Jenkinsfile
 pipeline {
     agent any
 
     environment {
-        // 기본값은 운영(prod) 환경으로 설정합니다. (안전장치)
-        CREDENTIALS_ID = 'PROD_PROPERTIES'
-        IMAGE_NAME = 'cocos-forest-app'
-        CONTAINER_NAME = 'cocos-forest-app'
+        // 환경별 설정을 맵(Map)으로 미리 정의해두어 가독성을 높입니다.
+        PROD_CONFIG = [
+            CREDENTIALS_ID: 'PROD_PROPERTIES',
+            IMAGE_NAME    : 'cocos-forest-app',
+            CONTAINER_NAME: 'cocos-forest-app'
+        ]
+        DEV_CONFIG = [
+            CREDENTIALS_ID: 'DEV_PROPERTIES',
+            IMAGE_NAME    : 'cocos-forest-app-dev',
+            CONTAINER_NAME: 'cocos-forest-app-dev'
+        ]
     }
 
     stages {
-        // [새로운 단계] 브랜치에 따라 환경 변수를 설정하는 준비 단계
         stage('Prepare Environment') {
             steps {
                 script {
-                    // GitLab Merge Request의 'Target Branch'를 기준으로 분기합니다.
-                    // 이 변수가 더 정확하고 신뢰성 높습니다.
-                    if (env.gitlabTargetBranch == 'dev') {
-                        echo "### Target branch is 'dev'. Setting DEV environment. ###"
-                        CREDENTIALS_ID = 'DEV_PROPERTIES'
-                        IMAGE_NAME = 'cocos-forest-app-dev'
-                        CONTAINER_NAME = 'cocos-forest-app-dev'
-                    } else {
-                        echo "### Target branch is 'master'. Setting PROD environment. ###"
+                    def config // 이번 빌드에서 사용할 설정을 담을 변수
+
+                    // [핵심] 현재 빌드 중인 브랜치 이름(env.BRANCH_NAME)을 기준으로 환경을 결정합니다.
+                    // 이 방식은 자동/수동 실행 여부와 관계없이 항상 정확하게 동작합니다.
+                    if (env.BRANCH_NAME == 'dev') {
+                        echo "### Branch is 'dev'. Setting DEV environment. ###"
+                        config = DEV_CONFIG
+                    } else { // 'master' 브랜치 또는 예상치 못한 다른 브랜치는 모두 PROD로 처리 (안전장치)
+                        echo "### Branch is '${env.BRANCH_NAME}'. Setting PROD environment. ###"
+                        config = PROD_CONFIG
                     }
+
+                    // 선택된 설정을 실제 파이프라인 변수에 할당합니다.
+                    CREDENTIALS_ID = config.CREDENTIALS_ID
+                    IMAGE_NAME     = config.IMAGE_NAME
+                    CONTAINER_NAME = config.CONTAINER_NAME
+
+                    echo "### Environment Set ###"
+                    echo "IMAGE_NAME: ${IMAGE_NAME}"
+                    echo "CONTAINER_NAME: ${CONTAINER_NAME}"
                 }
             }
         }
@@ -40,7 +56,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('cocos-forest') {
-                    // 동적으로 설정된 이미지 이름을 사용합니다.
                     sh "docker build -t ${IMAGE_NAME} ."
                 }
             }
@@ -48,10 +63,8 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                // 동적으로 설정된 Credential ID를 사용합니다.
                 withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'PROPERTIES_FILE_PATH')]) {
                     script {
-                        // 동적으로 설정된 컨테이너 이름을 사용
                         sh "docker stop ${CONTAINER_NAME} || true"
                         sh "docker rm ${CONTAINER_NAME} || true"
 
