@@ -3,23 +3,26 @@ pipeline {
     agent any
 
     environment {
-        // 환경별 설정을 맵(Map)으로 미리 정의해두어 가독성을 높입니다.
-        PROD_CONFIG = [
-            CREDENTIALS_ID: 'PROD_PROPERTIES',
-            IMAGE_NAME    : 'cocos-forest-app',
-            CONTAINER_NAME: 'cocos-forest-app'
-        ]
-        DEV_CONFIG = [
-            CREDENTIALS_ID: 'DEV_PROPERTIES',
-            IMAGE_NAME    : 'cocos-forest-app-dev',
-            CONTAINER_NAME: 'cocos-forest-app-dev'
-        ]
+        CREDENTIALS_ID = ''
+        IMAGE_NAME     = ''
+        CONTAINER_NAME = ''
     }
 
     stages {
         stage('Prepare Environment') {
             steps {
                 script {
+                    def PROD_CONFIG = [
+                        CREDENTIALS_ID: 'PROD_PROPERTIES',
+                        IMAGE_NAME    : 'cocos-forest-app',
+                        CONTAINER_NAME: 'cocos-forest-app'
+                    ]
+                    def DEV_CONFIG = [
+                        CREDENTIALS_ID: 'DEV_PROPERTIES',
+                        IMAGE_NAME    : 'cocos-forest-app-dev',
+                        CONTAINER_NAME: 'cocos-forest-app-dev'
+                    ]
+
                     def config // 이번 빌드에서 사용할 설정을 담을 변수
 
                     // [핵심] 현재 빌드 중인 브랜치 이름(env.BRANCH_NAME)을 기준으로 환경을 결정합니다.
