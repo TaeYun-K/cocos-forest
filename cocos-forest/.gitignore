@@ -41,5 +41,3 @@ out/
 **/application.yml
 **/application-*.yml
 **/application-*.properties
-
-**/index.html
