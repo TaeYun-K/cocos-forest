@@ -34,7 +34,7 @@ public record BaseResponse<T>(HttpStatus httpStatus, Boolean isSuccess, String m
      */
     public BaseResponse(BaseResponseStatus status) {
         this(status.getHttpStatus(), false, status.getMessage(), status.getCode(),
-                        com.Stalk.project.global.util.TypeCaster.castMessage(status.getMessage()));
+            com.E205.cocos_forest.global.util.TypeCaster.castMessage(status.getMessage()));
     }
 
     /**
@@ -45,7 +45,7 @@ public record BaseResponse<T>(HttpStatus httpStatus, Boolean isSuccess, String m
      */
     public BaseResponse(BaseResponseStatus status, String message) {
         this(status.getHttpStatus(), false, message, status.getCode(),
-                        com.Stalk.project.global.util.TypeCaster.castMessage(status.getMessage()));
+                        com.E205.cocos_forest.global.util.TypeCaster.castMessage(status.getMessage()));
     }
 
 }
