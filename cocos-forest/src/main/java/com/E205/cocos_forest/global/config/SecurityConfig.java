@@ -15,7 +15,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // H2 콘솔 등 사용 시
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // ✅ 전체 허용
+                // '/login' 페이지 자체는 인증 없이 누구나 볼 수 있도록 허용합니다. (무한 리디렉션 방지)
+                .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+                // 그 외 모든 요청은 반드시 인증(로그인)을 거쳐야 합니다.
+                .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
