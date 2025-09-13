@@ -1,12 +1,12 @@
 // src/types/dashboard.ts
 
-// 일일 탄소 배출량 타입
+// 일일 탄소 배출량 타입 (기존 호환성)
 export interface DailyEmissions {
   yearMonth: string;
   emissions: { [key: number]: number };
 }
 
-// 월별 리포트 데이터 타입
+// 월별 리포트 데이터 타입 (새로운 API 명세 기반)
 export interface MonthlyReportData {
   cardId: string;
   yearMonth: string;
@@ -19,7 +19,18 @@ export interface MonthlyReportData {
     avgPerDayAmount: number;
     avgPerDayCarbonKg: number;
   };
+  daily: Array<DailySummary>;
   byCategory: Array<CategoryData>;
+}
+
+// 일별 요약 데이터 타입
+export interface DailySummary {
+  date: string; // YYYY-MM-DD
+  amountTotal: number;
+  carbonTotalKg: number;
+  transactionCount: number;
+  fresh?: boolean;
+  lastSyncedAt?: string;
 }
 
 // 카테고리 데이터 타입

@@ -1,103 +1,87 @@
-// src/services/dashboard.ts
+// src/api/dashboard.ts
 import apiClient from './axios';
-import type { 
-  DailyEmissions, 
-  MonthlyReportData, 
-  DayData 
+import type {
+  DayData,
+  MonthlyReportData
 } from '../types/dashboard';
 
-/**
- * 일일 탄소 배출량 데이터를 가져옵니다.
- * @param year - 조회할 년도
- * @param month - 조회할 월 (1-12)
- * @returns 일일 탄소 배출량 데이터
- */
-export const fetchDailyEmissions = async (
-  year: number, 
-  month: number
-): Promise<DailyEmissions> => {
-  const response = await apiClient.get(`/api/dashboard/daily-emissions/${year}/${month}`);
-  return response.data;
-};
+// 고정 cardId
+const CARD_ID = "1003-a139e9f23f1a4cc";
 
 /**
- * 월별 리포트 데이터를 가져옵니다.
- * @param year - 조회할 년도
- * @param month - 조회할 월 (1-12)
- * @returns 월별 리포트 데이터
- */
-export const fetchMonthlyReport = async (
-  year: number, 
-  month: number
-): Promise<MonthlyReportData> => {
-  const response = await apiClient.get(`/api/dashboard/monthly-report/${year}/${month}`);
-  return response.data;
-};
-
-/**
- * 특정 날짜의 상세 데이터를 가져옵니다.
- * @param year - 조회할 년도
- * @param month - 조회할 월 (1-12)
- * @param day - 조회할 일 (1-31)
+ * 특정 날짜의 상세 데이터를 가져옵니다. (Daily API)
+ * @param date - 조회할 날짜 (YYYY-MM-DD)
+ * @param force - 캐시가 최신이어도 강제 동기화
  * @returns 일일 상세 데이터
  */
 export const fetchDayDetails = async (
-  year: number, 
-  month: number, 
-  day: number
+  date: string,
+  force: boolean = true
 ): Promise<DayData> => {
-  const response = await apiClient.get(`/api/dashboard/day-details/${year}/${month}/${day}`);
+  const response = await apiClient.get(`/api/cards/${CARD_ID}/transactions/day`, {
+    params: {
+      date,
+      force,
+      timeoutMs: 5000,
+      includeCarbon: true,
+      includeMeta: true
+    }
+  });
   return response.data;
 };
 
-// 편의성을 위한 현재 월 데이터 가져오기
-export const fetchCurrentMonthData = async (): Promise<{
-  emissions: DailyEmissions;
-  report: MonthlyReportData;
-}> => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-
-  const [emissions, report] = await Promise.all([
-    fetchDailyEmissions(year, month),
-    fetchMonthlyReport(year, month)
-  ]);
-
-  return { emissions, report };
-};
-
-// 오늘 날짜의 일별 데이터 가져오기
-export const fetchTodayData = async (): Promise<DayData> => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 0부터 시작하므로 +1
-  const day = now.getDate();
-
-  return fetchDayDetails(year, month, day);
-};
-
-// 여러 월 데이터를 한번에 가져오기
-export const fetchMultipleMonthsData = async (
-  startYear: number,
-  startMonth: number,
-  endYear: number,
-  endMonth: number
-): Promise<MonthlyReportData[]> => {
-  const requests: Promise<MonthlyReportData>[] = [];
-  
-  let currentYear = startYear;
-  let currentMonth = startMonth;
-  
-  while (currentYear < endYear || (currentYear === endYear && currentMonth <= endMonth)) {
-    requests.push(fetchMonthlyReport(currentYear, currentMonth));
-    
-    currentMonth++;
-    if (currentMonth > 12) {
-      currentMonth = 1;
-      currentYear++;
+/**
+ * 월별 리포트 데이터를 가져옵니다. (Monthly API)
+ * @param yearMonth - 조회할 월 (YYYY-MM)
+ * @returns 월별 리포트 데이터
+ */
+export const fetchMonthlyReport = async (
+  yearMonth: string
+): Promise<MonthlyReportData> => {
+  const response = await apiClient.get(`/api/cards/${CARD_ID}/transactions/month-summary`, {
+    params: {
+      yearMonth,
+      includeByCategory: true,
+      includeFreshness: true
     }
-  }
-  
-  return Promise.all(requests);
+  });
+  return response.data;
+};
+
+/**
+ * 오늘 날짜의 일별 데이터 가져오기
+ */
+export const fetchTodayData = async (): Promise<DayData> => {
+  const today = new Date();
+  const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+
+  return fetchDayDetails(dateString, true);
+};
+
+/**
+ * 현재 월의 월별 리포트 데이터 가져오기
+ */
+export const fetchCurrentMonthReport = async (): Promise<MonthlyReportData> => {
+  const now = new Date();
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM 형식
+
+  return fetchMonthlyReport(yearMonth);
+};
+
+// 편의성을 위한 년도/월 기반 함수들 (기존 DashboardScreen 호환성)
+export const fetchDailyEmissions = async (
+  year: number,
+  month: number
+): Promise<{ emissions: { [key: number]: number } }> => {
+  const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
+  const monthlyData = await fetchMonthlyReport(yearMonth);
+
+  // daily 배열을 일별 emissions 객체로 변환
+  const emissions: { [key: number]: number } = {};
+  monthlyData.daily.forEach(dayData => {
+    const day = parseInt(dayData.date.split('-')[2]);
+    emissions[day] = dayData.carbonTotalKg;
+  });
+
+  return { emissions };
 };

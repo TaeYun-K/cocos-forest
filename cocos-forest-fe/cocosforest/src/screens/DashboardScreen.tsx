@@ -37,7 +37,9 @@ export default function DashboardScreen() {
   const loadMonthlyReport = async (year: number, month: number) => {
     try {
       setLoading(true);
-      const data = await fetchMonthlyReport(year, month + 1); // month는 0부터 시작하므로 +1
+      // 새로운 API 형식에 맞게 yearMonth 포맷 변경 (YYYY-MM)
+      const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const data = await fetchMonthlyReport(yearMonth);
       setMonthlyReportData(data);
     } catch (error) {
       console.error('Failed to load monthly report:', error);
@@ -52,7 +54,9 @@ export default function DashboardScreen() {
     try {
       console.log(`🔄 Loading day details for ${year}-${month + 1}-${day}`);
       setLoading(true);
-      const data = await fetchDayDetails(year, month + 1, day); // month는 0부터 시작하므로 +1
+      // 새로운 API 형식에 맞게 날짜 포맷 변경 (YYYY-MM-DD)
+      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const data = await fetchDayDetails(date, true); // force=true로 설정
       console.log(`📊 Day data received:`, data);
       setDayData(data);
       console.log(`✅ Day data state updated`);
@@ -145,11 +149,11 @@ export default function DashboardScreen() {
     }
   };
 
-  // 탄소 배출량에 따른 색상 결정
+  // 탄소 배출량에 따른 색상 결정 (kg 단위에 맞게 조정)
   const getEmissionColor = (emission: number) => {
-    if (emission > 45) return '#ef4444';
-    if (emission > 35) return '#eab308';
-    return '#15803d';
+    if (emission >= 0.8) return '#ef4444'; // 0.8kg 이상: 높음 (빨강)
+    if (emission >= 0.4) return '#eab308';  // 0.4-0.8kg: 보통 (노랑)
+    return '#15803d'; // 0.4kg 미만: 낮음 (초록)
   };
 
   // 달력 생성
@@ -270,58 +274,6 @@ export default function DashboardScreen() {
               </Text>
             </View>
 
-            {/* 오늘의 주요 활동 */}
-            <View style={styles.todayActivities}>
-              <Text style={styles.activitiesTitle}>오늘의 주요 활동</Text>
-              {todayData ? (
-                // API 데이터 기반으로 거래내역 표시
-                todayData.transactions.slice(0, 3).map((transaction, index) => {
-                  const getCategoryIcon = (categoryId: string) => {
-                    switch (categoryId) {
-                      case 'CG-교통': return '🚌';
-                      case 'CG-카페': return '☕';
-                      case 'CG-음식': return '🍽️';
-                      case 'CG-쇼핑': return '🛒';
-                      case 'CG-주유': return '⛽';
-                      default: return '📱';
-                    }
-                  };
-
-                  return (
-                    <View key={index} style={styles.activityItem}>
-                      <Text style={styles.activityIcon}>
-                        {getCategoryIcon(transaction.categoryId)}
-                      </Text>
-                      <Text style={styles.activityText}>
-                        {transaction.merchantName}
-                      </Text>
-                      <Text style={styles.activityEmission}>
-                        {transaction.carbonKg}kg CO₂
-                      </Text>
-                    </View>
-                  );
-                })
-              ) : (
-                // 기본값 표시
-                <>
-                  <View style={styles.activityItem}>
-                    <Text style={styles.activityIcon}>🚌</Text>
-                    <Text style={styles.activityText}>대중교통 이용</Text>
-                    <Text style={styles.activityEmission}>-12kg</Text>
-                  </View>
-                  <View style={styles.activityItem}>
-                    <Text style={styles.activityIcon}>🍽️</Text>
-                    <Text style={styles.activityText}>로컬 식당 방문</Text>
-                    <Text style={styles.activityEmission}>-5kg</Text>
-                  </View>
-                  <View style={styles.activityItem}>
-                    <Text style={styles.activityIcon}>💡</Text>
-                    <Text style={styles.activityText}>에너지 절약 모드</Text>
-                    <Text style={styles.activityEmission}>-1kg</Text>
-                  </View>
-                </>
-              )}
-            </View>
           </View>
         </View>
 
@@ -382,15 +334,15 @@ export default function DashboardScreen() {
                 <View style={styles.legend}>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: '#15803d' }]} />
-                    <Text style={styles.legendText}>낮음 (~35kg)</Text>
+                    <Text style={styles.legendText}>낮음 (~0.4kg)</Text>
                   </View>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: '#eab308' }]} />
-                    <Text style={styles.legendText}>보통 (35-45kg)</Text>
+                    <Text style={styles.legendText}>보통 (0.4-0.8kg)</Text>
                   </View>
                   <View style={styles.legendItem}>
                     <View style={[styles.legendColor, { backgroundColor: '#ef4444' }]} />
-                    <Text style={styles.legendText}>높음 (45kg+)</Text>
+                    <Text style={styles.legendText}>높음 (0.8kg+)</Text>
                   </View>
                 </View>
 
@@ -1024,37 +976,6 @@ const styles = StyleSheet.create({
   },
   comparisonHighlight: {
     fontWeight: 'bold',
-    color: '#15803d',
-  },
-  todayActivities: {
-    marginTop: 4,
-  },
-  activitiesTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  activityIcon: {
-    fontSize: 16,
-    marginRight: 12,
-    width: 24,
-  },
-  activityText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#374151',
-  },
-  activityEmission: {
-    fontSize: 14,
-    fontWeight: '600',
     color: '#15803d',
   },
   // 슬라이딩 카드 스타일
