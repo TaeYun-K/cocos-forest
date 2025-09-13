@@ -1,11 +1,5 @@
 // src/types/dashboard.ts
 
-// 일일 탄소 배출량 타입 (기존 호환성)
-export interface DailyEmissions {
-  yearMonth: string;
-  emissions: { [key: number]: number };
-}
-
 // 월별 리포트 데이터 타입 (새로운 API 명세 기반)
 export interface MonthlyReportData {
   cardId: string;

@@ -58,30 +58,3 @@ export const fetchTodayData = async (): Promise<DayData> => {
   return fetchDayDetails(dateString, true);
 };
 
-/**
- * 현재 월의 월별 리포트 데이터 가져오기
- */
-export const fetchCurrentMonthReport = async (): Promise<MonthlyReportData> => {
-  const now = new Date();
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM 형식
-
-  return fetchMonthlyReport(yearMonth);
-};
-
-// 편의성을 위한 년도/월 기반 함수들 (기존 DashboardScreen 호환성)
-export const fetchDailyEmissions = async (
-  year: number,
-  month: number
-): Promise<{ emissions: { [key: number]: number } }> => {
-  const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
-  const monthlyData = await fetchMonthlyReport(yearMonth);
-
-  // daily 배열을 일별 emissions 객체로 변환
-  const emissions: { [key: number]: number } = {};
-  monthlyData.daily.forEach(dayData => {
-    const day = parseInt(dayData.date.split('-')[2]);
-    emissions[day] = dayData.carbonTotalKg;
-  });
-
-  return { emissions };
-};

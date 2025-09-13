@@ -12,7 +12,7 @@ export const DayDetailCard: React.FC<DayDetailCardProps> = () => {
     selectedYear,
     selectedMonth,
     selectedDay,
-    dayData,
+    currentDayData,
     handleCloseDetailCard
   } = useDashboardStore();
   const monthNames = [
@@ -45,24 +45,24 @@ export const DayDetailCard: React.FC<DayDetailCardProps> = () => {
         </View>
 
         {/* 총 배출량 및 결제 정보 */}
-        {dayData && (
+        {currentDayData && (
           <View style={styles.totalSection}>
             <View style={styles.totalEmissionCard}>
               <Text style={styles.totalEmissionLabel}>총 탄소 배출량</Text>
               <Text style={styles.totalEmissionValue}>
-                {dayData.totals.carbonTotalKg}kg CO₂
+                {currentDayData.totals.carbonTotalKg}kg CO₂
               </Text>
             </View>
             <View style={styles.totalStatsGrid}>
               <View style={styles.statCard}>
                 <Text style={styles.statValue}>
-                  {dayData.totals.amountTotal.toLocaleString()}원
+                  {currentDayData.totals.amountTotal.toLocaleString()}원
                 </Text>
                 <Text style={styles.statLabel}>총 결제금액</Text>
               </View>
               <View style={styles.statCard}>
                 <Text style={styles.statValue}>
-                  {dayData.totals.transactionCount}건
+                  {currentDayData.totals.transactionCount}건
                 </Text>
                 <Text style={styles.statLabel}>거래 건수</Text>
               </View>
@@ -71,11 +71,11 @@ export const DayDetailCard: React.FC<DayDetailCardProps> = () => {
         )}
 
         {/* 거래 내역 */}
-        {dayData && (
+        {currentDayData && (
           <View style={styles.transactionsSection}>
             <Text style={styles.transactionsTitle}>거래 내역</Text>
             <ScrollView style={styles.transactionsScrollView} showsVerticalScrollIndicator={false}>
-              {dayData.transactions.map((transaction, index) => (
+              {currentDayData.transactions.map((transaction, index) => (
                 <View key={index} style={styles.transactionItem}>
                   <View style={styles.transactionHeader}>
                     <View style={styles.transactionMerchant}>

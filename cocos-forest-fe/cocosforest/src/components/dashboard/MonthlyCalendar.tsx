@@ -10,7 +10,7 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = () => {
   const {
     selectedYear,
     selectedMonth,
-    dailyEmissions,
+    monthlyReportData,
     handleDayPress,
     handlePreviousMonth,
     handleNextMonth
@@ -48,7 +48,10 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = () => {
 
     // 날짜 추가
     for (let day = 1; day <= daysInMonth; day++) {
-      const emission = dailyEmissions[day] || 0;
+      // monthlyReportData.daily에서 해당 날짜의 탄소배출량 찾기
+      const dayStr = String(day).padStart(2, '0');
+      const dailyData = monthlyReportData?.daily?.find(d => d.date.endsWith(`-${dayStr}`));
+      const emission = dailyData?.carbonTotalKg || 0;
       days.push(
         <TouchableOpacity key={day} style={styles.calendarDay} onPress={() => handleDayPress(day)}>
           <View style={[styles.calendarDayBackground, { backgroundColor: getEmissionColor(emission) }]} />

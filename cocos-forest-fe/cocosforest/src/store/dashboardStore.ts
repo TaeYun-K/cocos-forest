@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchDailyEmissions, fetchMonthlyReport, fetchDayDetails, fetchTodayData } from '../api/dashboard';
+import { fetchMonthlyReport, fetchDayDetails, fetchTodayData } from '../api/dashboard';
 import type { MonthlyReportData, DayData } from '../types/dashboard';
 
 interface DashboardState {
@@ -14,10 +14,9 @@ interface DashboardState {
   loading: boolean;
 
   // API 데이터 상태
-  dailyEmissions: { [key: number]: number };
   monthlyReportData: MonthlyReportData | null;
-  dayData: DayData | null;
-  todayData: DayData | null;
+  todayData: DayData | null;  // 고정된 오늘 데이터
+  currentDayData: DayData | null;  // 선택된 날짜 데이터
 }
 
 interface DashboardActions {
@@ -35,7 +34,6 @@ interface DashboardActions {
   goToNextMonth: () => void;
 
   // API 액션
-  loadDailyEmissions: (year: number, month: number) => Promise<void>;
   loadMonthlyReport: (year: number, month: number) => Promise<void>;
   loadDayDetails: (year: number, month: number, day: number) => Promise<void>;
   loadTodayData: () => Promise<void>;
@@ -60,10 +58,9 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   activeTab: 0,
   showDetailCard: false,
   loading: false,
-  dailyEmissions: {},
   monthlyReportData: null,
-  dayData: null,
   todayData: null,
+  currentDayData: null,
 
   // 기본 setter 액션들
   setSelectedMonth: (month: number) => set({ selectedMonth: month }),
@@ -92,19 +89,6 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   },
 
   // API 호출 액션들
-  loadDailyEmissions: async (year: number, month: number) => {
-    try {
-      set({ loading: true });
-      const data = await fetchDailyEmissions(year, month + 1);
-      set({ dailyEmissions: data.emissions });
-    } catch (error) {
-      console.error('Failed to load daily emissions:', error);
-      set({ dailyEmissions: {} });
-    } finally {
-      set({ loading: false });
-    }
-  },
-
   loadMonthlyReport: async (year: number, month: number) => {
     try {
       set({ loading: true });
@@ -126,11 +110,11 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
       const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const data = await fetchDayDetails(date, true);
       console.log(`📊 Day data received:`, data);
-      set({ dayData: data });
+      set({ currentDayData: data });
       console.log(`✅ Day data state updated`);
     } catch (error) {
       console.error('Failed to load day details:', error);
-      set({ dayData: null });
+      set({ currentDayData: null });
       throw error;
     } finally {
       set({ loading: false });
@@ -193,7 +177,7 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   // 초기화 액션
   initializeDashboard: async (year?: number, month?: number) => {
-    const { loadDailyEmissions, loadMonthlyReport, loadTodayData } = get();
+    const { loadMonthlyReport, loadTodayData } = get();
     const targetYear = year ?? get().selectedYear;
     const targetMonth = month ?? get().selectedMonth;
 
@@ -202,7 +186,6 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
 
     try {
       await Promise.all([
-        loadDailyEmissions(targetYear, targetMonth),
         loadMonthlyReport(targetYear, targetMonth),
         loadTodayData()
       ]);
