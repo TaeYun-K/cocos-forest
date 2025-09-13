@@ -16,9 +16,9 @@ public class GlobalExceptionHandler {
   /**
    * BaseException 처리
    */
-  @ExceptionHandler(com.E205.cocos_forest.global.exception.BaseException.class)
+  @ExceptionHandler(BaseException.class)
   public ResponseEntity<BaseResponse<Object>> handleBaseException(
-      com.E205.cocos_forest.global.exception.BaseException e) {
+      BaseException e) {
     log.warn("BaseException occurred: {}", e.getMessage());
     BaseResponse<Object> response = new BaseResponse<>(e.getStatus());
     return ResponseEntity.status(e.getStatus().getHttpStatus()).body(response);
