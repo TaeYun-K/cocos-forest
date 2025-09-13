@@ -1,5 +1,7 @@
 package com.E205.cocos_forest.global.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -13,10 +15,12 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin())) // H2 콘솔 등 사용 시
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // ✅ 전체 허용
-            );
+                .anyRequest().authenticated()
+            )
+            .formLogin(withDefaults())
+            .logout(withDefaults());
         return http.build();
     }
 }
