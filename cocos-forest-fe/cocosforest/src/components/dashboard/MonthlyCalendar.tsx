@@ -1,23 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import useDashboardStore from '../../store/dashboardStore';
 
 interface MonthlyCalendarProps {
-  selectedYear: number;
-  selectedMonth: number;
-  dailyEmissions: { [key: number]: number };
-  onDayPress: (day: number) => void;
-  onPreviousMonth: () => void;
-  onNextMonth: () => void;
+  // props 제거 - store에서 직접 가져올 예정
 }
 
-export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
-  selectedYear,
-  selectedMonth,
-  dailyEmissions,
-  onDayPress,
-  onPreviousMonth,
-  onNextMonth
-}) => {
+export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = () => {
+  const {
+    selectedYear,
+    selectedMonth,
+    dailyEmissions,
+    handleDayPress,
+    handlePreviousMonth,
+    handleNextMonth
+  } = useDashboardStore();
   const monthNames = [
     '1월', '2월', '3월', '4월', '5월', '6월',
     '7월', '8월', '9월', '10월', '11월', '12월'
@@ -53,7 +50,7 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
     for (let day = 1; day <= daysInMonth; day++) {
       const emission = dailyEmissions[day] || 0;
       days.push(
-        <TouchableOpacity key={day} style={styles.calendarDay} onPress={() => onDayPress(day)}>
+        <TouchableOpacity key={day} style={styles.calendarDay} onPress={() => handleDayPress(day)}>
           <View style={[styles.calendarDayBackground, { backgroundColor: getEmissionColor(emission) }]} />
           <Text style={styles.calendarDayText}>{day}</Text>
         </TouchableOpacity>
@@ -68,13 +65,13 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
       <View style={styles.calendarHeader}>
         <Text style={styles.cardTitle}>월별 탄소 배출량</Text>
         <View style={styles.monthSelector}>
-          <TouchableOpacity style={styles.monthButton} onPress={onPreviousMonth}>
+          <TouchableOpacity style={styles.monthButton} onPress={handlePreviousMonth}>
             <Text style={styles.monthButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.monthText}>
             {selectedYear}년 {monthNames[selectedMonth]}
           </Text>
-          <TouchableOpacity style={styles.monthButton} onPress={onNextMonth}>
+          <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
             <Text style={styles.monthButtonText}>→</Text>
           </TouchableOpacity>
         </View>

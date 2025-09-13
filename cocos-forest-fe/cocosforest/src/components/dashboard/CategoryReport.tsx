@@ -1,18 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import useDashboardStore from '../../store/dashboardStore';
 import type { MonthlyReportData } from '../../types/dashboard';
 
 interface CategoryReportProps {
-  selectedYear: number;
-  selectedMonth: number;
-  monthlyReportData: MonthlyReportData | null;
+  // props 제거 - store에서 직접 가져올 예정
 }
 
-export const CategoryReport: React.FC<CategoryReportProps> = ({
-  selectedYear,
-  selectedMonth,
-  monthlyReportData
-}) => {
+export const CategoryReport: React.FC<CategoryReportProps> = () => {
+  const { selectedYear, selectedMonth, monthlyReportData } = useDashboardStore();
   return (
     <View>
       <Text style={styles.cardTitle}>

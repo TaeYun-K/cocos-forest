@@ -1,15 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import useDashboardStore from '../../store/dashboardStore';
 
 interface TodayEmissionStatusProps {
-  todayEmission: number;
-  averageEmission: number;
+  // props 제거 - store에서 직접 가져올 예정
 }
 
-export const TodayEmissionStatus: React.FC<TodayEmissionStatusProps> = ({
-  todayEmission,
-  averageEmission
-}) => {
+export const TodayEmissionStatus: React.FC<TodayEmissionStatusProps> = () => {
+  const { todayData } = useDashboardStore();
+
+  const todayEmission = todayData?.totals?.carbonTotalKg || 0.5;
+  const averageEmission = 0.8;
   const emissionDifference = averageEmission - todayEmission;
   const emissionPercentage = (todayEmission / averageEmission) * 100;
 

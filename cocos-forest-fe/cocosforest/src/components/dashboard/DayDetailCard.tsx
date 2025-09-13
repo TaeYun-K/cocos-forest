@@ -1,22 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import useDashboardStore from '../../store/dashboardStore';
 import type { DayData } from '../../types/dashboard';
 
 interface DayDetailCardProps {
-  selectedYear: number;
-  selectedMonth: number;
-  selectedDay: number | null;
-  dayData: DayData | null;
-  onClose: () => void;
+  // props 제거 - store에서 직접 가져올 예정
 }
 
-export const DayDetailCard: React.FC<DayDetailCardProps> = ({
-  selectedYear,
-  selectedMonth,
-  selectedDay,
-  dayData,
-  onClose
-}) => {
+export const DayDetailCard: React.FC<DayDetailCardProps> = () => {
+  const {
+    selectedYear,
+    selectedMonth,
+    selectedDay,
+    dayData,
+    handleCloseDetailCard
+  } = useDashboardStore();
   const monthNames = [
     '1월', '2월', '3월', '4월', '5월', '6월',
     '7월', '8월', '9월', '10월', '11월', '12월'
@@ -41,7 +39,7 @@ export const DayDetailCard: React.FC<DayDetailCardProps> = ({
               <Text style={styles.syncText}>실시간 동기화 완료</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleCloseDetailCard}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
         </View>
