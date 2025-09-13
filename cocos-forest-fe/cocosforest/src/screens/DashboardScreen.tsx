@@ -92,11 +92,12 @@ export default function DashboardScreen() {
   useEffect(() => {
     loadDailyEmissions(selectedYear, selectedMonth);
     loadMonthlyReport(selectedYear, selectedMonth);
+    loadTodayData(); // 오늘 데이터도 초기에 로딩
   }, [selectedYear, selectedMonth]);
 
   // 오늘 탄소 배출량 데이터 (API 연동)
-  const todayEmission = todayData?.totals?.carbonTotalKg || 32; // kg
-  const averageEmission = 50; // kg (평균값은 고정)
+  const todayEmission = todayData?.totals?.carbonTotalKg || 0.5; // kg (기본값 0.5kg)
+  const averageEmission = 0.8; // kg (평균값은 고정, kg 단위에 맞게 조정)
   const emissionDifference = averageEmission - todayEmission;
   const emissionPercentage = (todayEmission / averageEmission) * 100;
 
@@ -251,15 +252,15 @@ export default function DashboardScreen() {
                 <View 
                   style={[
                     styles.gaugeFill, 
-                    { 
+                    {
                       width: `${Math.min(emissionPercentage, 100)}%`,
-                      backgroundColor: todayEmission <= 35 ? '#15803d' : todayEmission <= 45 ? '#eab308' : '#ef4444'
+                      backgroundColor: todayEmission < 0.4 ? '#15803d' : todayEmission < 0.8 ? '#eab308' : '#ef4444'
                     }
                   ]} 
                 />
                 <View style={styles.gaugeLabels}>
                   <Text style={styles.gaugeLabelStart}>0kg</Text>
-                  <Text style={styles.gaugeLabelEnd}>50kg</Text>
+                  <Text style={styles.gaugeLabelEnd}>0.8kg</Text>
                 </View>
               </View>
             </View>
