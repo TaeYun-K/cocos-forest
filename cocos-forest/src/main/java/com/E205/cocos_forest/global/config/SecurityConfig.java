@@ -1,5 +1,7 @@
 package com.E205.cocos_forest.global.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -20,11 +22,8 @@ public class SecurityConfig {
                 // 그 외 모든 요청은 반드시 인증(로그인)을 거쳐야 합니다.
                 .anyRequest().authenticated()
             )
-            .formLogin(form -> form
-                .loginPage("/login")
-                // 로그인 성공 시, 원래 가려던 페이지로 보내주되, 갈 곳이 없으면 '/'로 보냅니다.
-                .defaultSuccessUrl("/", true)
-            );;
+            .formLogin(withDefaults())
+            .logout(withDefaults());
         return http.build();
     }
 }
