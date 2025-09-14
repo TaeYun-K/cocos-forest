@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import useDashboardStore from '../../store/dashboardStore';
 import { CategorySummary } from './CategorySummary';
+import { CategoryPieChart } from './CategoryPieChart';
 import { CategoryItem } from './CategoryItem';
 
 export const CategoryReport: React.FC = () => {
@@ -17,6 +18,12 @@ export const CategoryReport: React.FC = () => {
         monthlyReportData={monthlyReportData}
         selectedYear={selectedYear}
         selectedMonth={selectedMonth}
+      />
+
+      {/* 파이차트 */}
+      <CategoryPieChart
+        categories={monthlyReportData.byCategory}
+        title="카테고리별 탄소 배출량 비율"
       />
 
       {/* 카테고리별 상세 분석 */}
