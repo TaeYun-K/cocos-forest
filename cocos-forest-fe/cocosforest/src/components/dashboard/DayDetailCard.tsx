@@ -3,11 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import useDashboardStore from '../../store/dashboardStore';
 import type { DayData } from '../../types/dashboard';
 
-interface DayDetailCardProps {
-  // props 제거 - store에서 직접 가져올 예정
-}
-
-export const DayDetailCard: React.FC<DayDetailCardProps> = () => {
+export const DayDetailCard: React.FC = () => {
   const {
     selectedYear,
     selectedMonth,

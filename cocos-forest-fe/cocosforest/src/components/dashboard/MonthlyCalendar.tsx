@@ -2,11 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import useDashboardStore from '../../store/dashboardStore';
 
-interface MonthlyCalendarProps {
-  // props 제거 - store에서 직접 가져올 예정
-}
-
-export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = () => {
+export const MonthlyCalendar: React.FC = () => {
   const {
     selectedYear,
     selectedMonth,

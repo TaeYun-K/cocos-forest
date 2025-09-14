@@ -4,11 +4,7 @@ import useDashboardStore from '../../store/dashboardStore';
 import { CategorySummary } from './CategorySummary';
 import { CategoryItem } from './CategoryItem';
 
-interface CategoryReportProps {
-  // props 제거 - store에서 직접 가져올 예정
-}
-
-export const CategoryReport: React.FC<CategoryReportProps> = () => {
+export const CategoryReport: React.FC = () => {
   const { selectedYear, selectedMonth, monthlyReportData } = useDashboardStore();
 
   if (!monthlyReportData) {
