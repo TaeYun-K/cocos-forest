@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Card } from '../common';
 
 export const AIAnalysisCard: React.FC = () => {
   return (
-    <View style={styles.card}>
+    <Card>
       <View style={styles.aiResultHeader}>
         <View style={styles.aiResultIcon}>
           <Text style={styles.aiResultIconText}>🤖</Text>
@@ -28,21 +29,11 @@ export const AIAnalysisCard: React.FC = () => {
           💡 <Text style={styles.aiResultHighlight}>맞춤 제안:</Text> 내일은 자전거 이용을 추천드립니다. 추가로 5kg CO₂를 절약할 수 있어요.
         </Text>
       </View>
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',

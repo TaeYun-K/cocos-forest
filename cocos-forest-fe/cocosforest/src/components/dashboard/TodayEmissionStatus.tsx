@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import useDashboardStore from '../../store/dashboardStore';
+import { Card } from '../common';
 
 interface TodayEmissionStatusProps {
   // props 제거 - store에서 직접 가져올 예정
@@ -15,7 +16,7 @@ export const TodayEmissionStatus: React.FC<TodayEmissionStatusProps> = () => {
   const emissionPercentage = (todayEmission / averageEmission) * 100;
 
   return (
-    <View style={styles.card}>
+    <Card>
       <Text style={styles.cardTitle}>오늘 탄소 배출 현황</Text>
 
       {/* 현재 배출량 표시 */}
@@ -58,21 +59,11 @@ export const TodayEmissionStatus: React.FC<TodayEmissionStatusProps> = () => {
           평균 배출량보다 <Text style={styles.comparisonHighlight}>{emissionDifference}kg</Text> 적게 배출했어요!
         </Text>
       </View>
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',

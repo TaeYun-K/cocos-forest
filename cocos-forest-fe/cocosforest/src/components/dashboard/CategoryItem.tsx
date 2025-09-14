@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { CategoryData } from '../../types/dashboard';
+import { Card } from '../common';
 
 interface CategoryItemProps {
   item: CategoryData;
@@ -9,7 +10,7 @@ interface CategoryItemProps {
 
 export const CategoryItem: React.FC<CategoryItemProps> = ({ item, index }) => {
   return (
-    <View style={styles.categoryItemDetailed}>
+    <Card variant="small">
       <View style={styles.categoryHeader}>
         <View style={styles.categoryLeft}>
           <View style={[styles.categoryColor, { backgroundColor: item.color }]} />
@@ -55,22 +56,11 @@ export const CategoryItem: React.FC<CategoryItemProps> = ({ item, index }) => {
           ]}
         />
       </View>
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
-  categoryItemDetailed: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
   categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
