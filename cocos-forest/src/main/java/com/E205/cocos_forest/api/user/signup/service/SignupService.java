@@ -58,7 +58,7 @@ public class SignupService {
 
         if (emailVerification.getVerifiedAt() == null) {
             // 아직 인증되지 않은 이메일
-            throw new BaseException(BaseResponseStatus.NO_SIGN_IN); // 적절한 에러 코드로 변경 필요 (예: EMAIL_NOT_VERIFIED)
+            throw new BaseException(BaseResponseStatus.EMAIL_NOT_VERIFIED);
         }
 
         // 4. User 객체 생성 및 저장
