@@ -34,7 +34,9 @@ public class SsafyHeaderFactory {
     }
 
     private String genTxnId() {
-        // 명세 규칙에 맞게 구성 (예: yyyymmddHHmmss + 난수 등)
-        return UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime now = LocalDateTime.now();
+        String timestamp = now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String random6 = String.format("%06d", (int)(Math.random() * 1_000_000));
+        return timestamp + random6; // 총 20자리
     }
 }

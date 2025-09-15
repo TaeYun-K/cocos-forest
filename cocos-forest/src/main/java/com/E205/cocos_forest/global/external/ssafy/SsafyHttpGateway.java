@@ -1,5 +1,7 @@
 package com.E205.cocos_forest.global.external.ssafy;
 
+import com.E205.cocos_forest.global.external.ssafy.dto.AccountCreateResult;
+import com.E205.cocos_forest.global.external.ssafy.dto.SsafyHeader;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,6 +19,7 @@ public class SsafyHttpGateway implements SsafyGateway {
 
     private final WebClient webClient;
     private final SsafyProperties props;
+    private final SsafyHeaderFactory headerFactory;
 
     @Override
     public String registerAndGetUserKey(String userEmail) {
@@ -160,6 +163,63 @@ public class SsafyHttpGateway implements SsafyGateway {
         }
     }
 
+    @Override
+    public AccountCreateResult createDemandDepositAccount(String userKey, String accountTypeUniqueNo) {
+        log.info("=== SSAFY 수시 입출금 계좌 발급 API 호출 시작 ===");
+        log.info("userKey: {}", userKey);
+        log.info("accountTypeUniqueNo: {}", accountTypeUniqueNo);
+        
+        // 헤더 생성
+        SsafyHeader header = headerFactory.create(
+            "createDemandDepositAccount",
+            "createDemandDepositAccount", 
+            userKey
+        );
+        
+        var req = new AccountCreateReq(header, accountTypeUniqueNo);
+        log.info("계좌 발급 요청 객체: {}", req);
+        
+        try {
+            var res = webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                    .pathSegment("edu", "demandDeposit", "createDemandDepositAccount")
+                    .build())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                    response -> {
+                        log.error("SSAFY 계좌 발급 API 에러 응답: status={}", response.statusCode());
+                        return response.bodyToMono(String.class)
+                            .doOnNext(body -> log.error("에러 응답 본문: {}", body))
+                            .then(Mono.error(new RuntimeException("SSAFY API 에러: " + response.statusCode())));
+                    })
+                .bodyToMono(AccountCreateRes.class)
+                .block();
+
+            log.info("SSAFY 계좌 발급 API 응답: {}", res);
+            
+            if (res != null && res.getRec() != null) {
+                var rec = res.getRec();
+                return AccountCreateResult.builder()
+                    .bankCode(rec.getBankCode())
+                    .accountNo(rec.getAccountNo())
+                    .currency(AccountCreateResult.Currency.builder()
+                        .currency(rec.getCurrency().getCurrency())
+                        .currencyName(rec.getCurrency().getCurrencyName())
+                        .build())
+                    .build();
+            }
+            
+            log.error("계좌 발급 응답이 비어있음");
+            return null;
+            
+        } catch (Exception e) {
+            log.error("SSAFY 계좌 발급 API 호출 실패", e);
+            return null;
+        }
+    }
+
     @Getter @AllArgsConstructor
     static class RegisterReq {
         @JsonProperty("apiKey")
@@ -218,5 +278,53 @@ public class SsafyHttpGateway implements SsafyGateway {
         
         @JsonProperty("modified")
         private String modified;
+    }
+    
+    @Getter @AllArgsConstructor
+    static class AccountCreateReq {
+        @JsonProperty("Header")
+        private final SsafyHeader header;
+        
+        @JsonProperty("accountTypeUniqueNo")
+        private final String accountTypeUniqueNo;
+    }
+    
+    @Getter
+    static class AccountCreateRes {
+        @JsonProperty("Header")
+        private AccountCreateHeader header;
+        
+        @JsonProperty("REC")
+        private AccountCreateRec rec;
+    }
+    
+    @Getter
+    static class AccountCreateHeader {
+        @JsonProperty("responseCode")
+        private String responseCode;
+        
+        @JsonProperty("responseMessage")
+        private String responseMessage;
+    }
+    
+    @Getter
+    static class AccountCreateRec {
+        @JsonProperty("bankCode")
+        private String bankCode;
+        
+        @JsonProperty("accountNo")
+        private String accountNo;
+        
+        @JsonProperty("currency")
+        private AccountCreateCurrency currency;
+    }
+    
+    @Getter
+    static class AccountCreateCurrency {
+        @JsonProperty("currency")
+        private String currency;
+        
+        @JsonProperty("currencyName")
+        private String currencyName;
     }
 }
