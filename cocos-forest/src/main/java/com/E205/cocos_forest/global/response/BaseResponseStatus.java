@@ -54,60 +54,6 @@ public enum BaseResponseStatus {
    */
   NO_EXIST_NOTICE(HttpStatus.NOT_FOUND, false, 804, "존재하지 않는 공지사항입니다."),
 
-  /**
-   * 900: Comment 에러.
-   */
-  NO_COMMENT_MODIFY_AUTHORITY(HttpStatus.FORBIDDEN, false, 903,
-      "댓글 수정 권한이 없습니다. 관리자에게 문의해주시기 바랍니다."),
-  NO_EXIST_COMMENT(HttpStatus.NOT_FOUND, false, 904, "존재하지 않는 댓글입니다."),
-
-  /**
-   * 1000: Favorite 에러.
-   */
-  INVALID_FAVORITE_TYPE(HttpStatus.BAD_REQUEST, false, 1001, "지원하지 않는 FavoriteType입니다."),
-  ALREADY_FAVORITED(HttpStatus.CONFLICT, false, 1009, "이미 찜한 항목입니다."),
-
-  /**
-   * 1100: Advisor 에러.
-   */
-  ADVISOR_NOT_FOUND(HttpStatus.NOT_FOUND, false, 1101, "존재하지 않거나 승인되지 않은 어드바이저입니다."),
-  INVALID_PREFERRED_TRADE_STYLE(HttpStatus.BAD_REQUEST, false, 1102, "지원하지 않는 투자 성향입니다."),
-  INVALID_SORT_BY(HttpStatus.BAD_REQUEST, false, 1103, "지원하지 않는 정렬 기준입니다."),
-
-  /**
-   * 1200: Review 에러.
-   */
-  REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, false, 1201, "존재하지 않는 리뷰입니다."),
-  NO_REVIEW_MODIFY_AUTHORITY(HttpStatus.FORBIDDEN, false, 1202, "리뷰 수정 권한이 없습니다."),
-  ALREADY_REVIEWED(HttpStatus.CONFLICT, false, 1203, "이미 해당 어드바이저에 대한 리뷰를 작성하셨습니다."),
-
-  /**
-   * 1300: Reservation 에러 (기존 1301, 1302에 이어서 추가)
-   */
-  INVALID_TIME_FORMAT(HttpStatus.BAD_REQUEST, false, 1303, "올바르지 않은 시간 형식입니다. 정시만 입력 가능합니다."),
-  PAST_DATE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, false, 1304, "과거 날짜에는 예약할 수 없습니다."),
-  SAME_DAY_RESERVATION_NOT_ALLOWED_NEW(HttpStatus.BAD_REQUEST, false, 1305, "당일 예약은 불가능합니다."),
-  WEEKEND_RESERVATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, false, 1306, "주말에는 예약할 수 없습니다."),
-  OUTSIDE_BUSINESS_HOURS(HttpStatus.BAD_REQUEST, false, 1307, "운영시간(09:00~20:00) 외에는 예약할 수 없습니다."),
-  SELF_RESERVATION_NOT_ALLOWED(HttpStatus.BAD_REQUEST, false, 1308, "본인에게는 예약할 수 없습니다."),
-  TIME_SLOT_BLOCKED(HttpStatus.CONFLICT, false, 1309, "해당 시간은 전문가가 차단한 시간입니다."),
-  TIME_SLOT_ALREADY_RESERVED(HttpStatus.CONFLICT, false, 1310, "해당 시간대에 이미 예약이 존재합니다."),
-  RESERVATION_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 1311, "예약 생성에 실패했습니다."),
-  RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, false, 1312, "예약을 찾을 수 없습니다."),
-  RESERVATION_NOT_CANCELABLE(HttpStatus.BAD_REQUEST, false, 1313, "취소할 수 없는 예약입니다."),
-  SAME_DAY_CANCEL_NOT_ALLOWED(HttpStatus.BAD_REQUEST, false, 1314, "당일 취소는 불가능합니다."),
-  ALREADY_CANCELED_RESERVATION(HttpStatus.BAD_REQUEST, false, 1315, "이미 취소된 예약입니다."),
-  UNAUTHORIZED_CANCEL_REQUEST(HttpStatus.FORBIDDEN, false, 1316, "해당 예약을 취소할 권한이 없습니다."),
-  CANCEL_REQUEST_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 1317, "예약 취소 처리에 실패했습니다."),
-  PAST_DATE_BLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, false, 1318, "과거 날짜는 차단할 수 없습니다."),
-  RESERVED_TIME_CANNOT_BE_BLOCKED(HttpStatus.BAD_REQUEST, false, 1319, "이미 예약된 시간은 차단할 수 없습니다."),
-  INVALID_TIME_SLOT(HttpStatus.BAD_REQUEST, false, 1320, "유효하지 않은 시간대입니다."),
-  ADVISOR_ONLY_ACCESS(HttpStatus.FORBIDDEN, false, 1321, "전문가만 접근 가능합니다."),
-  INVALID_DATE_FORMAT(HttpStatus.BAD_REQUEST, false, 1322, "날짜 형식이 올바르지 않습니다."),
-  RESERVATION_USER_ONLY(HttpStatus.FORBIDDEN, false, 1323, "예약은 일반 사용자만 가능합니다."),
-  AVAILABLE_TIME_USER_ONLY(HttpStatus.FORBIDDEN, false, 1324, "예약 가능 시간 조회는 일반 사용자만 가능합니다."),
-  CONSULTATION_FEE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 1325, "상담료를 찾을 수 없습니다."),
-  // ===== 인증 관련 에러 코드 (2000번대) =====
 
   // 로그인 실패
   INVALID_USER_JWT(HttpStatus.UNAUTHORIZED, false, 2001, "권한이 없는 유저의 접근입니다."),
@@ -133,7 +79,12 @@ public enum BaseResponseStatus {
    * 파일 저장소 관련 에러 코드 추가
    */
   FILE_STORAGE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, false, 2013, "파일 저장소 처리 중 오류가 발생했습니다."),
-
+  /**
+   * 이메일 인증 관련 에러 코드 추가
+   */
+  EMAIL_VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, false, 2014, "이메일 인증 정보가 존재하지 않습니다."),
+  VERIFICATION_CODE_EXPIRED(HttpStatus.BAD_REQUEST, false, 2015, "인증 코드의 유효 시간이 만료되었습니다."),
+  VERIFICATION_CODE_MISMATCH(HttpStatus.BAD_REQUEST, false, 2016, "인증 코드가 일치하지 않습니다."),
 
   // ===== 토큰/인증 관련 에러 (2100번대) =====
   MISSING_TOKEN(HttpStatus.UNAUTHORIZED, false, 2101, "인증 토큰이 필요합니다."),
