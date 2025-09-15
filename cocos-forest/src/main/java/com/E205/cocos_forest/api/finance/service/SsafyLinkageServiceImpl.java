@@ -49,7 +49,7 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
 
         entity.setApiKey(props.getApiKey());             // 서버 보관(고정값)
         entity.setUserKey(userKey);                      // SSAFY 발급 userKey
-        entity.setInstitutionCode(props.getOrgCode());           // ex) "00100"
+        entity.setInstitutionCode(props.getInstitutionCode());           // ex) "00100"
         entity.setFintechAppNo(props.getFintechAppNo()); // ex) "001"
 
         SsafyLinkage saved = repository.save(entity);

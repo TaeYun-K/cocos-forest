@@ -25,7 +25,7 @@ public class SsafyHeaderFactory {
                 .apiServiceCode(apiServiceCode)
                 .transmissionDate(now.format(DATE))
                 .transmissionTime(now.format(TIME))
-                .institutionCode(props.getOrgCode())       // ← properties에서 고정값 주입
+                .institutionCode(props.getInstitutionCode())       // ← properties에서 고정값 주입
                 .fintechAppNo(props.getFintechAppNo())     // ← properties에서 고정값 주입
                 .institutionTransactionUniqueNo(genTxnId())// 매 요청 유니크 ID
                 .apiKey(props.getApiKey())                 // ← properties에서 고정값 주입

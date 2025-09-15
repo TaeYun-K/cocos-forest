@@ -7,5 +7,4 @@ import java.util.Optional;
 
 public interface SsafyLinkageRepository extends JpaRepository<SsafyLinkage, Long> {
     Optional<SsafyLinkage> findByUserId(Long userId);
-    boolean existsByUserId(Long userId);
 }
