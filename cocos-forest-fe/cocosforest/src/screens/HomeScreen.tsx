@@ -1,4 +1,3 @@
-// HomeScreen.tsx
 import React, { useMemo, useState, useCallback } from "react";
 import {
   View,
