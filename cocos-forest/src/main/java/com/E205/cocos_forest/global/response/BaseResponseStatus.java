@@ -44,10 +44,6 @@ public enum BaseResponseStatus {
    */
   INVALID_ROLE(HttpStatus.BAD_REQUEST, false, 601, "지원하지 않는 RoleType입니다."),
 
-  /**
-   * 700: House 에러.
-   */
-  INVALID_BUILDING_TYPE(HttpStatus.BAD_REQUEST, false, 701, "지원하지 않는 BuildingType입니다."),
 
   /**
    * 800: Notice 에러.
