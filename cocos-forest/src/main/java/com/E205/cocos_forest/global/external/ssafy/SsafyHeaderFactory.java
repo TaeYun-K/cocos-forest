@@ -25,7 +25,7 @@ public class SsafyHeaderFactory {
                 .apiServiceCode(apiServiceCode)
                 .transmissionDate(now.format(DATE))
                 .transmissionTime(now.format(TIME))
-                .institutionCode(props.getOrgCode())       // ← properties에서 고정값 주입
+                .institutionCode(props.getInstitutionCode())       // ← properties에서 고정값 주입
                 .fintechAppNo(props.getFintechAppNo())     // ← properties에서 고정값 주입
                 .institutionTransactionUniqueNo(genTxnId())// 매 요청 유니크 ID
                 .apiKey(props.getApiKey())                 // ← properties에서 고정값 주입
@@ -34,7 +34,9 @@ public class SsafyHeaderFactory {
     }
 
     private String genTxnId() {
-        // 명세 규칙에 맞게 구성 (예: yyyymmddHHmmss + 난수 등)
-        return UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime now = LocalDateTime.now();
+        String timestamp = now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String random6 = String.format("%06d", (int)(Math.random() * 1_000_000));
+        return timestamp + random6; // 총 20자리
     }
 }
