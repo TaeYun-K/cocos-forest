@@ -87,11 +87,4 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
             .createdAt(s.getCreatedAt().format(ISO))
             .build();
     }
-
-    @Override
-    public void deleteByUserId(Long userId) {
-        repository.findByUserId(userId)
-            .ifPresentOrElse(repository::delete,
-                () -> { throw new BaseException(BaseResponseStatus.USER_NOT_FOUND); });
-    }
 }

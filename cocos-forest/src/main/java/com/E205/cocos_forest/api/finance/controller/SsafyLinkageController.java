@@ -39,11 +39,4 @@ public class SsafyLinkageController {
         boolean exists = ssafyLinkageService.searchUserByEmail(req);
         return new BaseResponse<>(exists);
     }
-
-    @Operation(summary = "SSAFY 연동 삭제", description = "사용자 ID를 받아 SSAFY 연동을 삭제합니다.")
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<BaseResponse<Object>> delete(@PathVariable Long userId) {
-        ssafyLinkageService.deleteByUserId(userId);
-        return ResponseEntity.ok(new BaseResponse<>()); // 바디 없는 성공 생성자 사용 :contentReference[oaicite:5]{index=5}
-    }
 }

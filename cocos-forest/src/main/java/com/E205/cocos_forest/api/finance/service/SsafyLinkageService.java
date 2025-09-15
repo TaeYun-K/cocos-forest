@@ -12,5 +12,4 @@ public interface SsafyLinkageService {
     boolean searchUserByEmail(SsafyLinkageCreateIn in);
     
     SsafyLinkageOut getByUserId(Long userId);
-    void deleteByUserId(Long userId);
 }
