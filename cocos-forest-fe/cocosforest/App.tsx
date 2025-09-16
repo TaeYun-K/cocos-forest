@@ -1,16 +1,27 @@
+// App.tsx
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useEffect } from "react";
 import HomeScreen from "./src/screens/HomeScreen";
 import DashboardScreen from "./src/screens/DashboardScreen";
 import ChallengeScreen from "./src/screens/ChallengeScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+// axios-mock-adapter 설정을 import
+import "./src/mocks/setupMocks";
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
+  useEffect(() => {
+    if (__DEV__) {
+      console.log("✅ axios-mock-adapter initialized");
+    }
+  }, []);
+
   return (
     <NavigationContainer>
+      {/* ... 기존의 Tab.Navigator 코드 ... */}
       <Tab.Navigator
         screenOptions={{
           tabBarActiveTintColor: "#15803d",
