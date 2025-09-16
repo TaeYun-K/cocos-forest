@@ -1,5 +1,5 @@
-// global/external/ssafy/dto/SsafyHeader.java
-package com.E205.cocos_forest.global.external.ssafy.dto;
+// global/external/ssafy/header/SsafyHeader.java
+package com.E205.cocos_forest.global.external.ssafy.header;
 
 import lombok.*;
 

@@ -6,7 +6,7 @@ import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkage;
 import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkageRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.external.ssafy.SsafyGateway;
-import com.E205.cocos_forest.global.external.ssafy.SsafyProperties;
+import com.E205.cocos_forest.global.external.ssafy.config.SsafyProperties;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,13 +21,13 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
 
     private final SsafyLinkageRepository repository;
     private final SsafyGateway ssafyGateway;
-    private final SsafyProperties props; // ✅ 환경값 주입 (apiKey/orgCode/fintechAppNo/baseUrl)
+    private final SsafyProperties props; // ???�경�?주입 (apiKey/orgCode/fintechAppNo/baseUrl)
 
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**
-     * 이메일을 SSAFY에 등록(또는 조회)하고 userKey를 받아 linkage upsert
-     * @param in     userEmail만 포함한 DTO
+     * ?�메?�을 SSAFY???�록(?�는 조회)?�고 userKey�?받아 linkage upsert
+     * @param in     userEmail�??�함??DTO
      */
     @Override
     public SsafyLinkageOut registerByEmail(SsafyLinkageCreateIn in) {
@@ -35,19 +35,19 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
 
-        // 1) SSAFY 외부 API 호출 → userKey 획득
+        // 1) SSAFY ?��? API ?�출 ??userKey ?�득
         String userKey = ssafyGateway.registerAndGetUserKey(in.getUserEmail());
         if (userKey == null || userKey.isBlank()) {
             throw new BaseException(BaseResponseStatus.EXTERNAL_API_ERROR);
         }
 
-        Long userId = 1L; // 추후에 authService.getCurrentUserId(); 로 변경
+        Long userId = 1L; // 추후??authService.getCurrentUserId(); �?변�?
 
         // 2) linkage upsert
         SsafyLinkage entity = repository.findByUserId(userId)
             .orElseGet(() -> SsafyLinkage.builder().userId(userId).build());
 
-        entity.setApiKey(props.getApiKey());             // 서버 보관(고정값)
+        entity.setApiKey(props.getApiKey());             // ?�버 보�?(고정�?
         entity.setUserKey(userKey);                      // SSAFY 발급 userKey
         entity.setInstitutionCode(props.getInstitutionCode());           // ex) "00100"
         entity.setFintechAppNo(props.getFintechAppNo()); // ex) "001"
@@ -69,7 +69,7 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
 
-        // SSAFY 외부 API 호출 → 사용자 존재 여부 확인
+        // SSAFY ?��? API ?�출 ???�용??존재 ?��? ?�인
         return ssafyGateway.searchUser(in.getUserEmail());
     }
 

@@ -1,4 +1,4 @@
-package com.E205.cocos_forest.global.external.ssafy.dto;
+package com.E205.cocos_forest.global.external.ssafy.dto.result;
 
 import lombok.*;
 

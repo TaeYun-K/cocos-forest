@@ -1,8 +1,8 @@
 // global/external/ssafy/SsafyGateway.java
 package com.E205.cocos_forest.global.external.ssafy;
 
-import com.E205.cocos_forest.global.external.ssafy.dto.AccountCreateResult;
-import com.E205.cocos_forest.global.external.ssafy.dto.CreditCardCreateResult;
+import com.E205.cocos_forest.global.external.ssafy.dto.result.AccountCreateResult;
+import com.E205.cocos_forest.global.external.ssafy.dto.result.CreditCardCreateResult;
 
 public interface SsafyGateway {
     // SSAFY에 사용자 등록(또는 조회) 호출, userKey 반환
