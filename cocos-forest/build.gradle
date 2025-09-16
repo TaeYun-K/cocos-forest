@@ -42,13 +42,13 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 
-	// Redis 의존성 추가
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
 	// JWT 라이브러리 (이미 추가하셨겠지만 확인차 포함)
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	// Redis 의존성 추가
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {
