@@ -2,6 +2,7 @@ package com.E205.cocos_forest.global.external.ssafy;
 
 import com.E205.cocos_forest.global.external.ssafy.dto.AccountCreateResult;
 import com.E205.cocos_forest.global.external.ssafy.dto.SsafyHeader;
+import com.E205.cocos_forest.global.external.ssafy.dto.CreditCardCreateResult;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -220,6 +221,69 @@ public class SsafyHttpGateway implements SsafyGateway {
         }
     }
 
+    @Override
+    public CreditCardCreateResult createCreditCard(String userKey, String cardUniqueNo, String withdrawalAccountNo, String withdrawalDate) {
+        log.info("=== SSAFY 신용카드 발급 API 호출 시작 ===");
+        log.info("userKey: {}", userKey);
+        log.info("cardUniqueNo: {}", cardUniqueNo);
+
+        SsafyHeader header = headerFactory.create(
+            "createCreditCard",
+            "createCreditCard",
+            userKey
+        );
+
+        var req = new CreditCardCreateReq(header, cardUniqueNo, withdrawalAccountNo, withdrawalDate);
+        try {
+            var res = webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                    .pathSegment("edu", "creditCard", "createCreditCard")
+                    .build())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                    response -> {
+                        log.error("SSAFY 카드 발급 API 에러 응답: status={}", response.statusCode());
+                        return response.bodyToMono(String.class)
+                            .doOnNext(body -> log.error("에러 응답 본문: {}", body))
+                            .then(Mono.error(new RuntimeException("SSAFY API 에러: " + response.statusCode())));
+                    })
+                .bodyToMono(CreditCardCreateRes.class)
+                .block();
+
+            log.info("SSAFY 카드 발급 API 응답: {}", res);
+
+            if (res != null && res.getRec() != null) {
+                var rec = res.getRec();
+                return CreditCardCreateResult.builder()
+                    .cardNo(rec.getCardNo())
+                    .cvc(rec.getCvc())
+                    .cardUniqueNo(rec.getCardUniqueNo())
+                    .cardIssuerCode(rec.getCardIssuerCode())
+                    .cardIssuerName(rec.getCardIssuerName())
+                    .cardName(rec.getCardName())
+                    .baselinePerformance(parseIntSafe(rec.getBaselinePerformance()))
+                    .maxBenefitLimit(parseIntSafe(rec.getMaxBenefitLimit()))
+                    .cardDescription(rec.getCardDescription())
+                    .cardExpiryDate(rec.getCardExpiryDate())
+                    .withdrawalAccountNo(rec.getWithdrawalAccountNo())
+                    .withdrawalDate(rec.getWithdrawalDate())
+                    .build();
+            }
+
+            log.error("카드 발급 응답이 비어있음");
+            return null;
+        } catch (Exception e) {
+            log.error("SSAFY 카드 발급 API 호출 실패", e);
+            return null;
+        }
+    }
+
+    private Integer parseIntSafe(String s) {
+        try { return s == null ? null : Integer.parseInt(s); } catch (Exception e) { return null; }
+    }
+
     @Getter @AllArgsConstructor
     static class RegisterReq {
         @JsonProperty("apiKey")
@@ -326,5 +390,57 @@ public class SsafyHttpGateway implements SsafyGateway {
         
         @JsonProperty("currencyName")
         private String currencyName;
+    }
+
+    @Getter @AllArgsConstructor
+    static class CreditCardCreateReq {
+        @JsonProperty("Header")
+        private final SsafyHeader header;
+
+        @JsonProperty("cardUniqueNo")
+        private final String cardUniqueNo;
+
+        @JsonProperty("withdrawalAccountNo")
+        private final String withdrawalAccountNo;
+
+        @JsonProperty("withdrawalDate")
+        private final String withdrawalDate;
+    }
+
+    @Getter
+    static class CreditCardCreateRes {
+        @JsonProperty("Header")
+        private AccountCreateHeader header;
+
+        @JsonProperty("REC")
+        private CreditCardCreateRec rec;
+    }
+
+    @Getter
+    static class CreditCardCreateRec {
+        @JsonProperty("cardNo")
+        private String cardNo;
+        @JsonProperty("cvc")
+        private String cvc;
+        @JsonProperty("cardUniqueNo")
+        private String cardUniqueNo;
+        @JsonProperty("cardIssuerCode")
+        private String cardIssuerCode;
+        @JsonProperty("cardIssuerName")
+        private String cardIssuerName;
+        @JsonProperty("cardName")
+        private String cardName;
+        @JsonProperty("baselinePerformance")
+        private String baselinePerformance;
+        @JsonProperty("maxBenefitLimit")
+        private String maxBenefitLimit;
+        @JsonProperty("cardDescription")
+        private String cardDescription;
+        @JsonProperty("cardExpiryDate")
+        private String cardExpiryDate;
+        @JsonProperty("withdrawalAccountNo")
+        private String withdrawalAccountNo;
+        @JsonProperty("withdrawalDate")
+        private String withdrawalDate;
     }
 }
