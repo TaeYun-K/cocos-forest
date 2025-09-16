@@ -51,8 +51,6 @@ public class SignupService {
         }
 
         // 3. (필수) 이메일 인증 여부 확인
-        // 이 로직은 EmailVerification 엔티티/리포지토리가 있다는 가정 하에 작성됩니다.
-        // verifiedAt 컬럼이 있는 EmailVerification 테이블을 기준으로 합니다.
         var emailVerification = emailVerificationRepository.findById(requestDto.getEmail())
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.EMAIL_VERIFICATION_NOT_FOUND));
 
