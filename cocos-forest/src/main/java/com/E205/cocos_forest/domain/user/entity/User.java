@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -69,8 +70,14 @@ public class User {
 
     private LocalDateTime deletedAt;
 
+    @Enumerated(EnumType.STRING) // Enum 타입을 DB에 저장할 때 문자열(예: "USER")로 저장
+    @Column(nullable = false, length = 20)
+    private Role role;
+
     @Builder
-    public User(String email, String nickname, String password, String phoneNumber, LocalDateTime termsAgreedAt, LocalDateTime privacyPolicyAgreedAt, LocalDateTime marketingAgreedAt) {
+    public User(String email, String nickname, String password, String phoneNumber,
+        LocalDateTime termsAgreedAt, LocalDateTime privacyPolicyAgreedAt,
+        LocalDateTime marketingAgreedAt, Role role) {
         this.email = email;
         this.nickname = nickname;
         this.password = password;
@@ -78,5 +85,6 @@ public class User {
         this.termsAgreedAt = termsAgreedAt;
         this.privacyPolicyAgreedAt = privacyPolicyAgreedAt;
         this.marketingAgreedAt = marketingAgreedAt;
+        this.role = role != null ? role : Role.USER;
     }
 }
