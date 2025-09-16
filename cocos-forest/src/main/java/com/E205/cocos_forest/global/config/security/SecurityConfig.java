@@ -24,6 +24,8 @@ public class SecurityConfig {
      * passwordEncoder(): BCryptPasswordEncoder를 Spring 컨테이너에 Bean으로 등록합니다.
      * 이렇게 등록해두면 다른 곳에서 @Autowired나 생성자 주입으로 가져다 쓸 수 있습니다.
      */
+
+    // TODO: 추가 작업
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
