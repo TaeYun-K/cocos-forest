@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  StyleSheet,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,6 +11,7 @@ import { SignupStep3Form, SignupForm } from '../../types/auth';
 import { SignupHeader } from '../../components/auth/SignupHeader';
 import { AgreementSection } from '../../components/auth/AgreementSection';
 import { SignupButtons } from '../../components/auth/SignupButtons';
+import { signupStep3Styles } from '../../styles/auth/signupStep3Styles';
 
 interface SignupStep3ScreenProps {
   navigation: any;
@@ -92,12 +92,12 @@ export const SignupStep3Screen: React.FC<SignupStep3ScreenProps> = ({ navigation
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={signupStep3Styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SignupHeader currentStep={3} stepTitle="약관에 동의해주세요" />
 
-      <View style={styles.formContainer}>
+      <View style={signupStep3Styles.formContainer}>
         <AgreementSection
           agreements={agreements}
           onAgreementChange={handleAgreementChange}
@@ -116,20 +116,5 @@ export const SignupStep3Screen: React.FC<SignupStep3ScreenProps> = ({ navigation
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#7CB342',
-  },
-  formContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 30,
-    paddingTop: 40,
-  },
-});
 
 export default SignupStep3Screen;

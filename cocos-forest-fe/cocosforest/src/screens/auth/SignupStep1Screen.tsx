@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +13,7 @@ import { NicknameInput } from '../../components/auth/NicknameInput';
 import { EmailVerificationInput } from '../../components/auth/EmailVerificationInput';
 import { PhoneInput } from '../../components/auth/PhoneInput';
 import { SignupButtons } from '../../components/auth/SignupButtons';
+import { signupStep1Styles } from '../../styles/auth/signupStep1Styles';
 
 interface SignupStep1ScreenProps {
   navigation: any;
@@ -199,17 +199,17 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={signupStep1Styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={signupStep1Styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <SignupHeader currentStep={1} stepTitle="기본 정보를 입력해주세요" />
 
-        <View style={styles.formContainer}>
+        <View style={signupStep1Styles.formContainer}>
           <NicknameInput
             value={form.nickname}
             onChangeText={(value) => handleInputChange('nickname', value)}
@@ -250,24 +250,5 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#7CB342',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  formContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 30,
-    paddingTop: 30,
-    paddingBottom: 40,
-  },
-});
 
 export default SignupStep1Screen;

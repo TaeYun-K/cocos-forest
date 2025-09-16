@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +12,7 @@ import { LoginHeader } from '../../components/auth/LoginHeader';
 import { EmailInput } from '../../components/auth/EmailInput';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { LoginButtons } from '../../components/auth/LoginButtons';
+import { loginStyles } from '../../styles/auth/loginStyles';
 
 interface LoginScreenProps {
   navigation: any; // 실제로는 NavigationProp 타입 사용
@@ -89,17 +89,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={loginStyles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={loginStyles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <LoginHeader />
 
-        <View style={styles.formContainer}>
+        <View style={loginStyles.formContainer}>
           <EmailInput
             value={form.email}
             onChangeText={(value) => handleInputChange('email', value)}
@@ -127,24 +127,5 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#7CB342',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  formContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 30,
-    paddingTop: 30,
-    paddingBottom: 40,
-    minHeight: 400,
-  },
-});
 
 export default LoginScreen;
