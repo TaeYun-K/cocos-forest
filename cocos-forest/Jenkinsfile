@@ -75,32 +75,33 @@ pipeline {
             TARGET="${gitlabTargetBranch:-dev}"
             TS=$(date +%s)
 
-            # 브랜치별 색상 (dev=그린, master=블루)
-            COLOR="#2ecc71"
+            # 브랜치별 색상
+            COLOR="#2ecc71"     # dev
             [ "$TARGET" = "master" ] && COLOR="#228be6"
 
+            # 상단 본문(마크다운 표)
+            TABLE=$(printf '| 항목 | 값 |\\n|---|---|\\n| 브랜치 | `%s` |\\n| 커밋 | `%s` |\\n| 이미지 | `%s` |\\n' \
+                           "$TARGET" "$COMMIT7" "${IMAGE_NAME}")
+
             JSON=$(printf '{
-              "text": ":rocket: 배포 성공!",
+              "text": ":rocket: **배포 성공!**",
               "attachments": [{
                 "pretext": "@channel",
                 "color": "%s",
                 "title": "%s #%s",
                 "title_link": "%s",
-                "text": "브랜치: `%s`\\n커밋: `%s`\\n이미지: `%s`",
+                "text": "%s\\n🔗 **[빌드 로그 확인](%s)**",
                 "fields": [
                   {"title":"Job","value":"%s","short":true},
-                  {"title":"Build","value":"#%s","short":true},
-                  {"title":"Branch","value":"%s","short":true},
-                  {"title":"Commit","value":"%s","short":true},
-                  {"title":"Docker Image","value":"%s","short":false}
+                  {"title":"Build","value":"#%s","short":true}
                 ],
                 "footer": "Jenkins",
                 "ts": %s
               }]
             }' \
             "$COLOR" "${IMAGE_NAME}" "${BUILD_NUMBER}" "${BUILD_URL}" \
-            "$TARGET" "$COMMIT7" "${IMAGE_NAME}" \
-            "${JOB_NAME}" "${BUILD_NUMBER}" "$TARGET" "$COMMIT7" "${IMAGE_NAME}" "$TS")
+            "$TABLE" "${BUILD_URL}" \
+            "${JOB_NAME}" "${BUILD_NUMBER}" "$TS")
 
             curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
           '''
