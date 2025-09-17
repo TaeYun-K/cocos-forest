@@ -98,7 +98,7 @@ pipeline {
               "ts": %s
             }]
           }' \
-          "$COLOR" "$IMAGE_NAME" "$BUILD_NUMBER" "$BUILD_URL" \
+          "$TEXT" "$COLOR" "$IMAGE_NAME" "$BUILD_NUMBER" "$BUILD_URL" \
           "$TARGET" "$COMMIT7" "$IMAGE_NAME" \
           "$JOB_NAME" "$BUILD_NUMBER" "$TARGET" "$COMMIT7" "$IMAGE_NAME" "$TS")
 
