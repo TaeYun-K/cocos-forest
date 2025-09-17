@@ -69,40 +69,42 @@ pipeline {
     post {
       success {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh '''
-            COMMIT7=$(echo "${GIT_COMMIT}" | cut -c1-7)
+          sh '''#!/usr/bin/env sh
+            set -eu
+            COMMIT7=$(printf "%s" "${GIT_COMMIT}" | cut -c1-7)
             TARGET="${gitlabTargetBranch}"
-            PAYLOAD=$(cat <<EOF
-    {"text":"@channel \\n ### :rocket: **배포 성공!** :tada: \\n- **Job**: ${JOB_NAME}\\n- **Build**: #${BUILD_NUMBER}\\n- **Branch**: ${TARGET}\\n- **Commit**: ${COMMIT7}\\n- **Docker Image**: ${IMAGE_NAME}\\n🔗 [빌드 로그 확인](${BUILD_URL})\\n"}
-    EOF
-    )
-            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+
+            JSON=$(printf '{"text":"@channel \\n ### :rocket: **배포 성공!** :tada:\\n- **Job**: %s\\n- **Build**: #%s\\n- **Branch**: %s\\n- **Commit**: %s\\n- **Docker Image**: %s\\n🔗 [빌드 로그 확인](%s)\\n"}' \
+                  "${JOB_NAME}" "${BUILD_NUMBER}" "${TARGET}" "${COMMIT7}" "${IMAGE_NAME}" "${BUILD_URL}")
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
           '''
         }
       }
 
       failure {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh '''
-            COMMIT7=$(echo "${GIT_COMMIT}" | cut -c1-7)
+          sh '''#!/usr/bin/env sh
+            set -eu
+            COMMIT7=$(printf "%s" "${GIT_COMMIT}" | cut -c1-7)
             TARGET="${gitlabTargetBranch}"
-            PAYLOAD=$(cat <<EOF
-    {"text":":fire: **배포 실패!** :boom: \\n- **Job**: ${JOB_NAME}\\n- **Build**: #${BUILD_NUMBER}\\n- **Branch**: ${TARGET}\\n🔗 [에러 로그 확인](${BUILD_URL})\\n@here"}
-    EOF
-    )
-            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+
+            JSON=$(printf '{"text":":fire: **배포 실패!** :boom:\\n- **Job**: %s\\n- **Build**: #%s\\n- **Branch**: %s\\n🔗 [에러 로그 확인](%s)\\n@here"}' \
+                  "${JOB_NAME}" "${BUILD_NUMBER}" "${TARGET}" "${BUILD_URL}")
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
           '''
         }
       }
 
       unstable {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh '''
-            PAYLOAD=$(cat <<EOF
-    {"text":":warning: **빌드 불안정!** \\n- **Job**: ${JOB_NAME}\\n- **Build**: #${BUILD_NUMBER}\\n🔗 [자세히 보기](${BUILD_URL})"}
-    EOF
-    )
-            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+          sh '''#!/usr/bin/env sh
+            set -eu
+            JSON=$(printf '{"text":":warning: **빌드 불안정!**\\n- **Job**: %s\\n- **Build**: #%s\\n🔗 [자세히 보기](%s)"}' \
+                  "${JOB_NAME}" "${BUILD_NUMBER}" "${BUILD_URL}")
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
           '''
         }
       }
