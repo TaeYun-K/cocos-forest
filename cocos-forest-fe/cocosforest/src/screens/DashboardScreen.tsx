@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useDashboardStore from '../store/dashboardStore';
+import { useMonthlyReport, useTodayData } from '../hooks/useDashboardQueries';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
 import {
   AIAnalysisCard,
@@ -19,14 +19,14 @@ export default function DashboardScreen() {
     selectedDay,
     activeTab,
     showDetailCard,
-    todayData,
     // 액션
     setActiveTab,
     handleCloseDetailCard,
-    loadTodayData,
-    loadMonthlyReport,
-    initializeDashboard
   } = useDashboardStore();
+
+  // React Query hooks
+  const { data: todayData, isLoading: todayLoading, error: todayError } = useTodayData();
+  const { data: monthlyReportData, isLoading: monthlyLoading, error: monthlyError } = useMonthlyReport(selectedYear, selectedMonth);
 
   // GIF 선택 로직
   const getCocoGif = () => {
@@ -43,10 +43,8 @@ export default function DashboardScreen() {
   };
 
 
-  // 초기 데이터 로딩 및 월 변경 시 데이터 리로딩
-  useEffect(() => {
-    initializeDashboard(selectedYear, selectedMonth);
-  }, [selectedYear, selectedMonth, initializeDashboard]);
+  // 로딩 상태 통합
+  const isLoading = todayLoading || monthlyLoading;
 
 
 
@@ -85,11 +83,7 @@ export default function DashboardScreen() {
             <View style={tabStyles.tabContainer}>
               <TouchableOpacity
                 style={[tabStyles.tab, activeTab === 0 && tabStyles.activeTab]}
-onPress={() => {
-                  setActiveTab(0);
-                  // 일별 탭 클릭 시 오늘 데이터 로딩
-                  loadTodayData();
-                }}
+                onPress={() => setActiveTab(0)}
               >
                 <Text style={[tabStyles.tabText, activeTab === 0 && tabStyles.activeTabText]}>
                   일별
@@ -97,10 +91,8 @@ onPress={() => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[tabStyles.tab, activeTab === 1 && tabStyles.activeTab]}
-onPress={() => {
+                onPress={() => {
                   setActiveTab(1);
-                  // 카테고리별 탭 클릭 시 월별 리포트 로딩
-                  loadMonthlyReport(selectedYear, selectedMonth);
                   if (showDetailCard) {
                     handleCloseDetailCard();
                   }

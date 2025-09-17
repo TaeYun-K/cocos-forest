@@ -1,6 +1,4 @@
 import { create } from 'zustand';
-import { fetchMonthlyReport, fetchDayDetails, fetchTodayData } from '../api/dashboard';
-import type { MonthlyReportData, DayData } from '../types/dashboard';
 
 interface DashboardState {
   // 날짜 상태
@@ -11,12 +9,6 @@ interface DashboardState {
   // UI 상태
   activeTab: number;
   showDetailCard: boolean;
-  loading: boolean;
-
-  // API 데이터 상태
-  monthlyReportData: MonthlyReportData | null;
-  todayData: DayData | null;  // 고정된 오늘 데이터
-  currentDayData: DayData | null;  // 선택된 날짜 데이터
 }
 
 interface DashboardActions {
@@ -33,19 +25,11 @@ interface DashboardActions {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
 
-  // API 액션
-  loadMonthlyReport: (year: number, month: number) => Promise<void>;
-  loadDayDetails: (year: number, month: number, day: number) => Promise<void>;
-  loadTodayData: () => Promise<void>;
-
   // 복합 액션
-  handleDayPress: (day: number) => Promise<void>;
+  handleDayPress: (day: number) => void;
   handleCloseDetailCard: () => void;
   handlePreviousMonth: () => void;
   handleNextMonth: () => void;
-
-  // 초기화
-  initializeDashboard: (year?: number, month?: number) => Promise<void>;
 }
 
 type DashboardStore = DashboardState & DashboardActions;
@@ -57,10 +41,6 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   selectedDay: null,
   activeTab: 0,
   showDetailCard: false,
-  loading: false,
-  monthlyReportData: null,
-  todayData: null,
-  currentDayData: null,
 
   // 기본 setter 액션들
   setSelectedMonth: (month: number) => set({ selectedMonth: month }),
@@ -88,71 +68,11 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
   },
 
-  // API 호출 액션들
-  loadMonthlyReport: async (year: number, month: number) => {
-    try {
-      set({ loading: true });
-      const yearMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
-      const data = await fetchMonthlyReport(yearMonth);
-      set({ monthlyReportData: data });
-    } catch (error) {
-      console.error('Failed to load monthly report:', error);
-      set({ monthlyReportData: null });
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  loadDayDetails: async (year: number, month: number, day: number) => {
-    try {
-      console.log(`🔄 Loading day details for ${year}-${month + 1}-${day}`);
-      set({ loading: true });
-      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const data = await fetchDayDetails(date, true);
-      console.log(`📊 Day data received:`, data);
-      set({ currentDayData: data });
-      console.log(`✅ Day data state updated`);
-    } catch (error) {
-      console.error('Failed to load day details:', error);
-      set({ currentDayData: null });
-      throw error;
-    } finally {
-      set({ loading: false });
-    }
-  },
-
-  loadTodayData: async () => {
-    try {
-      console.log(`🔄 Loading today's data`);
-      set({ loading: true });
-      const data = await fetchTodayData();
-      console.log(`📊 Today data received:`, data);
-      set({ todayData: data });
-      console.log(`✅ Today data state updated`);
-    } catch (error) {
-      console.error('Failed to load today data:', error);
-      set({ todayData: null });
-    } finally {
-      set({ loading: false });
-    }
-  },
-
   // 복합 액션들
-  handleDayPress: async (day: number) => {
+  handleDayPress: (day: number) => {
     console.log(`📅 Day pressed: ${day}`);
-    const { selectedYear, selectedMonth, loadDayDetails } = get();
-
-    set({ selectedDay: day });
-    console.log(`📍 Selected day set to: ${day}`);
-
-    try {
-      await loadDayDetails(selectedYear, selectedMonth, day);
-      console.log(`✅ Day details loaded successfully for ${selectedYear}-${selectedMonth}-${day}`);
-      set({ showDetailCard: true });
-      console.log(`🎯 Show detail card set to: true`);
-    } catch (error) {
-      console.error(`❌ Failed to load day details:`, error);
-    }
+    set({ selectedDay: day, showDetailCard: true });
+    console.log(`📍 Selected day set to: ${day}, showDetailCard: true`);
   },
 
   handleCloseDetailCard: () => {
@@ -172,25 +92,6 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
     goToNextMonth();
     if (showDetailCard) {
       handleCloseDetailCard();
-    }
-  },
-
-  // 초기화 액션
-  initializeDashboard: async (year?: number, month?: number) => {
-    const { loadMonthlyReport, loadTodayData } = get();
-    const targetYear = year ?? get().selectedYear;
-    const targetMonth = month ?? get().selectedMonth;
-
-    if (year !== undefined) set({ selectedYear: year });
-    if (month !== undefined) set({ selectedMonth: month });
-
-    try {
-      await Promise.all([
-        loadMonthlyReport(targetYear, targetMonth),
-        loadTodayData()
-      ]);
-    } catch (error) {
-      console.error('Failed to initialize dashboard:', error);
     }
   },
 }));

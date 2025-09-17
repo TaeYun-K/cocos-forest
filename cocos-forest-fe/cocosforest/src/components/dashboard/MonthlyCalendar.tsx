@@ -1,16 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import useDashboardStore from '../../store/dashboardStore';
+import { useMonthlyReport } from '../../hooks/useDashboardQueries';
 
 export const MonthlyCalendar: React.FC = () => {
   const {
     selectedYear,
     selectedMonth,
-    monthlyReportData,
     handleDayPress,
     handlePreviousMonth,
     handleNextMonth
   } = useDashboardStore();
+
+  const { data: monthlyReportData, isLoading, error } = useMonthlyReport(selectedYear, selectedMonth);
   const monthNames = [
     '1월', '2월', '3월', '4월', '5월', '6월',
     '7월', '8월', '9월', '10월', '11월', '12월'
@@ -58,6 +60,50 @@ export const MonthlyCalendar: React.FC = () => {
 
     return days;
   };
+
+  if (isLoading) {
+    return (
+      <View>
+        <View style={styles.calendarHeader}>
+          <Text style={styles.cardTitle}>월별 탄소 배출량</Text>
+          <View style={styles.monthSelector}>
+            <TouchableOpacity style={styles.monthButton} onPress={handlePreviousMonth}>
+              <Text style={styles.monthButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.monthText}>
+              {selectedYear}년 {monthNames[selectedMonth]}
+            </Text>
+            <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
+              <Text style={styles.monthButtonText}>→</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View>
+        <View style={styles.calendarHeader}>
+          <Text style={styles.cardTitle}>월별 탄소 배출량</Text>
+          <View style={styles.monthSelector}>
+            <TouchableOpacity style={styles.monthButton} onPress={handlePreviousMonth}>
+              <Text style={styles.monthButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.monthText}>
+              {selectedYear}년 {monthNames[selectedMonth]}
+            </Text>
+            <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
+              <Text style={styles.monthButtonText}>→</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -198,5 +244,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     zIndex: 1,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#ef4444',
+    textAlign: 'center',
+    paddingVertical: 40,
   },
 });
