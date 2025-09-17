@@ -9,40 +9,31 @@ export const TodayEmissionStatus: React.FC = () => {
   const todayEmission = todayData?.totals?.carbonTotalKg || 0.5;
   const averageEmission = 0.8;
   const emissionDifference = averageEmission - todayEmission;
-  const emissionPercentage = (todayEmission / averageEmission) * 100;
+
+  // 배출량에 따른 색상 결정
+  const getEmissionColor = () => {
+    if (todayEmission < 0.4) {
+      return '#15803d'; // 녹색 - 좋음
+    } else if (todayEmission > averageEmission) {
+      return '#ef4444'; // 빨간색 - 나쁨
+    } else {
+      return '#eab308'; // 노란색 - 보통
+    }
+  };
 
   return (
-    <Card>
+    <Card style={styles.compactCard}>
       <Text style={styles.cardTitle}>오늘 탄소 배출 현황</Text>
 
       {/* 현재 배출량 표시 */}
       <View style={styles.emissionStatus}>
         <View style={styles.emissionValueContainer}>
-          <Text style={styles.emissionValue}>{todayEmission}kg</Text>
+          <Text style={[styles.emissionValue, { color: getEmissionColor() }]}>{todayEmission}kg</Text>
           <Text style={styles.emissionValueLabel}>오늘 배출량</Text>
         </View>
         <View style={styles.emissionAverageContainer}>
           <Text style={styles.emissionAverage}>{averageEmission}kg</Text>
           <Text style={styles.emissionAverageLabel}>평균 배출량</Text>
-        </View>
-      </View>
-
-      {/* 게이지 바 */}
-      <View style={styles.gaugeContainer}>
-        <View style={styles.gaugeBackground}>
-          <View
-            style={[
-              styles.gaugeFill,
-              {
-                width: `${Math.min(emissionPercentage, 100)}%`,
-                backgroundColor: todayEmission < 0.4 ? '#15803d' : todayEmission < 0.8 ? '#eab308' : '#ef4444'
-              }
-            ]}
-          />
-          <View style={styles.gaugeLabels}>
-            <Text style={styles.gaugeLabelStart}>0kg</Text>
-            <Text style={styles.gaugeLabelEnd}>0.8kg</Text>
-          </View>
         </View>
       </View>
 
@@ -60,11 +51,14 @@ export const TodayEmissionStatus: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  compactCard: {
+    padding: 16,
+  },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1f2937',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   emissionStatus: {
     flexDirection: 'row',
@@ -75,78 +69,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emissionValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#15803d',
   },
   emissionValueLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#6b7280',
-    marginTop: 4,
+    marginTop: 3,
   },
   emissionAverageContainer: {
     alignItems: 'center',
   },
   emissionAverage: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#9ca3af',
   },
   emissionAverageLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#6b7280',
-    marginTop: 4,
-  },
-  gaugeContainer: {
-    marginBottom: 20,
-  },
-  gaugeBackground: {
-    height: 24,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  gaugeFill: {
-    height: '100%',
-    borderRadius: 12,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-  gaugeLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    position: 'absolute',
-    width: '100%',
-    top: -20,
-  },
-  gaugeLabelStart: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '600',
-  },
-  gaugeLabelEnd: {
-    fontSize: 12,
-    color: '#6b7280',
-    fontWeight: '600',
+    marginTop: 3,
   },
   comparisonMessage: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0fdf4',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 0,
   },
   comparisonIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   comparisonIconText: {
-    fontSize: 20,
+    fontSize: 18,
   },
   comparisonText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#374151',
     flex: 1,
   },
