@@ -14,8 +14,6 @@ pipeline {
         stage('Prepare Environment') {
             steps {
                 script {
-                    // GitLab Merge Request의 'Target Branch'를 기준으로 분기합니다.
-                    // 이 변수가 더 정확하고 신뢰성 높습니다.
                     if (env.gitlabTargetBranch == 'dev') {
                         echo "### Target branch is 'dev'. Setting DEV environment. ###"
                         env.CREDENTIALS_ID = 'DEV_PROPERTIES'
@@ -41,7 +39,7 @@ pipeline {
             steps {
                 dir('cocos-forest') {
                     // 동적으로 설정된 이미지 이름을 사용합니다.
-                    sh "docker build -t ${IMAGE_NAME} ."
+                    sh "docker build -t ${env.IMAGE_NAME} ."
                 }
             }
         }
@@ -52,13 +50,13 @@ pipeline {
                 withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'PROPERTIES_FILE_PATH')]) {
                     script {
                         // 동적으로 설정된 컨테이너 이름을 사용
-                        sh "docker stop ${CONTAINER_NAME} || true"
-                        sh "docker rm ${CONTAINER_NAME} || true"
+                        sh "docker stop ${env.CONTAINER_NAME} || true"
+                        sh "docker rm ${env.CONTAINER_NAME} || true"
 
                         sh """
-                        docker run -d --name ${CONTAINER_NAME} --network=cocos-network \\
+                        docker run -d --name ${env.CONTAINER_NAME} --network=cocos-network \\
                                    --env-file ${PROPERTIES_FILE_PATH} \\
-                                   ${IMAGE_NAME}
+                                   ${env.IMAGE_NAME}
                         """
                     }
                 }
