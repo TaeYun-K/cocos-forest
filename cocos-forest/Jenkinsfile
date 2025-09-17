@@ -69,70 +69,111 @@ pipeline {
     post {
       success {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh """
-            # 메타데이터 수집
-            TARGET="\${gitlabTargetBranch}"
-            COMMIT7=\$(git rev-parse --short=7 HEAD 2>/dev/null || echo "\${GIT_COMMIT}" | cut -c1-7)
-            AUTHOR=\$(git --no-pager log -1 --pretty=format:'%an' || echo "unknown")
+          sh '''
+            set -e
+            TARGET="${TARGET_BRANCH}"
+            COMMIT7=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT}" | cut -c1-7)
+            AUTHOR=$(git --no-pager log -1 --pretty=format:%an 2>/dev/null || echo "unknown")
 
-            # Mattermost JSON(payload) 조합: 단일따옴표 + 변수 끼워넣기 패턴
-            curl -sS -X POST -H 'Content-Type: application/json' -d '{
-              "text": ":rocket: **배포 성공!** :tada:\\n"
-                      "항목\\t내용\\n"
-                      "🚀 Job\\t'"${JOB_NAME}"'\\n"
-                      "🔢 Build\\t#'"${BUILD_NUMBER}"'\\n"
-                      "🌿 Branch\\t'"${TARGET}"'\\n"
-                      "commit\\t'"${COMMIT7}"'\\n"
-                      "🧑‍💻 Author\\t'"${AUTHOR}"'\\n"
-                      "📦 Docker Image\\t'"${IMAGE_NAME}"'\\n"
-                      "🔗 빌드 로그\\t'"${BUILD_URL}"'"
-            }' "\$MM_URL"
-          """
+            read -r -d '' PAYLOAD <<'JSON'
+    {
+      "text": ":rocket: **배포 성공!** :tada:\\n"
+              "항목\\t내용\\n"
+              "🚀 Job\\t${JOB_NAME}\\n"
+              "🔢 Build\\t#${BUILD_NUMBER}\\n"
+              "🌿 Branch\\t${TARGET}\\n"
+              "commit\\t${COMMIT7}\\n"
+              "🧑‍💻 Author\\t${AUTHOR}\\n"
+              "📦 Docker Image\\t${IMAGE_NAME}\\n"
+              "🔗 빌드 로그\\t${BUILD_URL}"
+    }
+    JSON
+
+            # 변수 치환
+            PAYLOAD=$(echo "$PAYLOAD" \
+              | sed "s|\${JOB_NAME}|${JOB_NAME}|g" \
+              | sed "s|\${BUILD_NUMBER}|${BUILD_NUMBER}|g" \
+              | sed "s|\${TARGET}|${TARGET}|g" \
+              | sed "s|\${COMMIT7}|${COMMIT7}|g" \
+              | sed "s|\${AUTHOR}|${AUTHOR}|g" \
+              | sed "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" \
+              | sed "s|\${BUILD_URL}|${BUILD_URL}|g" )
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL" >/dev/null
+          '''
         }
       }
 
       failure {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh """
-            TARGET="\${gitlabTargetBranch}"
-            COMMIT7=\$(git rev-parse --short=7 HEAD 2>/dev/null || echo "\${GIT_COMMIT}" | cut -c1-7)
-            AUTHOR=\$(git --no-pager log -1 --pretty=format:'%an' || echo "unknown")
+          sh '''
+            set -e
+            TARGET="${TARGET_BRANCH}"
+            COMMIT7=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT}" | cut -c1-7)
+            AUTHOR=$(git --no-pager log -1 --pretty=format:%an 2>/dev/null || echo "unknown")
 
-            curl -sS -X POST -H 'Content-Type: application/json' -d '{
-              "text": ":fire: **배포 실패!** :boom:\\n"
-                      "항목\\t내용\\n"
-                      "🚀 Job\\t'"${JOB_NAME}"'\\n"
-                      "🔢 Build\\t#'"${BUILD_NUMBER}"'\\n"
-                      "🌿 Branch\\t'"${TARGET}"'\\n"
-                      "commit\\t'"${COMMIT7}"'\\n"
-                      "🧑‍💻 Author\\t'"${AUTHOR}"'\\n"
-                      "📦 Docker Image\\t'"${IMAGE_NAME}"'\\n"
-                      "🔗 에러 로그\\t'"${BUILD_URL}"'\\n"
-                      "@here"
-            }' "\$MM_URL"
-          """
+            read -r -d '' PAYLOAD <<'JSON'
+    {
+      "text": ":fire: **배포 실패!** :boom:\\n"
+              "항목\\t내용\\n"
+              "🚀 Job\\t${JOB_NAME}\\n"
+              "🔢 Build\\t#${BUILD_NUMBER}\\n"
+              "🌿 Branch\\t${TARGET}\\n"
+              "commit\\t${COMMIT7}\\n"
+              "🧑‍💻 Author\\t${AUTHOR}\\n"
+              "📦 Docker Image\\t${IMAGE_NAME}\\n"
+              "🔗 에러 로그\\t${BUILD_URL}\\n"
+              "@here"
+    }
+    JSON
+
+            PAYLOAD=$(echo "$PAYLOAD" \
+              | sed "s|\${JOB_NAME}|${JOB_NAME}|g" \
+              | sed "s|\${BUILD_NUMBER}|${BUILD_NUMBER}|g" \
+              | sed "s|\${TARGET}|${TARGET}|g" \
+              | sed "s|\${COMMIT7}|${COMMIT7}|g" \
+              | sed "s|\${AUTHOR}|${AUTHOR}|g" \
+              | sed "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" \
+              | sed "s|\${BUILD_URL}|${BUILD_URL}|g" )
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL" >/dev/null
+          '''
         }
       }
 
       unstable {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh """
-            TARGET="\${gitlabTargetBranch}"
-            COMMIT7=\$(git rev-parse --short=7 HEAD 2>/dev/null || echo "\${GIT_COMMIT}" | cut -c1-7)
-            AUTHOR=\$(git --no-pager log -1 --pretty=format:'%an' || echo "unknown")
+          sh '''
+            set -e
+            TARGET="${TARGET_BRANCH}"
+            COMMIT7=$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT}" | cut -c1-7)
+            AUTHOR=$(git --no-pager log -1 --pretty=format:%an 2>/dev/null || echo "unknown")
 
-            curl -sS -X POST -H 'Content-Type: application/json' -d '{
-              "text": ":warning: **빌드 불안정!**\\n"
-                      "항목\\t내용\\n"
-                      "🚀 Job\\t'"${JOB_NAME}"'\\n"
-                      "🔢 Build\\t#'"${BUILD_NUMBER}"'\\n"
-                      "🌿 Branch\\t'"${TARGET}"'\\n"
-                      "commit\\t'"${COMMIT7}"'\\n"
-                      "🧑‍💻 Author\\t'"${AUTHOR}"'\\n"
-                      "📦 Docker Image\\t'"${IMAGE_NAME}"'\\n"
-                      "🔗 자세히 보기\\t'"${BUILD_URL}"'"
-            }' "\$MM_URL"
-          """
+            read -r -d '' PAYLOAD <<'JSON'
+    {
+      "text": ":warning: **빌드 불안정!**\\n"
+              "항목\\t내용\\n"
+              "🚀 Job\\t${JOB_NAME}\\n"
+              "🔢 Build\\t#${BUILD_NUMBER}\\n"
+              "🌿 Branch\\t${TARGET}\\n"
+              "commit\\t${COMMIT7}\\n"
+              "🧑‍💻 Author\\t${AUTHOR}\\n"
+              "📦 Docker Image\\t${IMAGE_NAME}\\n"
+              "🔗 자세히 보기\\t${BUILD_URL}"
+    }
+    JSON
+
+            PAYLOAD=$(echo "$PAYLOAD" \
+              | sed "s|\${JOB_NAME}|${JOB_NAME}|g" \
+              | sed "s|\${BUILD_NUMBER}|${BUILD_NUMBER}|g" \
+              | sed "s|\${TARGET}|${TARGET}|g" \
+              | sed "s|\${COMMIT7}|${COMMIT7}|g" \
+              | sed "s|\${AUTHOR}|${AUTHOR}|g" \
+              | sed "s|\${IMAGE_NAME}|${IMAGE_NAME}|g" \
+              | sed "s|\${BUILD_URL}|${BUILD_URL}|g" )
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL" >/dev/null
+          '''
         }
       }
 
@@ -140,6 +181,5 @@ pipeline {
         cleanWs()
       }
     }
-
 
 }
