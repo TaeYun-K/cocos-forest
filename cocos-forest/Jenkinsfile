@@ -67,58 +67,51 @@ pipeline {
     }
 
     post {
-        success {
-          withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-            sh """
-              # 1. Groovy 변수들을 Shell 변수로 정의합니다.
-              #    .take(7) 같은 Groovy 코드는 여기서 미리 처리합니다.
-              TARGET_BRANCH="${env.gitlabTargetBranch}"
-              SHORT_COMMIT="${env.GIT_COMMIT.take(7)}"
-
-              # 2. Here Document(<<-EOF)를 사용해 JSON 페이로드를 만듭니다.
-              #    이 블록 안에서는 Shell 변수(\$VAR 또는 \${VAR})가 올바르게 치환됩니다.
-              read -r -d '' JSON_PAYLOAD << EOF
-              {
-                "text": ":rocket: **배포 성공!** :tada:\\n- **Job**: \`${JOB_NAME}\`\\n- **Build**: #${BUILD_NUMBER}\\n- **Branch**: \`${TARGET_BRANCH}\`\\n- **Commit**: \`${SHORT_COMMIT}\`\\n- **Docker Image**: \`${IMAGE_NAME}\`\\n🔗 [빌드 로그 확인](${BUILD_URL})\\n@channel"
-              }
-    EOF
-
-              # 3. 완성된 JSON 변수를 curl로 전송합니다.
-              curl -sS -X POST -H 'Content-Type: application/json' -d "\$JSON_PAYLOAD" "\$MM_URL"
-            """
-          }
+      success {
+        withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+          sh """
+            COMMIT7=\$(echo "\${GIT_COMMIT}" | cut -c1-7)
+            TARGET="\${gitlabTargetBranch}"
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d '{
+                "text": ":rocket: **배포 성공!** :tada:\\n- **Job**: \${JOB_NAME}\\n- **Build**: #\${BUILD_NUMBER}\\n- **Branch**: \${TARGET}\\n- **Commit**: \${COMMIT7}\\n- **Docker Image**: \${IMAGE_NAME}\\n🔗 [빌드 로그 확인](\${BUILD_URL})\\n@channel"
+              }' \
+              "\$MM_URL"
+          """
         }
+      }
 
-        failure {
-          withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-            sh """
-              TARGET_BRANCH="${env.gitlabTargetBranch}"
-
-              read -r -d '' JSON_PAYLOAD << EOF
-              {
-                "text": ":fire: **배포 실패!** :boom:\\n- **Job**: \`${JOB_NAME}\`\\n- **Build**: #${BUILD_NUMBER}\\n- **Branch**: \`${TARGET_BRANCH}\`\\n🔗 [에러 로그 확인](${BUILD_URL})\\n@here"
-              }
-    EOF
-              curl -sS -X POST -H 'Content-Type: application/json' -d "\$JSON_PAYLOAD" "\$MM_URL"
-            """
-          }
+      failure {
+        withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+          sh """
+            COMMIT7=\$(echo "\${GIT_COMMIT}" | cut -c1-7)
+            TARGET="\${gitlabTargetBranch}"
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d '{
+                "text": ":fire: **배포 실패!** :boom:\\n- **Job**: \${JOB_NAME}\\n- **Build**: #\${BUILD_NUMBER}\\n- **Branch**: \${TARGET}\\n🔗 [에러 로그 확인](\${BUILD_URL})\\n@here"
+              }' \
+              "\$MM_URL"
+          """
         }
+      }
 
-        unstable {
-          withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-            sh """
-              read -r -d '' JSON_PAYLOAD << EOF
-              {
-                "text": ":warning: **빌드 불안정!**\\n- **Job**: \`${JOB_NAME}\`\\n- **Build**: #${BUILD_NUMBER}\\n🔗 [자세히 보기](${BUILD_URL})"
-              }
-    EOF
-              curl -sS -X POST -H 'Content-Type: application/json' -d "\$JSON_PAYLOAD" "\$MM_URL"
-            """
-          }
+      unstable {
+        withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+          sh """
+            curl -sS -X POST -H 'Content-Type: application/json' \
+              -d '{
+                "text": ":warning: **빌드 불안정!**\\n- **Job**: \${JOB_NAME}\\n- **Build**: #\${BUILD_NUMBER}\\n🔗 [자세히 보기](\${BUILD_URL})"
+              }' \
+              "\$MM_URL"
+          """
         }
+      }
 
-        always {
-            cleanWs()
-        }
+      always {
+        cleanWs()
+      }
     }
+
+
+
 }
