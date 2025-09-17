@@ -72,25 +72,20 @@ pipeline {
             sh '''#!/usr/bin/env sh
               set -eu
 
-              # --- 변수 설정 ---
               COMMIT_HASH=$(printf "%s" "${GIT_COMMIT}" | cut -c1-7)
               TARGET_BRANCH="${gitlabTargetBranch}"
-              AUTHOR_NAME="${gitlabUserName:-Git}" # GitLab 플러그인 변수, 없을 경우 'Git'
+              AUTHOR_NAME="${gitlabUserName:-Git}"
 
-              # --- 환경별 메시지 및 색상 설정 ---
               if [ "$TARGET_BRANCH" = "dev" ]; then
                   TITLE_MSG="🌱 **코코야** 개발 서버 배포 성공!"
-                  # [수정됨] 백슬래시 이스케이프 처리: \` -> \\`
                   MAIN_MSG="✅ \\`dev\\` 브랜치가 개발 서버에 성공적으로 배포되었습니다."
-                  ATTACHMENT_COLOR="#007bff" # 파란색
+                  ATTACHMENT_COLOR="#007bff"
               else
                   TITLE_MSG="🎉 **코코야** 운영 서버 배포 성공!"
-                  # [수정됨] 백슬래시 이스케이프 처리: \` -> \\`
                   MAIN_MSG="✅ \\`master\\` 브랜치가 운영 서버에 성공적으로 배포되었습니다."
-                  ATTACHMENT_COLOR="#28a745" # 초록색
+                  ATTACHMENT_COLOR="#28a745"
               fi
 
-              # --- Mattermost Payload 생성 ---
               JSON_PAYLOAD=$(printf '{
                   "channel": "@channel",
                   "text": "## %s\\n---",
@@ -119,7 +114,6 @@ pipeline {
                   ]
               }' "$TITLE_MSG" "$ATTACHMENT_COLOR" "$MAIN_MSG" "${JOB_NAME}" "${BUILD_NUMBER}" "$TARGET_BRANCH" "$COMMIT_HASH" "$AUTHOR_NAME" "${IMAGE_NAME}" "${BUILD_URL}")
 
-              # --- curl 요청 ---
               curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON_PAYLOAD" "$MM_URL"
             '''
           }
