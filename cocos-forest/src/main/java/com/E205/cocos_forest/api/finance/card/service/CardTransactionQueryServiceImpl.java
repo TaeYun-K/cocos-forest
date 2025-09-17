@@ -1,6 +1,7 @@
 package com.E205.cocos_forest.api.finance.card.service;
 
 import com.E205.cocos_forest.api.finance.card.dto.out.CardMonthlySummaryOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.CardDailyDetailsOut;
 import com.E205.cocos_forest.domain.finance.carbon.EmissionFactor;
 import com.E205.cocos_forest.domain.finance.carbon.EmissionFactorRepository;
 import com.E205.cocos_forest.domain.finance.card.UserCard;
@@ -134,6 +135,112 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .totals(totals)
             .daily(dailySummaries)
             .byCategory(categorySummaries)
+            .build();
+    }
+    
+    // 일별 상세 조회
+    @Override
+    public CardDailyDetailsOut getDailyDetails(String userCardId, String date) {
+
+        long started = System.currentTimeMillis();
+
+        if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(date)) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
+        }
+
+        LocalDate targetDate;
+        try {
+            targetDate = LocalDate.parse(date);
+        } catch (Exception ex) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Invalid date format");
+        }
+
+        UserCard userCard = resolveUserCard(userCardId);
+
+        List<CardTransaction> transactions = cardTransactionRepository.findByUserIdAndTxDate(
+            userCard.getUserId(), targetDate);
+
+        // 사용된 카테고리와 배출계수 미리 로드
+        Map<String, Category> categoryMap = loadCategories(transactions);
+        Map<String, BigDecimal> factorMap = loadEmissionFactors(transactions);
+
+        // 거래 내역 목록 생성
+        List<CardDailyDetailsOut.TransactionItem> items = transactions.stream()
+            .map(tx -> {
+                BigDecimal factor = factorMap.getOrDefault(tx.getCategoryId(), BigDecimal.ZERO);
+                BigDecimal carbon = factor.multiply(BigDecimal.valueOf(tx.getAmountKrw()));
+
+                String categoryName = Optional.ofNullable(categoryMap.get(tx.getCategoryId()))
+                    .map(Category::getName)
+                    .orElse(tx.getCategoryId());
+
+                String approvedAt = null;
+                if (tx.getTxDate() != null) {
+                    // txDate + txTime 으로 ISO 8601 형식의 문자열 생성
+                    var ldt = tx.getTxTime() == null
+                        ? tx.getTxDate().atStartOfDay()
+                        : tx.getTxDate().atTime(tx.getTxTime());
+                    approvedAt = java.time.ZonedDateTime.of(ldt, java.time.ZoneId.of("Asia/Seoul"))
+                        .toOffsetDateTime()
+                        .toString();
+                }
+
+                // 거래내역 항목 생성
+                return CardDailyDetailsOut.TransactionItem.builder()
+                    .externalTransactionId(tx.getTransactionNo())
+                    .approvedAt(approvedAt)
+                    .txDate(tx.getTxDate() == null ? null : tx.getTxDate().toString())
+                    .txTime(tx.getTxTime() == null ? null : tx.getTxTime().toString())
+                    .amountKrw(tx.getAmountKrw())
+                    .status(tx.getStatus() == null ? null : tx.getStatus().name())
+                    .merchantName(null)
+                    .categoryId(tx.getCategoryId())
+                    .categoryName(categoryName)
+                    .cardLast4(tx.getCardLast4())
+                    .issuerCode(tx.getIssueCode())
+                    .cardName(tx.getCardName())
+                    .source("SSAFY")
+                    .carbonKg(scale(carbon, 2))
+                    .carbonCoefId(null)
+                    .build();
+            })
+            .sorted(Comparator.comparing(CardDailyDetailsOut.TransactionItem::getApprovedAt,
+                Comparator.nullsLast(String::compareTo)).reversed())
+            .toList();
+
+        // PENDING 상태인 거래만 합계에 포함하며 집계
+        List<CardDailyDetailsOut.TransactionItem> pendingItems = items.stream()
+            .filter(i -> "PENDING".equals(i.getStatus()))
+            .toList();
+
+        long amountTotal = pendingItems.stream().mapToLong(CardDailyDetailsOut.TransactionItem::getAmountKrw).sum();
+        BigDecimal carbonTotal = pendingItems.stream()
+            .map(CardDailyDetailsOut.TransactionItem::getCarbonKg)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        CardDailyDetailsOut.Totals totals = CardDailyDetailsOut.Totals.builder()
+            .amountTotal(amountTotal)
+            .carbonTotalKg(scale(carbonTotal, 2))
+            .transactionCount(pendingItems.size())
+            .build();
+
+        long durationMs = System.currentTimeMillis() - started;
+
+        // 메타 정보 생성
+        CardDailyDetailsOut.Meta meta = CardDailyDetailsOut.Meta.builder()
+            .lockAcquired(false)
+            .durationMs(durationMs)
+            .retry(0)
+            .error(null)
+            .build();
+
+        return CardDailyDetailsOut.builder()
+            .userCardId(userCardId)
+            .date(targetDate.toString())
+            .currency("KRW")
+            .totals(totals)
+            .transactions(items)
+            .meta(meta)
             .build();
     }
 
