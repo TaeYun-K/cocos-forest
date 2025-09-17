@@ -14,16 +14,17 @@ pipeline {
         stage('Prepare Environment') {
             steps {
                 script {
-                    // GitLab Merge Request의 'Target Branch'를 기준으로 분기합니다.
-                    // 이 변수가 더 정확하고 신뢰성 높습니다.
-                    if (env.gitlabTargetBranch == 'dev') {
-                        echo "### Target branch is 'dev'. Setting DEV environment. ###"
-                        CREDENTIALS_ID = 'DEV_PROPERTIES'
-                        IMAGE_NAME = 'cocos-forest-app-dev'
-                        CONTAINER_NAME = 'cocos-forest-app-dev'
-                    } else {
-                        echo "### Target branch is 'master'. Setting PROD environment. ###"
-                    }
+                  if (env.gitlabTargetBranch == 'dev') {
+                    echo "### Target branch is 'dev'. Setting DEV environment. ###"
+                    env.CREDENTIALS_ID = 'DEV_PROPERTIES'
+                    env.IMAGE_NAME = 'cocos-forest-app-dev'
+                    env.CONTAINER_NAME = 'cocos-forest-app-dev'
+                  } else {
+                    echo "### Target branch is 'master'. Setting PROD environment. ###"
+                    env.CREDENTIALS_ID = 'PROD_PROPERTIES'
+                    env.IMAGE_NAME = 'cocos-forest-app'
+                    env.CONTAINER_NAME = 'cocos-forest-app'
+                  }
                 }
             }
         }
@@ -66,68 +67,75 @@ pipeline {
         }
     }
 
-    post {
-      success {
-        withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh '''
-            set -e
+     post {
+       success {
+         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+           sh '''
+             set -e
+             TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
+             [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo dev)"
 
-            # 값 수집
-            TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
-            [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
-            COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT:0:7}")"
-            AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
+             # 커밋 7자리: git이 안 되면 환경변수로 대체
+             COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "$GIT_COMMIT" | cut -c1-7)"
+             [ -z "$COMMIT7" ] && COMMIT7="unknown"
 
-            # 코드블록 형태로 2열(항목/내용) 표 스타일 메시지 생성
-            PAYLOAD=$(printf '%s' "{
-              \"text\": \"\\\n\\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n📦 Docker Image\\t${IMAGE_NAME}\\n🔗 빌드 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
-            }")
+             # 작성자: GitLab 플러그인 변수 → Git → 환경변수 순
+             AUTHOR="${gitlabUserName:-}"
+             [ -z "$AUTHOR" ] && AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
 
-            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
-          '''
-        }
-      }
+             PAYLOAD=$(printf '%s' "{
+               \"text\": \"\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n📦 Docker Image\\t${IMAGE_NAME}\\n🔗 빌드 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
+             }")
 
-      failure {
-        withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh '''
-            set -e
+             curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+           '''
+         }
+       }
 
-            TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
-            [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
-            COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT:0:7}")"
-            AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
+       failure {
+         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+           sh '''
+             set -e
+             TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
+             [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo dev)"
+             COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "$GIT_COMMIT" | cut -c1-7)"
+             [ -z "$COMMIT7" ] && COMMIT7="unknown"
+             AUTHOR="${gitlabUserName:-}"
+             [ -z "$AUTHOR" ] && AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
 
-            PAYLOAD=$(printf '%s' "{
-              \"text\": \":fire: **배포 실패!** :boom:\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n🔗 에러 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
-            }")
+             PAYLOAD=$(printf '%s' "{
+               \"text\": \":fire: **배포 실패!** :boom:\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n🔗 에러 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
+             }")
 
-            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
-          '''
-        }
-      }
+             curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+           '''
+         }
+       }
 
-      unstable {
-        withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh '''
-            set -e
+       unstable {
+         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+           sh '''
+             set -e
+             TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
+             [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo dev)"
+             COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "$GIT_COMMIT" | cut -c1-7)"
+             [ -z "$COMMIT7" ] && COMMIT7="unknown"
+             AUTHOR="${gitlabUserName:-}"
+             [ -z "$AUTHOR" ] && AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
 
-            TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
-            [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
-            COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT:0:7}")"
-            AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
+             PAYLOAD=$(printf '%s' "{
+               \"text\": \":warning: **빌드 불안정!**\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n🔗 빌드 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
+             }")
 
-            PAYLOAD=$(printf '%s' "{
-              \"text\": \":warning: **빌드 불안정!**\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n🔗 빌드 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
-            }")
+             curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+           '''
+         }
+       }
 
-            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
-          '''
-        }
-      }
+       // 워크스페이스 정리는 '맨 마지막'에
+       cleanup {
+         cleanWs()
+       }
+     }
 
-      always {
-        cleanWs()
-      }
-    }
 }
