@@ -73,10 +73,14 @@ pipeline {
 
           # 브랜치별 색상 (dev=그린, master=블루)
           COLOR="#2ecc71"
-          [ "$TARGET" = "master" ] && COLOR="#228be6"
+          TEXT="### :pepe_jam: Dev Updated! :pepe_jam:"
+          if [ "$TARGET" = "master" ]; then
+            COLOR="#228be6"
+            TEXT="### :crown: Master Deployed! :crown:"
+          fi
 
           JSON=$(printf '{
-            "text": "### :pepe_jam: Dev Updated! :pepe_jam:",
+            "text": "%s",
             "attachments": [{
               "pretext": "@channel",
               "color": "%s",
@@ -94,7 +98,7 @@ pipeline {
               "ts": %s
             }]
           }' \
-          "$COLOR" "$IMAGE_NAME" "$BUILD_NUMBER" "$BUILD_URL" \
+          "$TEXT" "$COLOR" "$IMAGE_NAME" "$BUILD_NUMBER" "$BUILD_URL" \
           "$TARGET" "$COMMIT7" "$IMAGE_NAME" \
           "$JOB_NAME" "$BUILD_NUMBER" "$TARGET" "$COMMIT7" "$IMAGE_NAME" "$TS")
 
