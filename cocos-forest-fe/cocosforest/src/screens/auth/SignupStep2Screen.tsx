@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +12,7 @@ import { SignupHeader } from '../../components/auth/SignupHeader';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { PasswordConfirmInput } from '../../components/auth/PasswordConfirmInput';
 import { SignupButtons } from '../../components/auth/SignupButtons';
+import { signupStep2Styles } from '../../styles/auth/signupStep2Styles';
 
 interface SignupStep2ScreenProps {
   navigation: any;
@@ -98,17 +98,17 @@ export const SignupStep2Screen: React.FC<SignupStep2ScreenProps> = ({ navigation
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={signupStep2Styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={signupStep2Styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <SignupHeader currentStep={2} stepTitle="비밀번호를 설정해주세요" />
 
-        <View style={styles.formContainer}>
+        <View style={signupStep2Styles.formContainer}>
           <PasswordInput
             value={form.password}
             onChangeText={(value) => handleInputChange('password', value)}
@@ -129,7 +129,7 @@ export const SignupStep2Screen: React.FC<SignupStep2ScreenProps> = ({ navigation
             error={errors.passwordConfirm}
           />
 
-          <Text style={styles.passwordHint}>
+          <Text style={signupStep2Styles.passwordHint}>
             비밀번호는 6자 이상이어야 하며, 영문자와 숫자를 포함해야 합니다.
           </Text>
 
@@ -145,30 +145,5 @@ export const SignupStep2Screen: React.FC<SignupStep2ScreenProps> = ({ navigation
     </KeyboardAvoidingView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#7CB342',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  formContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 30,
-    paddingTop: 30,
-    paddingBottom: 40,
-  },
-  passwordHint: {
-    fontSize: 12,
-    color: '#666666',
-    marginBottom: 30,
-    lineHeight: 16,
-  },
-});
 
 export default SignupStep2Screen; 
