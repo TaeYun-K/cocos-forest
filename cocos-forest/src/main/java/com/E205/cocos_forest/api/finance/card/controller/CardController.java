@@ -35,6 +35,14 @@ public class CardController {
         return new BaseResponse<>(cardTransactionQueryService.getMonthlySummary(userCardId, yearMonth));
     }
 
+    @Operation(summary = "월별 카드 사용 내역 요약 조회 api (카테고리별)", description = "특정 카드의 월별 사용 내역 요약을 카테고리별로 조회합니다.")
+    @GetMapping("/{userCardId}/transactions/monthly-summary/by-category")
+    public BaseResponse<CardMonthlySummaryOut> getMonthlySummaryByCategory(@PathVariable String userCardId,
+                                                                           @RequestParam String yearMonth,
+                                                                           @RequestParam String categoryId) {
+        return new BaseResponse<>(cardTransactionQueryService.getMonthlySummaryByCategory(userCardId, yearMonth, categoryId));
+    }
+
     @Operation(summary = "일별 카드 상세 조회 api", description = "지정 일자의 카드 거래 상세와 합계를 조회합니다.")
     @GetMapping("/{userCardId}/transactions/daily-details")
     public BaseResponse<CardDailyDetailsOut> getDailyDetails(@PathVariable String userCardId,

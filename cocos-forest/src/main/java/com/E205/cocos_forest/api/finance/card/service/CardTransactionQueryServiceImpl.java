@@ -346,7 +346,89 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .toList();
     }
 
-    // 소숫점 자리수 반올림
+    // 카테고리별 요약 조회 (월별 요약 조회와 동일하지만, categoryId 로 필터링 한 값 반환)
+    @Override
+    public CardMonthlySummaryOut getMonthlySummaryByCategory(String userCardId, String yearMonth, String categoryId) {
+
+        // 입력값 검증
+        if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(yearMonth) || !StringUtils.hasText(categoryId)) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
+        }
+
+        YearMonth targetMonth = parseYearMonth(yearMonth);
+
+        UserCard userCard = resolveUserCard(userCardId);
+
+        LocalDate startDate = targetMonth.atDay(1);
+        LocalDate endDate = targetMonth.atEndOfMonth();
+
+        // 해당 카드 소유자의 월 거래내역 조회
+        List<CardTransaction> transactions = cardTransactionRepository.findByUserIdAndTxDateBetween(
+            userCard.getUserId(), startDate, endDate);
+
+        List<CardTransaction> approvedTransactions = transactions.stream()
+            .filter(tx -> tx.getStatus() == CardTransaction.Status.APPROVED)
+            .filter(tx -> categoryId.equals(tx.getCategoryId())) // categoryId 로 필터링
+            .toList();
+
+        Map<String, Category> categoryMap = loadCategories(approvedTransactions);
+        Map<String, BigDecimal> factorMap = loadEmissionFactors(approvedTransactions);
+
+        SummaryAccumulator totalAccumulator = new SummaryAccumulator();
+        Map<LocalDate, SummaryAccumulator> dailyAccumulators = new HashMap<>();
+        Map<String, SummaryAccumulator> categoryAccumulators = new HashMap<>();
+
+        for (CardTransaction tx : approvedTransactions) {
+            long amount = tx.getAmountKrw();
+            BigDecimal factor = factorMap.getOrDefault(tx.getCategoryId(), BigDecimal.ZERO);
+            BigDecimal carbon = factor.multiply(BigDecimal.valueOf(amount));
+
+            totalAccumulator.add(amount, carbon);
+            dailyAccumulators
+                .computeIfAbsent(tx.getTxDate(), ignored -> new SummaryAccumulator())
+                .add(amount, carbon);
+            categoryAccumulators
+                .computeIfAbsent(tx.getCategoryId(), ignored -> new SummaryAccumulator())
+                .add(amount, carbon);
+        }
+
+        long daysActive = dailyAccumulators.values().stream()
+            .filter(acc -> acc.getTransactionCount() > 0)
+            .count();
+
+        long avgPerDayAmount = daysActive == 0
+            ? 0
+            : BigDecimal.valueOf(totalAccumulator.getAmountTotal())
+                .divide(BigDecimal.valueOf(daysActive), 0, RoundingMode.HALF_UP)
+                .longValue();
+
+        BigDecimal avgPerDayCarbon = daysActive == 0
+            ? BigDecimal.ZERO
+            : scale(totalAccumulator.getCarbonTotal()
+                .divide(BigDecimal.valueOf(daysActive), 2, RoundingMode.HALF_UP), 2);
+
+        CardMonthlySummaryOut.Totals totals = CardMonthlySummaryOut.Totals.builder()
+            .amountTotal(totalAccumulator.getAmountTotal())
+            .carbonTotalKg(scale(totalAccumulator.getCarbonTotal(), 2))
+            .transactionCount(totalAccumulator.getTransactionCount())
+            .daysActive(daysActive)
+            .avgPerDayAmount(avgPerDayAmount)
+            .avgPerDayCarbonKg(avgPerDayCarbon)
+            .build();
+
+        List<CardMonthlySummaryOut.Daily> dailySummaries = buildDailySummaries(startDate, endDate, dailyAccumulators);
+        List<CardMonthlySummaryOut.CategoryBreakdown> categorySummaries = buildCategorySummaries(
+            categoryAccumulators, totalAccumulator, categoryMap);
+
+        return CardMonthlySummaryOut.builder()
+            .userCardId(userCardId)
+            .yearMonth(targetMonth.format(YEAR_MONTH_FORMATTER))
+            .totals(totals)
+            .daily(dailySummaries)
+            .byCategory(categorySummaries)
+            .build();
+    }
+
     private static BigDecimal scale(BigDecimal value, int scale) {
         return value.setScale(scale, RoundingMode.HALF_UP);
     }
