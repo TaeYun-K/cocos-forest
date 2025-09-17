@@ -6,7 +6,7 @@ import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkage;
 import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkageRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.external.ssafy.SsafyGateway;
-import com.E205.cocos_forest.global.external.ssafy.SsafyProperties;
+import com.E205.cocos_forest.global.external.ssafy.config.SsafyProperties;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

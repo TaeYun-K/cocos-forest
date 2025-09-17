@@ -2,6 +2,8 @@ package com.E205.cocos_forest.api.finance.card.controller;
 
 import com.E205.cocos_forest.api.finance.card.dto.in.CardLinkCreateIn;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardLinkOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.CardMonthlySummaryOut;
+import com.E205.cocos_forest.api.finance.card.service.CardTransactionQueryService;
 import com.E205.cocos_forest.api.finance.card.service.UserCardService;
 import com.E205.cocos_forest.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,17 +12,25 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "카드 연동 API", description = "사용자 카드 연동")
+@Tag(name = "카드 API", description = "카드 연결, 소비내역/탄소배출량 조회 API")
 @RestController
-@RequestMapping("/api/finance/cards")
+@RequestMapping("/api/finance/user-cards")
 @RequiredArgsConstructor
 public class CardController {
 
     private final UserCardService userCardService;
+    private final CardTransactionQueryService cardTransactionQueryService;
 
-    @Operation(summary = "카드 연결", description = "선택한 카드 상품을 SSAFY에 생성/연동하고 저장")
-    @PostMapping("/link")
+    @Operation(summary = "카드 연결 api", description = "카드를 연결합니다.")
+    @PostMapping
     public BaseResponse<CardLinkOut> link(@RequestBody @Valid CardLinkCreateIn in) {
         return new BaseResponse<>(userCardService.linkCard(in));
+    }
+
+    @Operation(summary = "월별 카드 사용 내역 요약 조회 api", description = "특정 카드의 월별 사용 내역 요약을 조회합니다.")
+    @GetMapping("/{userCardId}/transactions/monthly-summary")
+    public BaseResponse<CardMonthlySummaryOut> getMonthlySummary(@PathVariable String userCardId,
+                                                                @RequestParam String yearMonth) {
+        return new BaseResponse<>(cardTransactionQueryService.getMonthlySummary(userCardId, yearMonth));
     }
 }

@@ -1,7 +1,8 @@
-// global/external/ssafy/SsafyHeaderFactory.java
-package com.E205.cocos_forest.global.external.ssafy;
+// global/external/ssafy/header/SsafyHeaderFactory.java
+package com.E205.cocos_forest.global.external.ssafy.header;
 
-import com.E205.cocos_forest.global.external.ssafy.dto.SsafyHeader;
+import com.E205.cocos_forest.global.external.ssafy.config.SsafyProperties;
+import com.E205.cocos_forest.global.external.ssafy.header.SsafyHeader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

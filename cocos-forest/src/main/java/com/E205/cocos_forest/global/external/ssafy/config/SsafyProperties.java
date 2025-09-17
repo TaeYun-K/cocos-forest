@@ -1,5 +1,5 @@
-// global/external/ssafy/SsafyProperties.java
-package com.E205.cocos_forest.global.external.ssafy;
+// global/external/ssafy/config/SsafyProperties.java
+package com.E205.cocos_forest.global.external.ssafy.config;
 
 import lombok.Getter;
 import lombok.Setter;
