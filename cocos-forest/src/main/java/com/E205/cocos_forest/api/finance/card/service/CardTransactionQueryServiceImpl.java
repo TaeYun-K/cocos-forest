@@ -1,6 +1,7 @@
 package com.E205.cocos_forest.api.finance.card.service;
 
 import com.E205.cocos_forest.api.finance.card.dto.out.CardMonthlySummaryOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.CardDailyDetailsOut;
 import com.E205.cocos_forest.domain.finance.carbon.EmissionFactor;
 import com.E205.cocos_forest.domain.finance.carbon.EmissionFactorRepository;
 import com.E205.cocos_forest.domain.finance.card.UserCard;
@@ -136,6 +137,112 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .byCategory(categorySummaries)
             .build();
     }
+    
+    // 일별 상세 조회
+    @Override
+    public CardDailyDetailsOut getDailyDetails(String userCardId, String date) {
+
+        long started = System.currentTimeMillis();
+
+        if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(date)) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
+        }
+
+        LocalDate targetDate;
+        try {
+            targetDate = LocalDate.parse(date);
+        } catch (Exception ex) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Invalid date format");
+        }
+
+        UserCard userCard = resolveUserCard(userCardId);
+
+        List<CardTransaction> transactions = cardTransactionRepository.findByUserIdAndTxDate(
+            userCard.getUserId(), targetDate);
+
+        // 사용된 카테고리와 배출계수 미리 로드
+        Map<String, Category> categoryMap = loadCategories(transactions);
+        Map<String, BigDecimal> factorMap = loadEmissionFactors(transactions);
+
+        // 거래 내역 목록 생성
+        List<CardDailyDetailsOut.TransactionItem> items = transactions.stream()
+            .map(tx -> {
+                BigDecimal factor = factorMap.getOrDefault(tx.getCategoryId(), BigDecimal.ZERO);
+                BigDecimal carbon = factor.multiply(BigDecimal.valueOf(tx.getAmountKrw()));
+
+                String categoryName = Optional.ofNullable(categoryMap.get(tx.getCategoryId()))
+                    .map(Category::getName)
+                    .orElse(tx.getCategoryId());
+
+                String approvedAt = null;
+                if (tx.getTxDate() != null) {
+                    // txDate + txTime 으로 ISO 8601 형식의 문자열 생성
+                    var ldt = tx.getTxTime() == null
+                        ? tx.getTxDate().atStartOfDay()
+                        : tx.getTxDate().atTime(tx.getTxTime());
+                    approvedAt = java.time.ZonedDateTime.of(ldt, java.time.ZoneId.of("Asia/Seoul"))
+                        .toOffsetDateTime()
+                        .toString();
+                }
+
+                // 거래내역 항목 생성
+                return CardDailyDetailsOut.TransactionItem.builder()
+                    .externalTransactionId(tx.getTransactionNo())
+                    .approvedAt(approvedAt)
+                    .txDate(tx.getTxDate() == null ? null : tx.getTxDate().toString())
+                    .txTime(tx.getTxTime() == null ? null : tx.getTxTime().toString())
+                    .amountKrw(tx.getAmountKrw())
+                    .status(tx.getStatus() == null ? null : tx.getStatus().name())
+                    .merchantName(null)
+                    .categoryId(tx.getCategoryId())
+                    .categoryName(categoryName)
+                    .cardLast4(tx.getCardLast4())
+                    .issuerCode(tx.getIssueCode())
+                    .cardName(tx.getCardName())
+                    .source("SSAFY")
+                    .carbonKg(scale(carbon, 2))
+                    .carbonCoefId(null)
+                    .build();
+            })
+            .sorted(Comparator.comparing(CardDailyDetailsOut.TransactionItem::getApprovedAt,
+                Comparator.nullsLast(String::compareTo)).reversed())
+            .toList();
+
+        // PENDING 상태인 거래만 합계에 포함하며 집계
+        List<CardDailyDetailsOut.TransactionItem> pendingItems = items.stream()
+            .filter(i -> "PENDING".equals(i.getStatus()))
+            .toList();
+
+        long amountTotal = pendingItems.stream().mapToLong(CardDailyDetailsOut.TransactionItem::getAmountKrw).sum();
+        BigDecimal carbonTotal = pendingItems.stream()
+            .map(CardDailyDetailsOut.TransactionItem::getCarbonKg)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        CardDailyDetailsOut.Totals totals = CardDailyDetailsOut.Totals.builder()
+            .amountTotal(amountTotal)
+            .carbonTotalKg(scale(carbonTotal, 2))
+            .transactionCount(pendingItems.size())
+            .build();
+
+        long durationMs = System.currentTimeMillis() - started;
+
+        // 메타 정보 생성
+        CardDailyDetailsOut.Meta meta = CardDailyDetailsOut.Meta.builder()
+            .lockAcquired(false)
+            .durationMs(durationMs)
+            .retry(0)
+            .error(null)
+            .build();
+
+        return CardDailyDetailsOut.builder()
+            .userCardId(userCardId)
+            .date(targetDate.toString())
+            .currency("KRW")
+            .totals(totals)
+            .transactions(items)
+            .meta(meta)
+            .build();
+    }
 
     // yearMont 를 yyyy-MM 형식으로 파싱
     private YearMonth parseYearMonth(String yearMonth) {
@@ -239,7 +346,89 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .toList();
     }
 
-    // 소숫점 자리수 반올림
+    // 카테고리별 요약 조회 (월별 요약 조회와 동일하지만, categoryId 로 필터링 한 값 반환)
+    @Override
+    public CardMonthlySummaryOut getMonthlySummaryByCategory(String userCardId, String yearMonth, String categoryId) {
+
+        // 입력값 검증
+        if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(yearMonth) || !StringUtils.hasText(categoryId)) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
+        }
+
+        YearMonth targetMonth = parseYearMonth(yearMonth);
+
+        UserCard userCard = resolveUserCard(userCardId);
+
+        LocalDate startDate = targetMonth.atDay(1);
+        LocalDate endDate = targetMonth.atEndOfMonth();
+
+        // 해당 카드 소유자의 월 거래내역 조회
+        List<CardTransaction> transactions = cardTransactionRepository.findByUserIdAndTxDateBetween(
+            userCard.getUserId(), startDate, endDate);
+
+        List<CardTransaction> approvedTransactions = transactions.stream()
+            .filter(tx -> tx.getStatus() == CardTransaction.Status.APPROVED)
+            .filter(tx -> categoryId.equals(tx.getCategoryId())) // categoryId 로 필터링
+            .toList();
+
+        Map<String, Category> categoryMap = loadCategories(approvedTransactions);
+        Map<String, BigDecimal> factorMap = loadEmissionFactors(approvedTransactions);
+
+        SummaryAccumulator totalAccumulator = new SummaryAccumulator();
+        Map<LocalDate, SummaryAccumulator> dailyAccumulators = new HashMap<>();
+        Map<String, SummaryAccumulator> categoryAccumulators = new HashMap<>();
+
+        for (CardTransaction tx : approvedTransactions) {
+            long amount = tx.getAmountKrw();
+            BigDecimal factor = factorMap.getOrDefault(tx.getCategoryId(), BigDecimal.ZERO);
+            BigDecimal carbon = factor.multiply(BigDecimal.valueOf(amount));
+
+            totalAccumulator.add(amount, carbon);
+            dailyAccumulators
+                .computeIfAbsent(tx.getTxDate(), ignored -> new SummaryAccumulator())
+                .add(amount, carbon);
+            categoryAccumulators
+                .computeIfAbsent(tx.getCategoryId(), ignored -> new SummaryAccumulator())
+                .add(amount, carbon);
+        }
+
+        long daysActive = dailyAccumulators.values().stream()
+            .filter(acc -> acc.getTransactionCount() > 0)
+            .count();
+
+        long avgPerDayAmount = daysActive == 0
+            ? 0
+            : BigDecimal.valueOf(totalAccumulator.getAmountTotal())
+                .divide(BigDecimal.valueOf(daysActive), 0, RoundingMode.HALF_UP)
+                .longValue();
+
+        BigDecimal avgPerDayCarbon = daysActive == 0
+            ? BigDecimal.ZERO
+            : scale(totalAccumulator.getCarbonTotal()
+                .divide(BigDecimal.valueOf(daysActive), 2, RoundingMode.HALF_UP), 2);
+
+        CardMonthlySummaryOut.Totals totals = CardMonthlySummaryOut.Totals.builder()
+            .amountTotal(totalAccumulator.getAmountTotal())
+            .carbonTotalKg(scale(totalAccumulator.getCarbonTotal(), 2))
+            .transactionCount(totalAccumulator.getTransactionCount())
+            .daysActive(daysActive)
+            .avgPerDayAmount(avgPerDayAmount)
+            .avgPerDayCarbonKg(avgPerDayCarbon)
+            .build();
+
+        List<CardMonthlySummaryOut.Daily> dailySummaries = buildDailySummaries(startDate, endDate, dailyAccumulators);
+        List<CardMonthlySummaryOut.CategoryBreakdown> categorySummaries = buildCategorySummaries(
+            categoryAccumulators, totalAccumulator, categoryMap);
+
+        return CardMonthlySummaryOut.builder()
+            .userCardId(userCardId)
+            .yearMonth(targetMonth.format(YEAR_MONTH_FORMATTER))
+            .totals(totals)
+            .daily(dailySummaries)
+            .byCategory(categorySummaries)
+            .build();
+    }
+
     private static BigDecimal scale(BigDecimal value, int scale) {
         return value.setScale(scale, RoundingMode.HALF_UP);
     }
