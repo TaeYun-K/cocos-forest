@@ -1,12 +1,15 @@
 package com.E205.cocos_forest.api.finance.card.controller;
 
 import com.E205.cocos_forest.api.finance.card.dto.in.CardLinkCreateIn;
+import com.E205.cocos_forest.api.finance.card.dto.in.CardPaymentCreateIn;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardCategoryMonthlyDetailsOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardDailyDetailsOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardLinkOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardMonthlySummaryOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.CardPaymentOut;
 import com.E205.cocos_forest.api.finance.card.service.CardTransactionQueryService;
 import com.E205.cocos_forest.api.finance.card.service.UserCardService;
+import com.E205.cocos_forest.api.finance.card.service.CardPaymentService;
 import com.E205.cocos_forest.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,6 +25,7 @@ public class CardController {
 
     private final UserCardService userCardService;
     private final CardTransactionQueryService cardTransactionQueryService;
+    private final CardPaymentService cardPaymentService;
 
     @Operation(summary = "카드 연결 api", description = "카드를 연결합니다.")
     @PostMapping
@@ -50,5 +54,13 @@ public class CardController {
     public BaseResponse<CardDailyDetailsOut> getDailyDetails(@PathVariable String userCardId,
                                                             @RequestParam String date) {
         return new BaseResponse<>(cardTransactionQueryService.getDailyDetails(userCardId, date));
+    }
+
+    @Operation(summary = "카드 결제 이벤트 생성 api", description = "SSAFY 결제 API 호출 후 내부 거래 저장")
+    @PostMapping("/{userCardId}/transactions/pay")
+    public BaseResponse<CardPaymentOut> pay(@RequestParam Long userId,
+                                            @PathVariable String userCardId,
+                                            @RequestBody @Valid CardPaymentCreateIn in) {
+        return new BaseResponse<>(cardPaymentService.pay(userId, userCardId, in));
     }
 }

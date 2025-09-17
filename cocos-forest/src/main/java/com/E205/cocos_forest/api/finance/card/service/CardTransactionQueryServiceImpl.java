@@ -473,9 +473,10 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
                 .toString();
         }
 
-        String merchantName = Optional.ofNullable(tx.getMerchantId())
-            .map(merchantMap::get)
-            .map(Merchant::getName)
+        // 가맹점 Id로 이름을 가져오기
+        String merchantName = Optional.ofNullable(tx.getMerchantId()) //nullable 하기 때문에 Optional 형식으로 받음
+            .map(merchantMap::get) //객체의 메서드 참조
+            .map(Merchant::getName) // 클래스의 메서드 참조
             .orElse(null);
 
         return CardDailyDetailsOut.TransactionItem.builder()
