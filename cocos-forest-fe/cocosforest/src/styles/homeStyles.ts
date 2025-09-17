@@ -53,7 +53,7 @@ export const homeStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  cocoImg: { width: 44, height: 44, resizeMode: "contain" },
+  cocoImg: { width: 55, height: 55, resizeMode: "contain" },
   bubbleWrap: { position: "relative", flexShrink: 1 },
   bubble: {
     backgroundColor: "#ffffff",
