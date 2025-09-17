@@ -1,9 +1,9 @@
 // src/types/dashboard.ts
 
-// 월별 리포트 데이터 타입 (새로운 API 명세 기반)
+// 월별 리포트 데이터 타입 (실제 API 응답 기반)
 export interface MonthlyReportData {
-  cardId: string;
-  yearMonth: string;
+  userCardId: string;
+  yearMonth?: string; // API에서 직접 제공되지 않음, 클라이언트에서 추가
   currency: string;
   totals: {
     amountTotal: number;
@@ -38,13 +38,17 @@ export interface CategoryData {
   color: string;
 }
 
-// 일일 상세 데이터 타입
+// 일일 상세 데이터 타입 (실제 API 응답 기반)
 export interface DayData {
-  cardId: string;
+  userCardId: string;
   date: string;
-  fresh: boolean;
-  lastSyncedAt: string;
-  syncStatus: string;
+  currency: string;
+  meta: {
+    durationMs: number;
+    error: any;
+    lockAcquired: boolean;
+    retry: number;
+  };
   totals: DayTotals;
   transactions: Array<Transaction>;
 }

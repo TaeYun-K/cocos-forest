@@ -6,7 +6,7 @@ import { Card } from '../common';
 export const TodayEmissionStatus: React.FC = () => {
   const { data: todayData, isLoading, error } = useTodayData();
 
-  const todayEmission = todayData?.totals?.carbonTotalKg || 0.5;
+  const todayEmission = todayData?.totals?.carbonTotalKg ?? 0.5;
   const averageEmission = 0.8;
   const emissionDifference = averageEmission - todayEmission;
 

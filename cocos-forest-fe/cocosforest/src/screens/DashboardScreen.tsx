@@ -30,7 +30,7 @@ export default function DashboardScreen() {
 
   // GIF 선택 로직
   const getCocoGif = () => {
-    const todayEmission = todayData?.totals?.carbonTotalKg || 0.5;
+    const todayEmission = todayData?.totals?.carbonTotalKg ?? 0.5;
     const averageEmission = 0.8;
 
     if (todayEmission < 0.4) {
