@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useDashboardStore from '../store/dashboardStore';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
@@ -19,6 +19,7 @@ export default function DashboardScreen() {
     selectedDay,
     activeTab,
     showDetailCard,
+    todayData,
     // 액션
     setActiveTab,
     handleCloseDetailCard,
@@ -26,6 +27,20 @@ export default function DashboardScreen() {
     loadMonthlyReport,
     initializeDashboard
   } = useDashboardStore();
+
+  // GIF 선택 로직
+  const getCocoGif = () => {
+    const todayEmission = todayData?.totals?.carbonTotalKg || 0.5;
+    const averageEmission = 0.8;
+
+    if (todayEmission < 0.4) {
+      return require('../assets/coco-smile-unscreen.gif');
+    } else if (todayEmission > averageEmission) {
+      return require('../assets/coco-sad-unscreen.gif');
+    } else {
+      return require('../assets/coco-init-unscreen.gif');
+    }
+  };
 
 
   // 초기 데이터 로딩 및 월 변경 시 데이터 리로딩
@@ -41,12 +56,25 @@ export default function DashboardScreen() {
       <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
 
         {/* AI 분석 결과 */}
-        <View style={commonStyles.section}>
+        <View style={[commonStyles.section, { marginBottom: -155 }]}>
           <AIAnalysisCard />
         </View>
 
+        {/* Coco GIF */}
+        <View style={[commonStyles.section, { paddingVertical: 0, marginTop: -25 }]}>
+          <Image
+            source={getCocoGif()}
+            style={{
+              width: 600,
+              height: 600,
+              alignSelf: 'center',
+            }}
+            resizeMode="contain"
+          />
+        </View>
+
         {/* 오늘 탄소 배출 현황 */}
-        <View style={commonStyles.section}>
+        <View style={[commonStyles.section, { marginTop: -180 }]}>
           <TodayEmissionStatus />
         </View>
 
