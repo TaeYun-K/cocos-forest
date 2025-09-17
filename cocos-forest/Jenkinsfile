@@ -80,11 +80,13 @@ pipeline {
               # --- 환경별 메시지 및 색상 설정 ---
               if [ "$TARGET_BRANCH" = "dev" ]; then
                   TITLE_MSG="🌱 **코코야** 개발 서버 배포 성공!"
-                  MAIN_MSG="✅ \`dev\` 브랜치가 개발 서버에 성공적으로 배포되었습니다."
+                  # [수정됨] 백슬래시 이스케이프 처리: \` -> \\`
+                  MAIN_MSG="✅ \\`dev\\` 브랜치가 개발 서버에 성공적으로 배포되었습니다."
                   ATTACHMENT_COLOR="#007bff" # 파란색
               else
                   TITLE_MSG="🎉 **코코야** 운영 서버 배포 성공!"
-                  MAIN_MSG="✅ \`master\` 브랜치가 운영 서버에 성공적으로 배포되었습니다."
+                  # [수정됨] 백슬래시 이스케이프 처리: \` -> \\`
+                  MAIN_MSG="✅ \\`master\\` 브랜치가 운영 서버에 성공적으로 배포되었습니다."
                   ATTACHMENT_COLOR="#28a745" # 초록색
               fi
 
