@@ -69,41 +69,60 @@ pipeline {
     post {
       success {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh """
-            COMMIT7=\$(echo "\${GIT_COMMIT}" | cut -c1-7)
-            TARGET="\${gitlabTargetBranch}"
-            curl -sS -X POST -H 'Content-Type: application/json' \
-              -d '{
-                "text": ":rocket: **배포 성공!** :tada:\\n- **Job**: \${JOB_NAME}\\n- **Build**: #\${BUILD_NUMBER}\\n- **Branch**: \${TARGET}\\n- **Commit**: \${COMMIT7}\\n- **Docker Image**: \${IMAGE_NAME}\\n🔗 [빌드 로그 확인](\${BUILD_URL})\\n@channel"
-              }' \
-              "\$MM_URL"
-          """
+          sh '''
+            set -e
+
+            # 값 수집
+            TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
+            [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+            COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT:0:7}")"
+            AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
+
+            # 코드블록 형태로 2열(항목/내용) 표 스타일 메시지 생성
+            PAYLOAD=$(printf '%s' "{
+              \"text\": \"\\\n\\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n📦 Docker Image\\t${IMAGE_NAME}\\n🔗 빌드 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
+            }")
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+          '''
         }
       }
 
       failure {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh """
-            COMMIT7=\$(echo "\${GIT_COMMIT}" | cut -c1-7)
-            TARGET="\${gitlabTargetBranch}"
-            curl -sS -X POST -H 'Content-Type: application/json' \
-              -d '{
-                "text": ":fire: **배포 실패!** :boom:\\n- **Job**: \${JOB_NAME}\\n- **Build**: #\${BUILD_NUMBER}\\n- **Branch**: \${TARGET}\\n🔗 [에러 로그 확인](\${BUILD_URL})\\n@here"
-              }' \
-              "\$MM_URL"
-          """
+          sh '''
+            set -e
+
+            TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
+            [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+            COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT:0:7}")"
+            AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
+
+            PAYLOAD=$(printf '%s' "{
+              \"text\": \":fire: **배포 실패!** :boom:\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n🔗 에러 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
+            }")
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+          '''
         }
       }
 
       unstable {
         withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
-          sh """
-            curl -sS -X POST -H 'Content-Type: application/json' \
-              -d '{
-                "text": ":warning: **빌드 불안정!**\\n- **Job**: \${JOB_NAME}\\n- **Build**: #\${BUILD_NUMBER}\\n🔗 [자세히 보기](\${BUILD_URL})"
-              }' \
-              "\$MM_URL"
-          """
+          sh '''
+            set -e
+
+            TARGET="${gitlabTargetBranch:-${BRANCH_NAME}}"
+            [ -z "$TARGET" ] && TARGET="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+            COMMIT7="$(git rev-parse --short=7 HEAD 2>/dev/null || echo "${GIT_COMMIT:0:7}")"
+            AUTHOR="$(git log -1 --pretty=format:%an 2>/dev/null || echo "${GIT_AUTHOR_NAME:-unknown}")"
+
+            PAYLOAD=$(printf '%s' "{
+              \"text\": \":warning: **빌드 불안정!**\\n\\n\\`\\`\\`\\n항목\\t내용\\n🚀 Job\\t${JOB_NAME}\\n🔢 Build\\t#${BUILD_NUMBER}\\n🌿 Branch\\t${TARGET}\\ncommit\\t${COMMIT7}\\n🧑‍💻 Author\\t${AUTHOR}\\n🔗 빌드 로그\\t${BUILD_URL}\\n\\`\\`\\`\"
+            }")
+
+            curl -sS -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MM_URL"
+          '''
         }
       }
 
@@ -111,7 +130,4 @@ pipeline {
         cleanWs()
       }
     }
-
-
-
 }
