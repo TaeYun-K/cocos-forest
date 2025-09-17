@@ -2,6 +2,7 @@ package com.E205.cocos_forest.api.finance.card.service;
 
 import com.E205.cocos_forest.api.finance.card.dto.out.CardMonthlySummaryOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardDailyDetailsOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.CardCategoryMonthlyDetailsOut;
 import com.E205.cocos_forest.domain.finance.carbon.EmissionFactor;
 import com.E205.cocos_forest.domain.finance.carbon.EmissionFactorRepository;
 import com.E205.cocos_forest.domain.finance.card.UserCard;
@@ -12,6 +13,8 @@ import com.E205.cocos_forest.domain.finance.category.Category;
 import com.E205.cocos_forest.domain.finance.category.CategoryRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
+import com.E205.cocos_forest.domain.finance.merchant.Merchant;
+import com.E205.cocos_forest.domain.finance.merchant.MerchantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +40,7 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     private final CardTransactionRepository cardTransactionRepository;
     private final CategoryRepository categoryRepository;
     private final EmissionFactorRepository emissionFactorRepository;
+    private final MerchantRepository merchantRepository;
 
     @Override
     public CardMonthlySummaryOut getMonthlySummary(String userCardId, String yearMonth) {
@@ -163,6 +167,7 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
         // 사용된 카테고리와 배출계수 미리 로드
         Map<String, Category> categoryMap = loadCategories(transactions);
         Map<String, BigDecimal> factorMap = loadEmissionFactors(transactions);
+        Map<Long, com.E205.cocos_forest.domain.finance.merchant.Merchant> merchantMap = loadMerchants(transactions);
 
         // 거래 내역 목록 생성
         List<CardDailyDetailsOut.TransactionItem> items = transactions.stream()
@@ -193,7 +198,10 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
                     .txTime(tx.getTxTime() == null ? null : tx.getTxTime().toString())
                     .amountKrw(tx.getAmountKrw())
                     .status(tx.getStatus() == null ? null : tx.getStatus().name())
-                    .merchantName(null)
+                    .merchantName(Optional.ofNullable(tx.getMerchantId())
+                        .map(merchantMap::get)
+                        .map(Merchant::getName)
+                        .orElse(null))
                     .categoryId(tx.getCategoryId())
                     .categoryName(categoryName)
                     .cardLast4(tx.getCardLast4())
@@ -346,9 +354,9 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .toList();
     }
 
-    // 카테고리별 요약 조회 (월별 요약 조회와 동일하지만, categoryId 로 필터링 한 값 반환)
+    // 카테고리별 조회
     @Override
-    public CardMonthlySummaryOut getMonthlySummaryByCategory(String userCardId, String yearMonth, String categoryId) {
+    public CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategory(String userCardId, String yearMonth, String categoryId) {
 
         // 입력값 검증
         if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(yearMonth) || !StringUtils.hasText(categoryId)) {
@@ -374,58 +382,37 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
         Map<String, Category> categoryMap = loadCategories(approvedTransactions);
         Map<String, BigDecimal> factorMap = loadEmissionFactors(approvedTransactions);
 
-        SummaryAccumulator totalAccumulator = new SummaryAccumulator();
-        Map<LocalDate, SummaryAccumulator> dailyAccumulators = new HashMap<>();
-        Map<String, SummaryAccumulator> categoryAccumulators = new HashMap<>();
+        Map<Long, Merchant> merchantMap = loadMerchants(approvedTransactions);
 
-        for (CardTransaction tx : approvedTransactions) {
-            long amount = tx.getAmountKrw();
-            BigDecimal factor = factorMap.getOrDefault(tx.getCategoryId(), BigDecimal.ZERO);
-            BigDecimal carbon = factor.multiply(BigDecimal.valueOf(amount));
+        // Build transaction items for the month filtered by category
+        List<CardDailyDetailsOut.TransactionItem> items = approvedTransactions.stream()
+            .map(tx -> toTransactionItem(tx, categoryMap, factorMap, merchantMap))
+            .sorted(Comparator.comparing(CardDailyDetailsOut.TransactionItem::getApprovedAt,
+                Comparator.nullsLast(String::compareTo)).reversed())
+            .toList();
 
-            totalAccumulator.add(amount, carbon);
-            dailyAccumulators
-                .computeIfAbsent(tx.getTxDate(), ignored -> new SummaryAccumulator())
-                .add(amount, carbon);
-            categoryAccumulators
-                .computeIfAbsent(tx.getCategoryId(), ignored -> new SummaryAccumulator())
-                .add(amount, carbon);
-        }
+        long amountTotal = items.stream().mapToLong(CardDailyDetailsOut.TransactionItem::getAmountKrw).sum();
+        BigDecimal carbonTotal = items.stream()
+            .map(CardDailyDetailsOut.TransactionItem::getCarbonKg)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        long daysActive = dailyAccumulators.values().stream()
-            .filter(acc -> acc.getTransactionCount() > 0)
-            .count();
+        String categoryName = Optional.ofNullable(categoryMap.get(categoryId))
+            .map(Category::getName)
+            .orElse(categoryId);
 
-        long avgPerDayAmount = daysActive == 0
-            ? 0
-            : BigDecimal.valueOf(totalAccumulator.getAmountTotal())
-                .divide(BigDecimal.valueOf(daysActive), 0, RoundingMode.HALF_UP)
-                .longValue();
-
-        BigDecimal avgPerDayCarbon = daysActive == 0
-            ? BigDecimal.ZERO
-            : scale(totalAccumulator.getCarbonTotal()
-                .divide(BigDecimal.valueOf(daysActive), 2, RoundingMode.HALF_UP), 2);
-
-        CardMonthlySummaryOut.Totals totals = CardMonthlySummaryOut.Totals.builder()
-            .amountTotal(totalAccumulator.getAmountTotal())
-            .carbonTotalKg(scale(totalAccumulator.getCarbonTotal(), 2))
-            .transactionCount(totalAccumulator.getTransactionCount())
-            .daysActive(daysActive)
-            .avgPerDayAmount(avgPerDayAmount)
-            .avgPerDayCarbonKg(avgPerDayCarbon)
+        CardCategoryMonthlyDetailsOut.Totals totals = CardCategoryMonthlyDetailsOut.Totals.builder()
+            .amountTotal(amountTotal)
+            .carbonTotalKg(scale(carbonTotal, 2))
+            .transactionCount(items.size())
             .build();
 
-        List<CardMonthlySummaryOut.Daily> dailySummaries = buildDailySummaries(startDate, endDate, dailyAccumulators);
-        List<CardMonthlySummaryOut.CategoryBreakdown> categorySummaries = buildCategorySummaries(
-            categoryAccumulators, totalAccumulator, categoryMap);
-
-        return CardMonthlySummaryOut.builder()
+        return CardCategoryMonthlyDetailsOut.builder()
             .userCardId(userCardId)
             .yearMonth(targetMonth.format(YEAR_MONTH_FORMATTER))
+            .categoryId(categoryId)
+            .categoryName(categoryName)
             .totals(totals)
-            .daily(dailySummaries)
-            .byCategory(categorySummaries)
+            .transactions(items)
             .build();
     }
 
@@ -460,5 +447,64 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
         BigDecimal getCarbonTotal() {
             return carbonTotal;
         }
+    }
+
+    // 거래 내역 정보를 TransacitonItem 으로 매핑
+    private CardDailyDetailsOut.TransactionItem toTransactionItem(
+        CardTransaction tx,
+        Map<String, Category> categoryMap,
+        Map<String, BigDecimal> factorMap,
+        Map<Long, Merchant> merchantMap
+    ) {
+        BigDecimal factor = factorMap.getOrDefault(tx.getCategoryId(), BigDecimal.ZERO);
+        BigDecimal carbon = factor.multiply(BigDecimal.valueOf(tx.getAmountKrw()));
+
+        String categoryName = Optional.ofNullable(categoryMap.get(tx.getCategoryId()))
+            .map(Category::getName)
+            .orElse(tx.getCategoryId());
+
+        String approvedAt = null;
+        if (tx.getTxDate() != null) {
+            var ldt = tx.getTxTime() == null
+                ? tx.getTxDate().atStartOfDay()
+                : tx.getTxDate().atTime(tx.getTxTime());
+            approvedAt = java.time.ZonedDateTime.of(ldt, java.time.ZoneId.of("Asia/Seoul"))
+                .toOffsetDateTime()
+                .toString();
+        }
+
+        String merchantName = Optional.ofNullable(tx.getMerchantId())
+            .map(merchantMap::get)
+            .map(Merchant::getName)
+            .orElse(null);
+
+        return CardDailyDetailsOut.TransactionItem.builder()
+            .externalTransactionId(tx.getTransactionNo())
+            .approvedAt(approvedAt)
+            .txDate(tx.getTxDate() == null ? null : tx.getTxDate().toString())
+            .txTime(tx.getTxTime() == null ? null : tx.getTxTime().toString())
+            .amountKrw(tx.getAmountKrw())
+            .status(tx.getStatus() == null ? null : tx.getStatus().name())
+            .merchantName(merchantName)
+            .categoryId(tx.getCategoryId())
+            .categoryName(categoryName)
+            .cardLast4(tx.getCardLast4())
+            .issuerCode(tx.getIssueCode())
+            .cardName(tx.getCardName())
+            .source("SSAFY")
+            .carbonKg(scale(carbon, 2))
+            .carbonCoefId(null)
+            .build();
+    }
+
+    // 거래에서 등장한 merchantId로 가맹점 정보를 미리 로딩합니다.
+    private Map<Long, Merchant> loadMerchants(List<CardTransaction> transactions) {
+        Set<Long> ids = transactions.stream()
+            .map(CardTransaction::getMerchantId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        if (ids.isEmpty()) return Collections.emptyMap();
+        return merchantRepository.findByIdIn(ids).stream()
+            .collect(Collectors.toMap(Merchant::getId, m -> m));
     }
 }
