@@ -29,8 +29,9 @@ public class AccountController {
     @Operation (summary = "수시 입출금 계좌 발급", description = "사용자 ID와 은행 코드, 계좌 상품 코드를 받아 수시 입출금 계좌를 발급합니다.")
     @PostMapping("/demand-deposit")
     public BaseResponse<AccountCreateOut> createDemandDepositAccount(
+            @RequestParam Long userId,
             @RequestBody @Valid AccountCreateIn request) {
-        AccountCreateOut result = accountService.createDemandDepositAccount(request);
+        AccountCreateOut result = accountService.createDemandDepositAccount(userId, request);
         return new BaseResponse<>(result);
     }
 

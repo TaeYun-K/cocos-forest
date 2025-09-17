@@ -7,6 +7,6 @@ import com.E205.cocos_forest.api.finance.account.dto.out.UserAccountOut;
 import java.util.List;
 
 public interface AccountService {
-    AccountCreateOut createDemandDepositAccount(AccountCreateIn request);
+    AccountCreateOut createDemandDepositAccount(Long userId, AccountCreateIn request);
     List<UserAccountOut> getUserAccounts(Long userId);
 }

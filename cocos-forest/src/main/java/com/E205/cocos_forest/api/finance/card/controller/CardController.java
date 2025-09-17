@@ -24,8 +24,9 @@ public class CardController {
 
     @Operation(summary = "카드 연결 api", description = "카드를 연결합니다.")
     @PostMapping
-    public BaseResponse<CardLinkOut> link(@RequestBody @Valid CardLinkCreateIn in) {
-        return new BaseResponse<>(userCardService.linkCard(in));
+    public BaseResponse<CardLinkOut> link(@RequestParam Long userId,
+                                          @RequestBody @Valid CardLinkCreateIn in) {
+        return new BaseResponse<>(userCardService.linkCard(userId, in));
     }
 
     @Operation(summary = "월별 카드 사용 내역 요약 조회 api", description = "특정 카드의 월별 사용 내역 요약을 조회합니다.")
