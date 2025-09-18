@@ -1,7 +1,7 @@
 // com.E205.cocos_forest.global.config.WebClientConfig
 package com.E205.cocos_forest.global.config;
 
-import com.E205.cocos_forest.global.external.ssafy.SsafyProperties;
+import com.E205.cocos_forest.global.external.ssafy.config.SsafyProperties;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
