@@ -19,6 +19,9 @@ apiClient.interceptors.request.use(
       const token = await AsyncStorage.getItem(ENV.AUTH_TOKEN_KEY);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log(`🔐 토큰 추가됨: ${token.substring(0, 20)}...`);
+      } else {
+        console.log('⚠️ 저장된 토큰이 없습니다');
       }
     } catch (error) {
       console.error('토큰 로드 오류:', error);
@@ -26,6 +29,10 @@ apiClient.interceptors.request.use(
 
     if (ENV.IS_DEV) {
       console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+      console.log('📋 Request Headers:', config.headers);
+      if (config.data) {
+        console.log('📊 Request Data:', config.data);
+      }
     }
     return config;
   },
