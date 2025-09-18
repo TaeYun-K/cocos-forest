@@ -57,5 +57,17 @@ public class UserChallenge {
     private LocalDateTime updatedAt;
 
     public enum Status { PENDING, DONE, FAIL }
+
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
 

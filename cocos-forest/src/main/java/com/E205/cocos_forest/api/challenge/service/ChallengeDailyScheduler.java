@@ -62,16 +62,16 @@ public class ChallengeDailyScheduler {
                 continue;
             }
 
-            // DONE이고 미지급이며 MANUAL이면 자동 지급
+            // 상태가 DONE이지만 미지급 상태면 자동 지급
             if (uc.getStatus() == UserChallenge.Status.DONE
                 && (uc.getRewardPoints() == null || uc.getRewardPoints() == 0)
-                && ch.getRewardType() == Challenge.RewardType.MANUAL) {
+                && (ch.getRewardType() == Challenge.RewardType.MANUAL || ch.getRewardType() == Challenge.RewardType.AUTO)) {
                 try {
                     pointService.earnPoints(uc.getUserId(), ch.getRewardPoints(), "CHALLENGE_REWARD", uc.getId(), ch.getTitle());
                     uc.setRewardPoints(ch.getRewardPoints());
                     userChallengeRepository.save(uc);
                 } catch (Exception e) {
-                    log.warn("[Challenge] Auto-claim failed: ucId={}, reason={}", uc.getId(), e.getMessage());
+                    log.warn("[Challenge] Scheduled reward claim failed: ucId={}, reason={}", uc.getId(), e.getMessage());
                 }
             }
         }

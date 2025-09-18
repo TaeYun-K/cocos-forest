@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -22,9 +23,9 @@ import org.springframework.context.annotation.Configuration;
                 description = "E205 - Coco's Forest (SSAFY 금융 연동/챌린지/포인트) API 문서",
                 contact = @Contact(name = "E205", email = "team-e205@example.com"),
                 license = @License(name = "Apache 2.0")
-        )
+        ),
+        security = @SecurityRequirement(name = "bearerAuth") //jwt 토큰 헤더 추가
 )
-// JWT를 추후 쓸 계획이면 유지, 없다면 이 어노테이션은 제거 가능
 @SecurityScheme(
         name = "bearerAuth",
         description = "JWT Authorization header using the Bearer scheme",

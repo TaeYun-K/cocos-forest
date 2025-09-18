@@ -68,8 +68,15 @@ public class ChallengeServiceImpl implements ChallengeService {
                 .orElseGet(() -> createPending(userId, ch, today));
 
             // 챌린지 달성 여부 계산 후 상태 갱신
-            Evaluation eval = evaluate(userId, ch, today);
-            applyEvaluation(uc, ch, eval);
+            Evaluation eval;
+            if (ch.getMetricType() == null || ch.getComparator() == null) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("warning", "challenge_misconfigured");
+                eval = new Evaluation(false, 0.0, m);
+            } else {
+                eval = evaluate(userId, ch, today);
+                applyEvaluation(uc, ch, eval);
+            }
 
             // 클라이언트 응답용 아이템 구성
             items.add(toItem(uc, ch, eval, now));
@@ -171,6 +178,9 @@ public class ChallengeServiceImpl implements ChallengeService {
         userChallengeRepository.save(uc);
     }
 
+    /**
+     * 단일 챌린지 항목을 응답 DTO로 변환
+     */
     private ChallengeTodayOut.Item toItem(UserChallenge uc, Challenge ch, Evaluation eval, OffsetDateTime now) {
         String code = deriveCode(ch);
         String instanceId = String.format("UC-%s-%s-%d", uc.getChallengeDate().format(COMPACT_DATE_FMT), code, uc.getId());
@@ -205,12 +215,18 @@ public class ChallengeServiceImpl implements ChallengeService {
             .build();
     }
 
+    /**
+     * 챌린지 코드 생성
+     */
     private String deriveCode(Challenge ch) {
         // Prefer categoryId as a stable code if present; otherwise sanitize title
         String base = Optional.ofNullable(ch.getCategoryId()).filter(s -> !s.isBlank()).orElse(ch.getTitle());
         return base.toUpperCase().replaceAll("[^A-Z0-9]+", "-");
     }
 
+    /**
+     * 규칙 문구 생성
+     */
     private String buildRule(Challenge ch) {
         // Fallback: build from comparator + threshold
         String comp = ch.getComparator() == Challenge.ComparatorType.LTE ? "≤" : "≥";
@@ -218,16 +234,28 @@ public class ChallengeServiceImpl implements ChallengeService {
         return String.format("목표: %s %s %s%s", ch.getMetricType(), comp, ch.getThresholdValue().stripTrailingZeros().toPlainString(), unit);
     }
 
+    /**
+     * 유저에게 보여줄 메시지를 생성
+     */
     private String buildMessage(Challenge ch, Evaluation eval, String statusStr) {
         if ("SUCCESS".equals(statusStr)) {
-            return "오늘 목표 달성!";
+            return "오늘 목표 달성 중!";
         }
         // simple guidance message from progress
         if (ch.getComparator() == Challenge.ComparatorType.LTE && ch.getMetricType() == Challenge.MetricType.AMOUNT) {
             try {
                 BigDecimal threshold = ch.getThresholdValue() == null ? BigDecimal.ZERO : ch.getThresholdValue();
-                BigDecimal spent = BigDecimal.valueOf(((Number) ((Map<?, ?>) eval.metrics().getOrDefault("amount", Map.of("krw", 0))).getOrDefault("krw", 0)).longValue());
-                BigDecimal remain = threshold.subtract(spent);
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> amount =
+                        (Map<String, Object>) eval.metrics().getOrDefault("amount", Map.<String, Object>of("krw", 0L));
+
+                Object krwObj = amount.getOrDefault("krw", 0L);
+                long spent = (krwObj instanceof Number n)
+                        ? n.longValue()
+                        : new BigDecimal(String.valueOf(krwObj)).longValue();
+
+                BigDecimal remain = threshold.subtract(BigDecimal.valueOf(spent));
                 if (remain.compareTo(BigDecimal.ZERO) > 0) {
                     return String.format("조금만 더! %,d원 남았어요", remain.longValue());
                 }
@@ -236,6 +264,9 @@ public class ChallengeServiceImpl implements ChallengeService {
         return "목표에 도전해보세요";
     }
 
+    /**
+     * 금일 승인된 카드 거래 중, 포함/제외 카테고리 필터를 적용해 합계(원) 계산
+     */
     private BigDecimal evaluateAmount(Long userId, Challenge ch, LocalDate date, Map<String, Object> metricsOut) {
         List<CardTransaction> txs = cardTransactionRepository.findByUserIdAndTxDate(userId, date);
         List<CardTransaction> approved = txs.stream()
@@ -258,6 +289,10 @@ public class ChallengeServiceImpl implements ChallengeService {
         return BigDecimal.valueOf(amount);
     }
 
+    /**
+     * 금일 탄소 배출량 평가
+     * - 추후 DailyEmission 등 집계 테이블과 연동 예정
+     */
     private BigDecimal evaluateEmission(Long userId, Challenge ch, LocalDate date, Map<String, Object> metricsOut) {
         // TODO: integrate with DailyEmission when available; placeholder 0
         Map<String, Object> carbon = new LinkedHashMap<>();
@@ -266,6 +301,9 @@ public class ChallengeServiceImpl implements ChallengeService {
         return BigDecimal.ZERO;
     }
 
+    /**
+     * JSON 문자열에서 특정 key의 배열 값을 Set<String>으로 파싱
+     */
     private Set<String> parseStringSet(String json, String key) {
         try {
             if (json == null || json.isBlank()) return Collections.emptySet();
@@ -281,6 +319,9 @@ public class ChallengeServiceImpl implements ChallengeService {
         }
     }
 
+    /**
+     * 진행도를 0.0~1.0 범위로 안전하게 보정
+     */
     private double clamp(double v) {
         if (Double.isNaN(v) || Double.isInfinite(v)) return 0.0;
         return Math.max(0.0, Math.min(1.0, v));
