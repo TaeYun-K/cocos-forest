@@ -13,6 +13,8 @@ interface EmailVerificationInputProps {
   isEmailVerified: boolean;
   emailError?: string;
   codeError?: string;
+  timeLeft?: number;
+  formatTime?: (seconds: number) => string;
 }
 
 export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
@@ -27,6 +29,8 @@ export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
   isEmailVerified,
   emailError,
   codeError,
+  timeLeft = 0,
+  formatTime,
 }) => {
   return (
     <View style={styles.inputContainer}>
@@ -92,7 +96,7 @@ export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
           <TouchableOpacity
             style={styles.verifyButton}
             onPress={onVerifyCode}
-            disabled={isLoading}
+            disabled={isLoading || timeLeft === 0}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -101,6 +105,18 @@ export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
             )}
           </TouchableOpacity>
         </View>
+      )}
+
+      {isCodeSent && !isEmailVerified && timeLeft > 0 && formatTime && (
+        <View style={styles.timerContainer}>
+          <Text style={styles.timerText}>
+            남은 시간: {formatTime(timeLeft)}
+          </Text>
+        </View>
+      )}
+
+      {codeError && (
+        <Text style={styles.errorText}>{codeError}</Text>
       )}
     </View>
   );
@@ -173,5 +189,14 @@ const styles = StyleSheet.create({
     minWidth: 80,
     alignItems: 'center',
     minHeight: 50,
+  },
+  timerContainer: {
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  timerText: {
+    fontSize: 14,
+    color: '#FF6B35',
+    fontWeight: '500',
   },
 });

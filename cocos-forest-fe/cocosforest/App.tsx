@@ -1,25 +1,24 @@
 // App.tsx
-import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
-import { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { RootNavigator } from "./src/navigation/RootNavigator";
+import { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
+import { NavigationContainer } from "@react-navigation/native";
 
-const queryClient = new QueryClient();
+// Mock 설정 제거 (실제 API 연동 시)
+// import "./src/mocks/setupMocks";
+
+import { RootNavigator } from "./src/navigation/RootNavigator";
+import { validateEnv } from "./src/config/env";
 
 export default function App() {
   useEffect(() => {
-    if (__DEV__) {
-      console.log("✅ axios-mock-adapter initialized");
-    }
+    // 환경변수 검증
+    validateEnv();
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
     <NavigationContainer>
       <RootNavigator />
       <StatusBar style="light" />
     </NavigationContainer>
-    </QueryClientProvider>
   );
 }

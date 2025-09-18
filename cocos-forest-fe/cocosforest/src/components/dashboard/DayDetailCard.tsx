@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import useDashboardStore from '../../store/dashboardStore';
-import { useDayDetails } from '../../hooks/useDashboardQueries';
 import type { DayData } from '../../types/dashboard';
 
 export const DayDetailCard: React.FC = () => {
@@ -9,63 +8,15 @@ export const DayDetailCard: React.FC = () => {
     selectedYear,
     selectedMonth,
     selectedDay,
+    currentDayData,
     handleCloseDetailCard
   } = useDashboardStore();
-
-  const { data: currentDayData, isLoading, error } = useDayDetails(
-    selectedYear,
-    selectedMonth,
-    selectedDay || 1,
-    Boolean(selectedDay)
-  );
   const monthNames = [
     '1월', '2월', '3월', '4월', '5월', '6월',
     '7월', '8월', '9월', '10월', '11월', '12월'
   ];
 
   if (!selectedDay) return null;
-
-  if (isLoading) {
-    return (
-      <View style={styles.inlineDetailCard}>
-        <View style={styles.detailCard}>
-          <View style={styles.cardHandle} />
-          <View style={styles.detailHeader}>
-            <View style={styles.detailHeaderLeft}>
-              <Text style={styles.detailDate}>
-                {selectedYear}년 {monthNames[selectedMonth]} {selectedDay}일
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.closeButton} onPress={handleCloseDetailCard}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.inlineDetailCard}>
-        <View style={styles.detailCard}>
-          <View style={styles.cardHandle} />
-          <View style={styles.detailHeader}>
-            <View style={styles.detailHeaderLeft}>
-              <Text style={styles.detailDate}>
-                {selectedYear}년 {monthNames[selectedMonth]} {selectedDay}일
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.closeButton} onPress={handleCloseDetailCard}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.inlineDetailCard}>
@@ -331,17 +282,5 @@ const styles = StyleSheet.create({
   cardInfo: {
     fontSize: 12,
     color: '#6b7280',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    paddingVertical: 40,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#ef4444',
-    textAlign: 'center',
-    paddingVertical: 40,
   },
 });
