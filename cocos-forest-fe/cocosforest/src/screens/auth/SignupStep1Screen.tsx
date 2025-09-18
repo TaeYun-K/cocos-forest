@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Alert,
@@ -37,6 +37,62 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [errors, setErrors] = useState<Partial<SignupStep1Form>>({}); // 추가: 에러 상태
+  const [timeLeft, setTimeLeft] = useState(0); // 타이머 상태 (초 단위)
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 타이머 시작 함수
+  const startTimer = () => {
+    setTimeLeft(180); // 3분 = 180초
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+  };
+
+  // 타이머 정리 함수
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setTimeLeft(0);
+  };
+
+  // 타이머 효과
+  useEffect(() => {
+    if (timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearTimer();
+            Alert.alert('시간 만료', '인증 시간이 만료되었습니다. 다시 인증번호를 요청해주세요.');
+            setIsCodeSent(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [timeLeft]);
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
+  }, []);
+
+  // 시간 포맷팅 함수 (MM:SS)
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleInputChange = (field: keyof SignupStep1Form, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -53,6 +109,7 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
     if (field === 'email') {
       setIsEmailVerified(false);
       setIsCodeSent(false);
+      clearTimer(); // 이메일 변경 시 타이머 리셋
     }
   };
 
@@ -108,7 +165,8 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
 
       await authService.sendVerificationCode(form.email);
       setIsCodeSent(true);
-      Alert.alert('인증번호 발송', '이메일로 인증번호가 발송되었습니다.\n(목업: 1234)');
+      startTimer(); // 인증번호 발송 후 타이머 시작
+      Alert.alert('인증번호 발송', '이메일로 인증번호가 발송되었습니다.\n3분 내에 인증을 완료해주세요.');
     } catch (error) {
       Alert.alert('오류', '인증번호 발송에 실패했습니다.');
     } finally {
@@ -128,6 +186,7 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
       
       if (isValid) {
         setIsEmailVerified(true);
+        clearTimer(); // 인증 성공 시 타이머 정리
         Alert.alert('인증완료', '이메일 인증이 완료되었습니다.');
       } else {
         Alert.alert('인증실패', '올바른 인증번호를 입력해주세요.');
@@ -231,6 +290,8 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
             isEmailVerified={isEmailVerified}
             emailError={errors.email}
             codeError={errors.verificationCode}
+            timeLeft={timeLeft}
+            formatTime={formatTime}
           />
 
           <PhoneInput

@@ -1,22 +1,19 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
-  User, 
-  LoginForm, 
+import { ENV } from '../config/env';
+import {
+  User,
+  LoginForm,
   SignupForm,
   SignupStep1Form,
   SignupStep2Form,
   SignupStep3Form,
-  AuthResponse 
+  AuthResponse,
+  TokenInfo,
+  SignupResponseDto
 } from '../types/auth';
-import { 
-  mockLoginAPI, 
-  mockSignupAPI,
-  mockCheckEmailAPI,
-  mockSendVerificationCodeAPI,
-  mockVerifyCodeAPI,
-  mockCheckNicknameAPI
-} from '../api/mockApi';
+import { authService } from '../services/authService';
+// Mock API import 제거
 
 interface AuthState {
   // 기본 인증 상태
@@ -52,8 +49,9 @@ interface AuthState {
   checkNicknameAvailability: (nickname: string) => Promise<boolean>;
 }
 
-const AUTH_TOKEN_KEY = 'auth_token';
-const AUTH_USER_KEY = 'auth_user';
+// 환경변수에서 키 값 가져오기
+const AUTH_TOKEN_KEY = ENV.AUTH_TOKEN_KEY;
+const AUTH_USER_KEY = ENV.AUTH_USER_KEY;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   // 초기 상태
@@ -63,28 +61,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   signupData: {},
 
-  // 로그인 (기존 코드 + API 호출 추가)
+  // 로그인
   login: async (loginData: LoginForm) => {
     try {
       set({ isLoading: true });
-      
-      // 목업 API 호출 (나중에 실제 API로 교체)
-      const response: AuthResponse = await mockLoginAPI(loginData);
-      
-      // AsyncStorage에 저장
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user));
-      
-      // 상태 업데이트
+
+      // 실제 API 호출
+      const tokenInfo: TokenInfo = await authService.login(loginData);
+
+      // AsyncStorage에 토큰 저장
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, tokenInfo.accessToken);
+      await AsyncStorage.setItem(ENV.REFRESH_TOKEN_KEY, tokenInfo.refreshToken);
+
+      // 상태 업데이트 (사용자 정보는 별도 API 호출이 필요할 수 있음)
       set({
         isAuthenticated: true,
-        user: response.user,
-        token: response.token,
+        user: null, // 사용자 정보는 별도로 가져와야 함
+        token: tokenInfo.accessToken,
         isLoading: false,
       });
-      
-      console.log('로그인 성공:', response.user);
-      
+
+      console.log('로그인 성공:', tokenInfo);
+
     } catch (error) {
       set({ isLoading: false });
       console.error('로그인 실패:', error);
@@ -92,29 +90,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // 회원가입 (새로 추가)
+  // 회원가입
   signup: async (signupData: SignupForm) => {
     try {
       set({ isLoading: true });
-      
-      // 목업 API 호출 (나중에 실제 API로 교체)
-      const response: AuthResponse = await mockSignupAPI(signupData);
-      
-      // AsyncStorage에 저장
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user));
-      
+
+      // 실제 API 호출
+      const signupResponse: SignupResponseDto = await authService.signup(signupData);
+
+      // 회원가입 성공 후 자동 로그인 처리
+      const loginData: LoginForm = {
+        email: signupData.email,
+        password: signupData.password,
+      };
+
+      const tokenInfo: TokenInfo = await authService.login(loginData);
+
+      // AsyncStorage에 토큰 저장
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, tokenInfo.accessToken);
+      await AsyncStorage.setItem(ENV.REFRESH_TOKEN_KEY, tokenInfo.refreshToken);
+
+      // User 타입에 맞게 변환
+      const user: User = {
+        id: signupResponse.id,
+        email: signupResponse.email,
+        nickname: signupResponse.nickname,
+        phoneNumber: signupResponse.phoneNumber,
+      };
+
       // 상태 업데이트
       set({
         isAuthenticated: true,
-        user: response.user,
-        token: response.token,
+        user: user,
+        token: tokenInfo.accessToken,
         isLoading: false,
         signupData: {}, // 회원가입 완료 후 임시 데이터 초기화
       });
-      
-      console.log('회원가입 성공:', response.user);
-      
+
+      console.log('회원가입 성공:', user);
+
     } catch (error) {
       set({ isLoading: false });
       console.error('회원가입 실패:', error);
@@ -122,13 +136,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // 로그아웃 (기존 코드 유지)
+  // 로그아웃
   logout: async () => {
     try {
+      // 저장된 refresh token으로 백엔드 로그아웃 API 호출
+      const refreshToken = await AsyncStorage.getItem(ENV.REFRESH_TOKEN_KEY);
+      if (refreshToken) {
+        try {
+          await authService.logout(refreshToken);
+        } catch (apiError) {
+          console.error('백엔드 로그아웃 API 호출 실패:', apiError);
+          // 백엔드 호출이 실패해도 로컬 상태는 초기화
+        }
+      }
+
       // AsyncStorage에서 제거
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
       await AsyncStorage.removeItem(AUTH_USER_KEY);
-      
+      await AsyncStorage.removeItem(ENV.REFRESH_TOKEN_KEY);
+
       // 상태 초기화
       set({
         isAuthenticated: false,
@@ -136,9 +162,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         token: null,
         signupData: {}, // 회원가입 데이터도 초기화
       });
-      
+
       console.log('로그아웃 완료');
-      
+
     } catch (error) {
       console.error('로그아웃 실패:', error);
     }
@@ -221,8 +247,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // 이메일 중복 확인
   checkEmailAvailability: async (email: string): Promise<boolean> => {
     try {
-      const response = await mockCheckEmailAPI(email);
-      return response.available;
+      const isDuplicate = await authService.checkEmailDuplicate(email);
+      return !isDuplicate; // 중복이 아니면 available=true
     } catch (error) {
       console.error('이메일 중복 확인 실패:', error);
       throw error;
@@ -232,7 +258,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // 이메일 인증번호 발송
   sendVerificationCode: async (email: string): Promise<void> => {
     try {
-      await mockSendVerificationCodeAPI(email);
+      await authService.sendVerificationCode(email);
       console.log('인증번호 발송 완료:', email);
     } catch (error) {
       console.error('인증번호 발송 실패:', error);
@@ -243,8 +269,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // 인증번호 확인
   verifyCode: async (email: string, code: string): Promise<boolean> => {
     try {
-      const response = await mockVerifyCodeAPI(email, code);
-      return response.valid;
+      return await authService.verifyCode(email, code);
     } catch (error) {
       console.error('인증번호 확인 실패:', error);
       throw error;
@@ -254,8 +279,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // 닉네임 중복 확인
   checkNicknameAvailability: async (nickname: string): Promise<boolean> => {
     try {
-      const response = await mockCheckNicknameAPI(nickname);
-      return response.available;
+      const isDuplicate = await authService.checkNicknameDuplicate(nickname);
+      return !isDuplicate; // 중복이 아니면 available=true
     } catch (error) {
       console.error('닉네임 중복 확인 실패:', error);
       throw error;

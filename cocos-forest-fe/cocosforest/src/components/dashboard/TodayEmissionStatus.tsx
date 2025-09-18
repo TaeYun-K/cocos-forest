@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTodayData } from '../../hooks/useDashboardQueries';
+import useDashboardStore from '../../store/dashboardStore';
 import { Card } from '../common';
 
 export const TodayEmissionStatus: React.FC = () => {
-  const { data: todayData, isLoading, error } = useTodayData();
+  const { todayData } = useDashboardStore();
 
-  const todayEmission = todayData?.totals?.carbonTotalKg ?? 0.5;
+  const todayEmission = todayData?.totals?.carbonTotalKg || 0.5;
   const averageEmission = 0.8;
   const emissionDifference = averageEmission - todayEmission;
 
@@ -20,24 +20,6 @@ export const TodayEmissionStatus: React.FC = () => {
       return '#eab308'; // 노란색 - 보통
     }
   };
-
-  if (isLoading) {
-    return (
-      <Card style={styles.compactCard}>
-        <Text style={styles.cardTitle}>오늘 탄소 배출 현황</Text>
-        <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card style={styles.compactCard}>
-        <Text style={styles.cardTitle}>오늘 탄소 배출 현황</Text>
-        <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
-      </Card>
-    );
-  }
 
   return (
     <Card style={styles.compactCard}>
@@ -130,17 +112,5 @@ const styles = StyleSheet.create({
   comparisonHighlight: {
     fontWeight: 'bold',
     color: '#15803d',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#ef4444',
-    textAlign: 'center',
-    paddingVertical: 20,
   },
 });

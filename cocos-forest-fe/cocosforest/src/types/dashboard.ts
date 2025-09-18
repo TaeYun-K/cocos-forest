@@ -1,9 +1,9 @@
 // src/types/dashboard.ts
 
-// 월별 리포트 데이터 타입 (실제 API 응답 기반)
+// 월별 리포트 데이터 타입 (새로운 API 명세 기반)
 export interface MonthlyReportData {
-  userCardId: string;
-  yearMonth?: string; // API에서 직접 제공되지 않음, 클라이언트에서 추가
+  cardId: string;
+  yearMonth: string;
   currency: string;
   totals: {
     amountTotal: number;
@@ -38,17 +38,13 @@ export interface CategoryData {
   color: string;
 }
 
-// 일일 상세 데이터 타입 (실제 API 응답 기반)
+// 일일 상세 데이터 타입
 export interface DayData {
-  userCardId: string;
+  cardId: string;
   date: string;
-  currency: string;
-  meta: {
-    durationMs: number;
-    error: any;
-    lockAcquired: boolean;
-    retry: number;
-  };
+  fresh: boolean;
+  lastSyncedAt: string;
+  syncStatus: string;
   totals: DayTotals;
   transactions: Array<Transaction>;
 }
@@ -84,30 +80,6 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   success?: boolean;
-}
-
-// 카테고리별 월별 상세 데이터 타입 (task.md 응답 형식 기반)
-export interface CategoryMonthlyDetails {
-  userCardId: string;
-  yearMonth: string;
-  categoryId: string;
-  categoryName: string;
-  currency: string;
-  totals: {
-    amountTotal: number;
-    carbonTotalKg: number;
-    transactionCount: number;
-  };
-  transactions: Array<Transaction>;
-}
-
-// API 응답 래퍼 타입
-export interface CategoryMonthlyDetailsResponse {
-  httpStatus: string;
-  isSuccess: boolean;
-  message: string;
-  code: number;
-  result: CategoryMonthlyDetails;
 }
 
 // 에러 타입
