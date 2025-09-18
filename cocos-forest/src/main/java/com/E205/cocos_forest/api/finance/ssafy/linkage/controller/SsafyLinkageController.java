@@ -26,9 +26,10 @@ public class SsafyLinkageController {
     @Operation(summary = "SSAFY 연동 생성", description = "이메일을 받아 SSAFY 연동을 생성합니다.")
     @PostMapping("/register")
     public BaseResponse<SsafyLinkageOut> registerByEmail(
+        @RequestParam Long userId,
         @RequestBody @Valid SsafyLinkageCreateIn req
     ) {
-        return new BaseResponse<>(ssafyLinkageService.registerByEmail(req));
+        return new BaseResponse<>(ssafyLinkageService.registerByEmail(userId, req));
     }
 
 

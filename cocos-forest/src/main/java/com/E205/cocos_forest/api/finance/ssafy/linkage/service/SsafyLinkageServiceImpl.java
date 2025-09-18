@@ -30,7 +30,7 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
      * @param in     userEmail만 포함한 DTO
      */
     @Override
-    public SsafyLinkageOut registerByEmail(SsafyLinkageCreateIn in) {
+    public SsafyLinkageOut registerByEmail(Long userId, SsafyLinkageCreateIn in) {
         if (in == null || in.getUserEmail() == null || in.getUserEmail().isBlank()) {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
@@ -40,8 +40,6 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
         if (userKey == null || userKey.isBlank()) {
             throw new BaseException(BaseResponseStatus.EXTERNAL_API_ERROR);
         }
-
-        Long userId = 1L; // 추후에 authService.getCurrentUserId(); 로 변경
 
         // 2) linkage upsert
         SsafyLinkage entity = repository.findByUserId(userId)

@@ -29,9 +29,8 @@ public class AccountServiceImpl implements AccountService {
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Override
-    public AccountCreateOut createDemandDepositAccount(AccountCreateIn request) {
+    public AccountCreateOut createDemandDepositAccount(Long userId, AccountCreateIn request) {
         // 1) 현재 사용자의 SSAFY 연동 정보 조회
-        Long userId = 1L; // 추후에 authService.getCurrentUserId(); 로 변경
         SsafyLinkage linkage = ssafyLinkageRepository.findByUserId(userId)
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 

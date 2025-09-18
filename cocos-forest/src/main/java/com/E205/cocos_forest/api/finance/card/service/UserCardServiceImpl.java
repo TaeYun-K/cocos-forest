@@ -26,12 +26,10 @@ public class UserCardServiceImpl implements UserCardService {
     private final UserCardRepository userCardRepository;
 
     @Override
-    public CardLinkOut linkCard(CardLinkCreateIn in) {
+    public CardLinkOut linkCard(Long userId, CardLinkCreateIn in) {
         if (in == null || in.getProductId() == null || in.getWithdrawalAccountNo() == null || in.getWithdrawalDate() == null) {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
-
-        Long userId = 1L; // TODO: replace with auth context
 
         var linkage = linkageRepository.findByUserId(userId)
             .orElseThrow(() -> new BaseException(BaseResponseStatus.LINKAGE_NOT_FOUND));
