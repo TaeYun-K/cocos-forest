@@ -1,6 +1,5 @@
 package com.E205.cocos_forest.global.config.security;
 
-
 import com.E205.cocos_forest.global.jwt.JwtAuthenticationFilter;
 import com.E205.cocos_forest.global.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-    /**
-     * passwordEncoder(): BCryptPasswordEncoder를 Spring 컨테이너에 Bean으로 등록합니다.
-     * 이렇게 등록해두면 다른 곳에서 @Autowired나 생성자 주입으로 가져다 쓸 수 있습니다.
-     */
 
-    // TODO: 추가 작업
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -34,11 +28,26 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화 (API 서버에서는 보통 비활성화)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안함 (JWT 기반 인증)
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
             .authorizeHttpRequests((requests) -> requests
-                .requestMatchers("/**").permitAll()
+                // 공개 접근 허용 경로들
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/api/test/public").permitAll()  // 테스트용 공개 엔드포인트
+
+                // 인증/회원가입 관련 (인증 불필요)
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/user/register", "/api/user/login").permitAll()
+
+                // 관리자 전용
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // 그 외 모든 API는 인증 필요
+                .requestMatchers("/api/**").authenticated()
+
+                // 기타 모든 요청 허용 (정적 리소스 등)
+                .anyRequest().permitAll()
             )
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 

@@ -2,8 +2,11 @@ package com.E205.cocos_forest.domain.user.repository;
 
 import com.E205.cocos_forest.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -29,4 +32,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByNickname(String nickname);
 
     Optional<User> findByEmail(String email);
+
+    /**
+     * 삭제되지 않은 사용자만 조회
+     */
+    @Query("SELECT u FROM User u WHERE u.deletedAt IS NULL")
+    List<User> findAllActiveUsers();
+
+    /**
+     * 특정 일자에 탄소배출량이 임계값을 초과한 사용자들 조회 (배치 작업용)
+     */
+    @Query("SELECT u.id FROM User u " +
+                    "JOIN DailyEmission de ON u.id = de.userId " +
+                    "WHERE de.emissionDate = :date AND de.totalEmission > :threshold")
+    List<Long> findUserIdsWithExcessiveEmission(@Param("date") java.time.LocalDate date,
+                    @Param("threshold") java.math.BigDecimal threshold);
 }
