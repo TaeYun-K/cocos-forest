@@ -18,6 +18,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -54,6 +55,7 @@ public class SecurityConfig {
                 // 기타 모든 요청 허용 (정적 리소스 등)
                 .anyRequest().permitAll()
             )
+
             .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
