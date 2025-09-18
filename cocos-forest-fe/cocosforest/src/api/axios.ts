@@ -1,23 +1,16 @@
 import axios from 'axios';
-import MockAdapter from 'axios-mock-adapter';
 
 // axios 인스턴스 생성
 const apiClient = axios.create({
-  baseURL: __DEV__ ? 'https://api.cocos-forest.dev' : 'https://api.cocos-forest.com',
+  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.cocos-forest.com',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Mock adapter 선언 (개발 환경에서만 초기화)
-let mock: MockAdapter | undefined;
-
-// 개발 환경에서만 mock adapter 설정
+// 요청/응답 인터셉터 (디버깅용)
 if (__DEV__) {
-  mock = new MockAdapter(apiClient);
-
-  // 요청/응답 인터셉터 (디버깅용)
   apiClient.interceptors.request.use(
     (config) => {
       console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
@@ -41,8 +34,5 @@ if (__DEV__) {
     }
   );
 }
-
-// Mock 설정을 export하여 다른 파일에서 사용할 수 있도록
-export { mock };
 
 export default apiClient;
