@@ -73,6 +73,36 @@ public enum BaseResponseStatus {
   FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 2061, "파일 업로드에 실패했습니다."),
   FILE_STORAGE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, false, 2062, "파일 저장소 처리 중 오류가 발생했습니다."),
 
+  // 4001~4020: 숲 관련
+  FOREST_NOT_FOUND(HttpStatus.NOT_FOUND, false, 4001, "숲을 찾을 수 없습니다."),
+  FOREST_ALREADY_EXISTS(HttpStatus.CONFLICT, false, 4002, "이미 숲이 존재합니다."),
+
+  // 4021~4040: 나무 관련
+  TREE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 4021, "나무를 찾을 수 없습니다."),
+  INVALID_TREE_POSITION(HttpStatus.BAD_REQUEST, false, 4022, "유효하지 않은 나무 위치입니다."),
+  POSITION_OCCUPIED(HttpStatus.BAD_REQUEST, false, 4023, "이미 다른 나무가 있는 위치입니다."),
+  POND_AREA_RESTRICTION(HttpStatus.BAD_REQUEST, false, 4024, "연못 영역에는 나무를 심을 수 없습니다."),
+  OUT_OF_FOREST_BOUNDS(HttpStatus.BAD_REQUEST, false, 4025, "숲 범위를 벗어난 위치입니다."),
+  DEAD_TREE_ACTION(HttpStatus.BAD_REQUEST, false, 4026, "죽은 나무에는 해당 행동을 할 수 없습니다."),
+
+  // 4041~4060: 물주기 관련
+  WATER_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, false, 4041, "하루 물주기 제한을 초과했습니다. (하루 3회 제한)"),
+  TREE_ALREADY_WATERED_MAX(HttpStatus.BAD_REQUEST, false, 4042, "오늘은 더 이상 물을 줄 수 없습니다."),
+
+  // 4061~4080: 연못 관련
+  INVALID_POND_POSITION(HttpStatus.BAD_REQUEST, false, 4061, "연못 위치가 유효하지 않습니다."),
+  POND_TOO_CLOSE_TO_BOUNDARY(HttpStatus.BAD_REQUEST, false, 4062, "연못은 경계에서 최소 1칸 떨어져야 합니다."),
+
+  // 4081~4100: 포인트 관련
+  INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, false, 4081, "포인트가 부족합니다."),
+  POINTS_TRANSACTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 4082, "포인트 처리 중 오류가 발생했습니다."),
+  POINTS_CONCURRENCY_ERROR(HttpStatus.CONFLICT, false, 4083, "포인트 처리 중 동시성 오류가 발생했습니다. 다시 시도해주세요."),
+  INVALID_POINTS_AMOUNT(HttpStatus.BAD_REQUEST, false, 4084, "유효하지 않은 포인트 금액입니다."),
+  POINTS_LEDGER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, false, 4085, "포인트 내역 기록 중 오류가 발생했습니다."),
+
+  // 4101~4120: 권한 관련
+  UNAUTHORIZED_TREE_ACCESS(HttpStatus.FORBIDDEN, false, 4101, "다른 사용자의 나무입니다."),
+  UNAUTHORIZED_FOREST_ACCESS(HttpStatus.FORBIDDEN, false, 4102, "다른 사용자의 숲입니다."),
 
   // ===================================================================================
   // ===== 외부 API 관련 에러 코드 (5000번대) =====
