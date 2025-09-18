@@ -37,17 +37,17 @@ public class AuthService {
 
         // 3. 인증 정보를 기반으로 User 엔티티 조회
         User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
         // 4. JWT 토큰 생성
         TokenInfo tokenInfo = jwtTokenProvider.generateToken(authentication, user);
 
         // 5. Refresh Token을 Redis에 저장 (만료 시간과 함께)
         redisTemplate.opsForValue().set(
-                "RT:" + authentication.getName(), // Key: "RT:user@example.com"
-                tokenInfo.getRefreshToken(),      // Value: "refresh-token-string"
-                jwtTokenProvider.getExpiration(tokenInfo.getRefreshToken()), // TTL
-                TimeUnit.MILLISECONDS
+            "RT:" + authentication.getName(), // Key: "RT:user@example.com"
+            tokenInfo.getRefreshToken(),      // Value: "refresh-token-string"
+            jwtTokenProvider.getExpiration(tokenInfo.getRefreshToken()), // TTL
+            TimeUnit.MILLISECONDS
         );
 
         return tokenInfo;
@@ -71,15 +71,15 @@ public class AuthService {
 
         // 4. 새로운 토큰 생성
         User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
         TokenInfo tokenInfo = jwtTokenProvider.generateToken(authentication, user);
 
         // 5. Redis의 Refresh Token 정보 업데이트
         redisTemplate.opsForValue().set(
-                "RT:" + authentication.getName(),
-                tokenInfo.getRefreshToken(),
-                jwtTokenProvider.getExpiration(tokenInfo.getRefreshToken()),
-                TimeUnit.MILLISECONDS
+            "RT:" + authentication.getName(),
+            tokenInfo.getRefreshToken(),
+            jwtTokenProvider.getExpiration(tokenInfo.getRefreshToken()),
+            TimeUnit.MILLISECONDS
         );
 
         return tokenInfo;
@@ -90,14 +90,13 @@ public class AuthService {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BaseException(BaseResponseStatus.INVALID_TOKEN);
         }
-        
+
         // 2. Refresh Token에서 사용자 정보(email) 가져오기
         Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
-        
+
         // 3. Redis에 해당 Refresh Token이 있는지 확인
         String redisRefreshTokenKey = "RT:" + authentication.getName();
-        if (redisTemplate.opsForValue().get(redisRefreshTokenKey) != null) {
-            redisTemplate.delete(redisRefreshTokenKey);
-        }
+        redisTemplate.opsForValue().get(redisRefreshTokenKey);
+        redisTemplate.delete(redisRefreshTokenKey);
     }
 }
