@@ -1,10 +1,8 @@
-import React, { useMemo, useRef, useLayoutEffect, useState, Suspense, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import React, { useMemo, useRef, useLayoutEffect, useState } from 'react';
+import { View, StyleSheet, Modal, Text, Pressable } from 'react-native';
 import { Canvas } from '@react-three/fiber/native';
-import { OrthographicCamera, OrbitControls, useGLTF } from '@react-three/drei/native';
-import { Asset } from 'expo-asset';
+import { OrthographicCamera, OrbitControls } from '@react-three/drei/native';
 import * as THREE from 'three';
-
 
 const GRID = 8;
 const TILE = 1;
@@ -61,6 +59,7 @@ function CheckerBoard({
     if (oddRef.current) setMatrices(oddRef.current, oddCells);
   }, [dummy, evenCells, oddCells]);
 
+  // 클릭으로만 픽킹 → 팬 제스처 방해 줄임
   const onClickEven = (e: any) => {
     const i = e.instanceId as number;
     if (i != null) onPick(evenCells[i]);
@@ -143,35 +142,14 @@ function Markers({
 function IsoOrthoCamera() {
   const worldSpan = GRID * (TILE + GAP);
   const d = worldSpan * 1.5;
-  const zoom = Math.max(1, 220 / GRID);
-  return <OrthographicCamera makeDefault position={[d, d, d]} near={0.1} far={5000} zoom={zoom} />;
-}
+  const zoom = Math.max(1, 220 / GRID); // ⬆️ 더 확대된 기본 줌 (원하면 수치만 키워)
 
-const TREE_SRC = require('../../assets/low_poly_tree.glb');
-
-function Tree({
-  position = [0, 0, 0] as [number, number, number],
-  scale = 1,
-  rotationY = 0,
-}) {
-  const [uri, setUri] = useState<string | null>(null);
-
-  useEffect(() => {
-    const asset = Asset.fromModule(TREE_SRC);
-    asset.downloadAsync().then(() => {
-      setUri(asset.localUri ?? asset.uri); // file:// or asset://
-    });
-  }, []);
-
-  if (!uri) return null;
-  const gltf: any = useGLTF(uri);
   return (
-    <primitive object={gltf.scene} position={position} scale={scale} rotation={[0, rotationY, 0]} dispose={null} />
+    <OrthographicCamera makeDefault position={[d, d, d]} near={0.1} far={5000} zoom={zoom} />
   );
 }
 
-
-const HomeScreen = () => {
+export default function App() {
   const [selected, setSelected] = useState<Cell | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -188,7 +166,6 @@ const HomeScreen = () => {
       return { grid: { x, z }, pos: toWorld(x, z) };
     });
   }, []);
-
   const markerKeySet = useMemo(
     () => new Set(markers.map((m) => `${m.grid.x},${m.grid.z}`)),
     [markers]
@@ -199,44 +176,36 @@ const HomeScreen = () => {
     setVisible(true);
   };
 
-  const isMarked = selected && markerKeySet.has(`${selected.grid.x},${selected.grid.z}`);
-
-  // 타일 중앙 위치 계산, 나무
-  const centerIdx = Math.floor(GRID / 2) - 1;
-  const centerTilePos = toWorld(centerIdx, centerIdx);
+  const isMarked =
+    selected && markerKeySet.has(`${selected.grid.x},${selected.grid.z}`);
 
   return (
-      <View style={styles.canvasWrap}>
-        <Canvas shadows>
-          <IsoOrthoCamera />
+    <View style={styles.container}>
+      <Canvas shadows>
+        <IsoOrthoCamera />
 
-          <ambientLight intensity={0.65} />
-          <directionalLight position={[8, 12, 6]} intensity={0.95} castShadow />
+        <ambientLight intensity={0.65} />
+        <directionalLight position={[8, 12, 6]} intensity={0.95} castShadow />
 
-          <CheckerBoard onPick={handlePick} highlighted={selected} />
-          <Markers markers={markers} onPick={handlePick} />
+        <CheckerBoard onPick={handlePick} highlighted={selected} />
+        <Markers markers={markers} onPick={handlePick} />
 
-          {/* ⬇️ 4) 나무 배치: (7,7) 타일 중앙 위에 올림 */}
-          <Suspense fallback={null}>
-           <Tree position={[centerTilePos.x, THICK, centerTilePos.z]} scale={0.8}/>
-          </Suspense>
+        {/* ⬇️ 팬/줌 강화: 한 손가락=PAN, 두 손가락=핀치줌(+팬), 줌 범위 넓힘 */}
+        <OrbitControls
+          makeDefault
+          enableRotate={false}
+          enablePan
+          enableZoom
+          touches={{ ONE: 1, TWO: 2 }}   // ONE=PAN, TWO=DOLLY_PAN
+          screenSpacePanning
+          panSpeed={2.0}
+          zoomSpeed={1.6}
+          minZoom={20 / GRID}            // 더 멀게도 나갈 수 있게 (작은 값일수록 멀어짐)
+          maxZoom={600 / GRID}           // 더 많이 확대 가능 (큰 값일수록 더 확대)
+          target={[0, 0, 0]}
+        />
+      </Canvas>
 
-          <OrbitControls
-            makeDefault
-            enableRotate={false}
-            enablePan
-            enableZoom
-            touches={{ ONE: 1, TWO: 2 }}
-            screenSpacePanning
-            panSpeed={2.0}
-            zoomSpeed={1.6}
-            minZoom={20 / GRID}
-            maxZoom={600 / GRID}
-            target={[0, 0, 0]}
-          />
-        </Canvas>
-
-      {/* 모달 (기존 그대로) */}
       {/* 조건별 모달 */}
       <Modal
         visible={visible}
@@ -261,12 +230,10 @@ const HomeScreen = () => {
       </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0e1111' },
-  canvasWrap: { flex: 1 },
-
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -292,5 +259,3 @@ const styles = StyleSheet.create({
   },
   modalBtnText: { color: '#fff', fontWeight: '700' },
 });
-
-export default HomeScreen;
