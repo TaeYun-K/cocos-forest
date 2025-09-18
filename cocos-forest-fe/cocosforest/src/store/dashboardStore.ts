@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { CategoryMonthlyDetails } from '../types/dashboard';
 
 interface DashboardState {
   // 날짜 상태
@@ -9,6 +10,11 @@ interface DashboardState {
   // UI 상태
   activeTab: number;
   showDetailCard: boolean;
+
+  // 카테고리 상세 모달 상태
+  showCategoryModal: boolean;
+  categoryModalData: CategoryMonthlyDetails | null;
+  categoryModalLoading: boolean;
 }
 
 interface DashboardActions {
@@ -20,6 +26,12 @@ interface DashboardActions {
   // UI 액션
   setActiveTab: (tab: number) => void;
   setShowDetailCard: (show: boolean) => void;
+
+  // 카테고리 모달 액션
+  setShowCategoryModal: (show: boolean) => void;
+  setCategoryModalData: (data: CategoryMonthlyDetails | null) => void;
+  setCategoryModalLoading: (loading: boolean) => void;
+  closeCategoryModal: () => void;
 
   // 월 변경 액션
   goToPreviousMonth: () => void;
@@ -42,12 +54,27 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   activeTab: 0,
   showDetailCard: false,
 
+  // 카테고리 모달 초기 상태
+  showCategoryModal: false,
+  categoryModalData: null,
+  categoryModalLoading: false,
+
   // 기본 setter 액션들
   setSelectedMonth: (month: number) => set({ selectedMonth: month }),
   setSelectedYear: (year: number) => set({ selectedYear: year }),
   setSelectedDay: (day: number | null) => set({ selectedDay: day }),
   setActiveTab: (tab: number) => set({ activeTab: tab }),
   setShowDetailCard: (show: boolean) => set({ showDetailCard: show }),
+
+  // 카테고리 모달 액션들
+  setShowCategoryModal: (show: boolean) => set({ showCategoryModal: show }),
+  setCategoryModalData: (data: CategoryMonthlyDetails | null) => set({ categoryModalData: data }),
+  setCategoryModalLoading: (loading: boolean) => set({ categoryModalLoading: loading }),
+  closeCategoryModal: () => set({
+    showCategoryModal: false,
+    categoryModalData: null,
+    categoryModalLoading: false
+  }),
 
   // 월 변경 액션들
   goToPreviousMonth: () => {

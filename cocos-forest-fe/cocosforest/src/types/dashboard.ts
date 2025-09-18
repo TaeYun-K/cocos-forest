@@ -86,6 +86,30 @@ export interface ApiResponse<T> {
   success?: boolean;
 }
 
+// 카테고리별 월별 상세 데이터 타입 (task.md 응답 형식 기반)
+export interface CategoryMonthlyDetails {
+  userCardId: string;
+  yearMonth: string;
+  categoryId: string;
+  categoryName: string;
+  currency: string;
+  totals: {
+    amountTotal: number;
+    carbonTotalKg: number;
+    transactionCount: number;
+  };
+  transactions: Array<Transaction>;
+}
+
+// API 응답 래퍼 타입
+export interface CategoryMonthlyDetailsResponse {
+  httpStatus: string;
+  isSuccess: boolean;
+  message: string;
+  code: number;
+  result: CategoryMonthlyDetails;
+}
+
 // 에러 타입
 export interface ApiError {
   message: string;

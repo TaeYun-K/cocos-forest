@@ -5,9 +5,17 @@ import { useMonthlyReport } from '../../hooks/useDashboardQueries';
 import { CategorySummary } from './CategorySummary';
 import { CategoryPieChart } from './CategoryPieChart';
 import { CategoryItem } from './CategoryItem';
+import { CategoryDetailModal } from './CategoryDetailModal';
 
 export const CategoryReport: React.FC = () => {
-  const { selectedYear, selectedMonth } = useDashboardStore();
+  const {
+    selectedYear,
+    selectedMonth,
+    showCategoryModal,
+    categoryModalData,
+    categoryModalLoading,
+    closeCategoryModal
+  } = useDashboardStore();
   const { data: monthlyReportData, isLoading, error } = useMonthlyReport(selectedYear, selectedMonth);
 
   if (isLoading) {
@@ -53,6 +61,14 @@ export const CategoryReport: React.FC = () => {
             />
           ))}
       </View>
+
+      {/* 카테고리 상세 모달 */}
+      <CategoryDetailModal
+        visible={showCategoryModal}
+        onClose={closeCategoryModal}
+        data={categoryModalData}
+        loading={categoryModalLoading}
+      />
     </View>
   );
 };

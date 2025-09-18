@@ -2,7 +2,9 @@
 import apiClient from './axios';
 import type {
   DayData,
-  MonthlyReportData
+  MonthlyReportData,
+  CategoryMonthlyDetails,
+  CategoryMonthlyDetailsResponse
 } from '../types/dashboard';
 
 // 고정 cardId
@@ -102,6 +104,66 @@ export const fetchMonthlyReport = async (
   } catch (error) {
     console.error(`❌ fetchMonthlyReport 에러: ${yearMonth}`, error);
     throw error;
+  }
+};
+
+/**
+ * 카테고리별 월별 상세 데이터를 가져옵니다.
+ * @param userCardId - 사용자 카드 ID
+ * @param yearMonth - 조회할 월 (YYYY-MM)
+ * @param categoryId - 카테고리 ID
+ * @returns 카테고리별 월별 상세 데이터
+ */
+export const fetchCategoryMonthlyDetails = async (
+  userCardId: string,
+  yearMonth: string,
+  categoryId: string
+): Promise<CategoryMonthlyDetails> => {
+  try {
+    console.log(`🔍 fetchCategoryMonthlyDetails 시작:`);
+    console.log(`  - userCardId: ${userCardId}`);
+    console.log(`  - yearMonth: ${yearMonth}`);
+    console.log(`  - categoryId: ${categoryId}`);
+
+    const params = { yearMonth, categoryId };
+    console.log(`📋 API 요청 파라미터:`, params);
+
+    const response = await apiClient.get<CategoryMonthlyDetailsResponse>(
+      `/api/finance/user-cards/${userCardId}/transactions/${categoryId}`,
+      { params }
+    );
+
+    console.log(`✅ fetchCategoryMonthlyDetails 성공: ${categoryId}`);
+    console.log('📦 Raw Response Object:', response);
+    console.log('📦 Response Data:', response.data);
+    console.log('📦 Response Status:', response.status);
+    console.log('📦 Response Headers:', response.headers);
+
+    // API 응답 구조 확인 및 result 반환
+    if (response.data.isSuccess && response.data.result) {
+      return response.data.result;
+    } else {
+      throw new Error(response.data.message || '카테고리 상세 데이터 조회에 실패했습니다.');
+    }
+  } catch (error: any) {
+    console.error(`❌ fetchCategoryMonthlyDetails 에러: ${categoryId}`);
+    console.error(`📦 Error Response Object:`, error.response);
+    console.error(`📦 Error Response Data:`, error.response?.data);
+    console.error(`📦 Error Response Status:`, error.response?.status);
+    console.error(`📦 Error Response Headers:`, error.response?.headers);
+    console.error(`📦 Error Message:`, error.message);
+    console.error(`📦 Full Error:`, error);
+
+    // 에러 메시지 개선
+    if (error.response?.status === 500) {
+      throw new Error('서버에서 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } else if (error.response?.status === 404) {
+      throw new Error('해당 카테고리의 데이터를 찾을 수 없습니다.');
+    } else if (error.response?.status === 400) {
+      throw new Error('잘못된 요청입니다. 파라미터를 확인해주세요.');
+    } else {
+      throw new Error('네트워크 오류가 발생했습니다. 연결 상태를 확인해주세요.');
+    }
   }
 };
 
