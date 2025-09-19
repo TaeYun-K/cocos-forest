@@ -1,6 +1,6 @@
 // api/forest.ts
 import apiClient, { mock } from "./axios";
-import type { MarkerCoord } from "../types/forest";
+import type { ForestInfoDto } from "../types/forest";
 
 // BaseResponse 타입 정의
 interface BaseResponse<T> {
@@ -10,33 +10,6 @@ interface BaseResponse<T> {
   code: number;
   result: T;
 }
-
-// 백엔드 실제 응답 구조에 맞게 수정
-export type ForestInfoDto = {
-  aliveTreeCount: number;
-  createdAt: string;
-  deadHighlightCount: number;
-  forestId: number;
-  pondX: number;
-  pondY: number;
-  size: number;
-  trees: Array<{
-    deadHighlight: boolean;
-    growthDays: number;
-    growthStage: string;
-    health: number;
-    isDead: boolean;
-    lastWateredDate: string | null;
-    maxHealth: number;
-    plantedAt: string;
-    treeId: number;
-    waterCountToday: number;
-    x: number;
-    y: number;
-  }>;
-  updatedAt: string;
-  userId: number;
-};
 
 export type PointsDto = number; // 숫자가 바로 반환됨
 
