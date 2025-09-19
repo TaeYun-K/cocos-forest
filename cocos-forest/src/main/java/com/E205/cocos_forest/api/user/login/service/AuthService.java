@@ -8,6 +8,7 @@ import com.E205.cocos_forest.global.jwt.TokenInfo;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -33,7 +34,15 @@ public class AuthService {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
 
         // 2. 실제 검증 (비밀번호 확인 등)
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        Authentication authentication;
+        // 2. 실제 검증 (비밀번호 확인 등) - try-catch 블록으로 감싸기
+        try {
+            authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+        } catch (BadCredentialsException e) {
+            // authenticate() 메소드에서 비밀번호가 일치하지 않을 때 BadCredentialsException 발생
+            // 이 예외를 잡아서 우리가 정의한 커스텀 예외로 변환하여 던집니다.
+            throw new BaseException(BaseResponseStatus.PASSWORD_NOT_MATCHED);
+        }
 
         // 3. 인증 정보를 기반으로 User 엔티티 조회
         User user = userRepository.findByEmail(authentication.getName())
