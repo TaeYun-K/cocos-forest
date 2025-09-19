@@ -2,6 +2,7 @@ package com.E205.cocos_forest.api.finance.card.service;
 
 import com.E205.cocos_forest.api.finance.card.dto.in.CardLinkCreateIn;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardLinkOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.UserCardOut;
 import com.E205.cocos_forest.domain.finance.card.CardProduct;
 import com.E205.cocos_forest.domain.finance.card.CardProductRepository;
 import com.E205.cocos_forest.domain.finance.card.UserCard;
@@ -15,6 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -24,6 +28,7 @@ public class UserCardServiceImpl implements UserCardService {
     private final SsafyLinkageRepository linkageRepository;
     private final CardProductRepository productRepository;
     private final UserCardRepository userCardRepository;
+    private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Override
     public CardLinkOut linkCard(Long userId, CardLinkCreateIn in) {
@@ -97,5 +102,37 @@ public class UserCardServiceImpl implements UserCardService {
         int visible = 4;
         String last4 = cardNo.substring(cardNo.length()-visible);
         return "************" + last4;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserCardOut> getUserCards(Long userId) {
+        List<UserCard> cards = userCardRepository.findByUserId(userId);
+        return cards.stream().map(this::toOut).toList();
+    }
+
+    /**
+     * 내 카드 목록 조회 dtd 만드는 클래스
+     */
+    private UserCardOut toOut(UserCard uc) {
+        return UserCardOut.builder()
+                .userCardId(uc.getUserCardId())
+                .userId(uc.getUserId())
+                .productId(uc.getProduct() != null ? uc.getProduct().getProductId() : null)
+                .cardUniqueNo(uc.getCardUniqueNo())
+                .issuerCode(uc.getIssuerCode())
+                .issuerName(uc.getIssuerName())
+                .cardName(uc.getCardName())
+                .cardNoMasked(uc.getCardNoMasked())
+                .last4(uc.getLast4())
+                .expiryYmd(uc.getExpiryYmd())
+                .withdrawalAccountNo(uc.getWithdrawalAccountNo())
+                .withdrawalDay(uc.getWithdrawalDay())
+                .baselinePerformance(uc.getBaselinePerformance())
+                .maxBenefitLimit(uc.getMaxBenefitLimit())
+                .cardDescription(uc.getCardDescription())
+                .status(uc.getStatus())
+                .createdAt(uc.getCreatedAt() != null ? uc.getCreatedAt().format(ISO) : null)
+                .build();
     }
 }
