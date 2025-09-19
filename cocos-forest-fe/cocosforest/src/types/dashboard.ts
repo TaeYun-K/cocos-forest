@@ -1,0 +1,118 @@
+// src/types/dashboard.ts
+
+// 월별 리포트 데이터 타입 (실제 API 응답 기반)
+export interface MonthlyReportData {
+  userCardId: string;
+  yearMonth?: string; // API에서 직접 제공되지 않음, 클라이언트에서 추가
+  currency: string;
+  totals: {
+    amountTotal: number;
+    carbonTotalKg: number;
+    transactionCount: number;
+    daysActive: number;
+    avgPerDayAmount: number;
+    avgPerDayCarbonKg: number;
+  };
+  daily: Array<DailySummary>;
+  byCategory: Array<CategoryData>;
+}
+
+// 일별 요약 데이터 타입
+export interface DailySummary {
+  date: string; // YYYY-MM-DD
+  amountTotal: number;
+  carbonTotalKg: number;
+  transactionCount: number;
+  fresh?: boolean;
+  lastSyncedAt?: string;
+}
+
+// 카테고리 데이터 타입
+export interface CategoryData {
+  categoryId: string;
+  categoryName: string;
+  amountTotal: number;
+  carbonTotalKg: number;
+  ratioAmount: number;
+  ratioCarbon: number;
+  color: string;
+}
+
+// 일일 상세 데이터 타입 (실제 API 응답 기반)
+export interface DayData {
+  userCardId: string;
+  date: string;
+  currency: string;
+  meta: {
+    durationMs: number;
+    error: any;
+    lockAcquired: boolean;
+    retry: number;
+  };
+  totals: DayTotals;
+  transactions: Array<Transaction>;
+}
+
+// 일일 합계 데이터 타입
+export interface DayTotals {
+  amountTotal: number;
+  carbonTotalKg: number;
+  transactionCount: number;
+}
+
+// 거래 데이터 타입
+export interface Transaction {
+  externalTransactionId: string;
+  approvedAt: string;
+  txDate: string;
+  txTime: string;
+  amountKrw: number;
+  status: string;
+  merchantName: string;
+  categoryId: string;
+  categoryName: string;
+  cardLast4: string;
+  issuerCode: string;
+  cardName: string;
+  source: string;
+  carbonKg: number;
+  carbonCoefId: string;
+}
+
+// API 응답 공통 타입
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success?: boolean;
+}
+
+// 카테고리별 월별 상세 데이터 타입 (task.md 응답 형식 기반)
+export interface CategoryMonthlyDetails {
+  userCardId: string;
+  yearMonth: string;
+  categoryId: string;
+  categoryName: string;
+  currency: string;
+  totals: {
+    amountTotal: number;
+    carbonTotalKg: number;
+    transactionCount: number;
+  };
+  transactions: Array<Transaction>;
+}
+
+// API 응답 래퍼 타입
+export interface CategoryMonthlyDetailsResponse {
+  httpStatus: string;
+  isSuccess: boolean;
+  message: string;
+  code: number;
+  result: CategoryMonthlyDetails;
+}
+
+// 에러 타입
+export interface ApiError {
+  message: string;
+  code?: string;
+  status?: number;
+}
