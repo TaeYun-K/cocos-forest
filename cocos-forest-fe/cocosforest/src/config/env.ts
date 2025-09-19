@@ -2,9 +2,7 @@
 
 export const ENV = {
   // API 설정
-  API_BASE_URL: __DEV__
-    ? process.env.EXPO_PUBLIC_API_BASE_URL_DEV || 'http://192.168.30.111:8080'
-    : process.env.EXPO_PUBLIC_API_BASE_URL_PROD || 'https://j13e205.p.ssafy.io/dev',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://j13e205.p.ssafy.io/dev',
 
   API_TIMEOUT: parseInt(process.env.EXPO_PUBLIC_API_TIMEOUT || '10000', 10),
 
