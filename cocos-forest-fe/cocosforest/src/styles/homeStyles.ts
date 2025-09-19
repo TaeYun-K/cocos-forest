@@ -117,4 +117,72 @@ export const homeStyles = StyleSheet.create({
     alignItems: "center",
   },
   modalBtnText: { color: "#fff", fontWeight: "700" },
+
+  // 새로 추가된 스타일들
+  treeInfoSection: {
+    marginVertical: 10,
+  },
+  treeInfoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  treeInfoCard: {
+    backgroundColor: '#F3F4F6',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 5,
+  },
+  treeInfoText: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  treeInfoLabel: {
+    fontWeight: 'bold',
+  },
+  treeHealthText: {
+    fontWeight: 'bold',
+  },
+  treeInfoSubtext: {
+    color: '#6B7280',
+  },
+  treeStageText: {
+    color: '#374151',
+  },
+  treeWaterText: {
+    color: '#3B82F6',
+  },
+  treeDeadText: {
+    fontSize: 14,
+    color: '#EF4444',
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 15,
+  },
+  modalButtonFlex: {
+    flex: 1,
+  },
+  
+  // 동적 스타일을 위한 베이스 스타일들
+  fabActive: {
+    backgroundColor: "#10B981",
+  },
+  fabInactive: {
+    backgroundColor: "#9CA3AF",
+  },
+  modalBtnPlant: {
+    backgroundColor: "#10B981",
+  },
+  modalBtnWater: {
+    backgroundColor: "#3B82F6",
+  },
+  modalBtnDisabled: {
+    backgroundColor: "#9CA3AF",
+  },
+  modalBtnClose: {
+    backgroundColor: "#6B7280",
+  },
 });

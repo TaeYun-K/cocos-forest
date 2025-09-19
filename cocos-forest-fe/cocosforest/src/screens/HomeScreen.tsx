@@ -199,13 +199,28 @@ export default function HomeScreen() {
     ? treeData.find(tree => tree.x === selected.x && tree.y === selected.z)
     : null;
 
-  // 체력 상태에 따른 색상
+  // 체력 상태에 따른 색상 (동적 스타일)
   const getHealthColor = (health: number, maxHealth: number) => {
     const percentage = (health / maxHealth) * 100;
     if (percentage >= 70) return "#10B981"; // 건강 (녹색)
     if (percentage >= 40) return "#F59E0B"; // 보통 (주황)
     return "#EF4444"; // 위험 (빨강)
   };
+
+  // 동적 스타일 헬퍼 함수들
+  const getFabStyle = () => [s.fab, showHitbox ? s.fabActive : s.fabInactive];
+  
+  const getPlantButtonStyle = () => [
+    s.modalBtn,
+    s.modalButtonFlex,
+    actionLoading ? s.modalBtnDisabled : s.modalBtnPlant
+  ];
+  
+  const getWaterButtonStyle = () => [
+    s.modalBtn,
+    s.modalButtonFlex,
+    actionLoading ? s.modalBtnDisabled : s.modalBtnWater
+  ];
 
   return (
     <View style={s.container}>
@@ -230,10 +245,7 @@ export default function HomeScreen() {
 
       <Pressable
         onPress={() => setShowHitbox((v) => !v)}
-        style={[
-          s.fab,
-          { backgroundColor: showHitbox ? "#10B981" : "#9CA3AF" },
-        ]}
+        style={getFabStyle()}
       >
         <Text style={s.fabText}>
           {showHitbox ? "히트박스 ON" : "히트박스 OFF"}
@@ -255,49 +267,39 @@ export default function HomeScreen() {
             
             {/* 나무가 있는 경우 상세 정보 표시 */}
             {selectedTree ? (
-              <View style={{ marginVertical: 10 }}>
-                <Text style={[s.modalHint, { fontSize: 16, fontWeight: 'bold' }]}>
+              <View style={s.treeInfoSection}>
+                <Text style={[s.modalHint, s.treeInfoTitle]}>
                   🌳 나무 정보
                 </Text>
-                <View style={{ 
-                  backgroundColor: '#F3F4F6', 
-                  padding: 10, 
-                  borderRadius: 8, 
-                  marginTop: 5 
-                }}>
-                  <Text style={{ fontSize: 14, marginBottom: 4 }}>
-                    <Text style={{ fontWeight: 'bold' }}>체력: </Text>
-                    <Text style={{ 
-                      color: getHealthColor(selectedTree.health, selectedTree.maxHealth),
-                      fontWeight: 'bold'
-                    }}>
+                <View style={s.treeInfoCard}>
+                  <Text style={s.treeInfoText}>
+                    <Text style={s.treeInfoLabel}>체력: </Text>
+                    <Text style={[
+                      s.treeHealthText,
+                      { color: getHealthColor(selectedTree.health, selectedTree.maxHealth) }
+                    ]}>
                       {selectedTree.health}/{selectedTree.maxHealth}
                     </Text>
-                    <Text style={{ color: '#6B7280' }}>
+                    <Text style={s.treeInfoSubtext}>
                       ({Math.round((selectedTree.health / selectedTree.maxHealth) * 100)}%)
                     </Text>
                   </Text>
-                  <Text style={{ fontSize: 14, marginBottom: 4 }}>
-                    <Text style={{ fontWeight: 'bold' }}>성장 단계: </Text>
-                    <Text style={{ color: '#374151' }}>{selectedTree.growthStage}</Text>
+                  <Text style={s.treeInfoText}>
+                    <Text style={s.treeInfoLabel}>성장 단계: </Text>
+                    <Text style={s.treeStageText}>{selectedTree.growthStage}</Text>
                   </Text>
-                  <Text style={{ fontSize: 14, marginBottom: 4 }}>
-                    <Text style={{ fontWeight: 'bold' }}>오늘 물준 횟수: </Text>
-                    <Text style={{ color: '#3B82F6' }}>{selectedTree.waterCountToday}회</Text>
+                  <Text style={s.treeInfoText}>
+                    <Text style={s.treeInfoLabel}>오늘 물준 횟수: </Text>
+                    <Text style={s.treeWaterText}>{selectedTree.waterCountToday}회</Text>
                   </Text>
                   {selectedTree.lastWateredDate && (
-                    <Text style={{ fontSize: 14 }}>
-                      <Text style={{ fontWeight: 'bold' }}>마지막 물준 날: </Text>
-                      <Text style={{ color: '#6B7280' }}>{selectedTree.lastWateredDate}</Text>
+                    <Text style={s.treeInfoText}>
+                      <Text style={s.treeInfoLabel}>마지막 물준 날: </Text>
+                      <Text style={s.treeInfoSubtext}>{selectedTree.lastWateredDate}</Text>
                     </Text>
                   )}
                   {selectedTree.isDead && (
-                    <Text style={{ 
-                      fontSize: 14, 
-                      color: '#EF4444', 
-                      fontWeight: 'bold',
-                      marginTop: 4 
-                    }}>
+                    <Text style={s.treeDeadText}>
                       💀 나무가 죽었습니다
                     </Text>
                   )}
@@ -308,13 +310,10 @@ export default function HomeScreen() {
             )}
             
             {/* 액션 버튼들 */}
-            <View style={{ flexDirection: 'row', gap: 10, marginTop: 15 }}>
+            <View style={s.modalButtonRow}>
               {!isMarked && (
                 <Pressable
-                  style={[s.modalBtn, { 
-                    backgroundColor: actionLoading ? "#9CA3AF" : "#10B981",
-                    flex: 1 
-                  }]}
+                  style={getPlantButtonStyle()}
                   onPress={handlePlantTree}
                   disabled={actionLoading}
                 >
@@ -326,10 +325,7 @@ export default function HomeScreen() {
               
               {isMarked && selectedTree && !selectedTree.isDead && (
                 <Pressable
-                  style={[s.modalBtn, { 
-                    backgroundColor: actionLoading ? "#9CA3AF" : "#3B82F6",
-                    flex: 1 
-                  }]}
+                  style={getWaterButtonStyle()}
                   onPress={handleWaterTree}
                   disabled={actionLoading}
                 >
@@ -340,10 +336,7 @@ export default function HomeScreen() {
               )}
               
               <Pressable
-                style={[s.modalBtn, { 
-                  backgroundColor: "#6B7280",
-                  flex: 1 
-                }]}
+                style={[s.modalBtn, s.modalButtonFlex, s.modalBtnClose]}
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={s.modalBtnText}>닫기</Text>
