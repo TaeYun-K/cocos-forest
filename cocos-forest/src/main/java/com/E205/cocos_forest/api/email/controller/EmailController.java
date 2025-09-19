@@ -21,6 +21,13 @@ public class EmailController {
 
     private final EmailService emailService;
 
+    @Operation(summary = "이메일 중복 확인", description = "회원가입 시 사용하는 이메일이 이미 사용 중인지 확인합니다.")
+    @PostMapping("/check-email-duplicate")
+    public BaseResponse<Void> checkEmailDuplicate(@Valid @RequestBody EmailSendRequestDto requestDto) {
+        emailService.checkEmailDuplicate(requestDto.getEmail());
+        // 중복이 아니면 성공 응답 (결과 데이터 없음)
+        return new BaseResponse<>();
+    }
     @Operation(summary = "인증 코드 이메일 발송", description = "지정된 이메일로 6자리 인증 코드를 발송합니다.")
     @PostMapping("/send-verification")
     public BaseResponse<Void> sendVerificationEmail(@Valid @RequestBody EmailSendRequestDto requestDto) {

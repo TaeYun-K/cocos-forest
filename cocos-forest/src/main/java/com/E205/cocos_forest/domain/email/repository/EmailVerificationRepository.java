@@ -6,6 +6,10 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EmailVerificationRepository extends JpaRepository<EmailVerification, String> {
-    // JpaRepository<EmailVerification, String> 에서 두 번째 타입은 PK의 타입입니다.
-    // email(PK)의 타입이 String이므로 String을 사용합니다.
+    /**
+     * 이메일 존재 여부 확인
+     * @param email 확인할 이메일
+     * @return 존재하면 true, 아니면 false
+     */
+    boolean existsByEmail(String email);
 }
