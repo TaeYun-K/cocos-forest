@@ -27,6 +27,20 @@ public class EmailService {
     private static final long EXPIRATION_TIME_MINUTES = 3; // 인증코드 유효시간 3분
     @Value("${spring.mail.username}")
     private String fromEmail;
+
+    /**
+     * 이메일 중복 확인
+     * @param email 중복 확인할 이메일
+     */
+    @Transactional(readOnly = true)
+    public void checkEmailDuplicate(String email) {
+        if (emailVerificationRepository.existsByEmail(email)) {
+            // 이미 이메일이 존재하면 예외 발생
+            throw new BaseException(BaseResponseStatus.DATABASE_CONSTRAINT_VIOLATION);
+        }
+        // 존재하지 않으면 아무것도 하지 않고 성공적으로 메서드 종료
+    }
+
     /**
      * 인증 코드 이메일 발송
      */
