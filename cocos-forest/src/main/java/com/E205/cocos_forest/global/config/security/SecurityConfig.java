@@ -7,6 +7,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,14 +40,9 @@ public class SecurityConfig {
             .authorizeHttpRequests((requests) -> requests
                 // 공개 접근 허용 경로들
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/api/test/public").permitAll()  // 테스트용 공개 엔드포인트
 
                 // 인증/회원가입 관련 (인증 불필요)
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/user/register", "/api/user/login").permitAll()
-
-                // 관리자 전용
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/user/signup", "/api/user/login", "/api/user/logout").permitAll()
 
                 // 그 외 모든 API는 인증 필요
                 .requestMatchers("/api/**").authenticated()
