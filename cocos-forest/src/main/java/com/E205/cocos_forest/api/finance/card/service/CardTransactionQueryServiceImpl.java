@@ -42,8 +42,7 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     private final EmissionFactorRepository emissionFactorRepository;
     private final MerchantRepository merchantRepository;
 
-    @Override
-    public CardMonthlySummaryOut getMonthlySummary(String userCardId, String yearMonth) {
+    private CardMonthlySummaryOut buildMonthlySummary(String userCardId, String yearMonth) {
 
         // 입력값 검증
         if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(yearMonth)) {
@@ -141,10 +140,15 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .byCategory(categorySummaries)
             .build();
     }
+
+    @Override
+    public CardMonthlySummaryOut getMonthlySummaryForUser(Long userId, String yearMonth) {
+        String resolvedUserCardId = resolveUserCardIdForUser(userId);
+        return buildMonthlySummary(resolvedUserCardId, yearMonth);
+    }
     
     // 일별 상세 조회
-    @Override
-    public CardDailyDetailsOut getDailyDetails(String userCardId, String date) {
+    private CardDailyDetailsOut buildDailyDetails(String userCardId, String date) {
 
         long started = System.currentTimeMillis();
 
@@ -216,9 +220,9 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
                 Comparator.nullsLast(String::compareTo)).reversed())
             .toList();
 
-        // PENDING 상태인 거래만 합계에 포함하며 집계
+        // 승인된 상태만 조회
         List<CardDailyDetailsOut.TransactionItem> pendingItems = items.stream()
-            .filter(i -> "PENDING".equals(i.getStatus()))
+            .filter(i -> "APPROVED".equals(i.getStatus()))
             .toList();
 
         long amountTotal = pendingItems.stream().mapToLong(CardDailyDetailsOut.TransactionItem::getAmountKrw).sum();
@@ -252,6 +256,12 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .build();
     }
 
+    @Override
+    public CardDailyDetailsOut getDailyDetailsForUser(Long userId, String date) {
+        String userCardId = resolveUserCardIdForUser(userId);
+        return buildDailyDetails(userCardId, date);
+    }
+
     // yearMont 를 yyyy-MM 형식으로 파싱
     private YearMonth parseYearMonth(String yearMonth) {
         try {
@@ -265,6 +275,19 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     private UserCard resolveUserCard(String userCardId) {
         return userCardRepository.findById(Long.valueOf(userCardId))
             .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Card not found"));
+    }
+
+    // 사용자가 가지고 있는 카드가 유효한지 검증 
+    private String resolveUserCardIdForUser(Long userId) {
+        if (userId == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Missing userId");
+        }
+
+      StringUtils.hasText(null);
+
+      return userCardRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+            .map(uc -> String.valueOf(uc.getUserCardId()))
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "No linked card"));
     }
 
     // 거래에 등장한 categoryId 목록으로 카테고리 엔티티 로딩
@@ -355,8 +378,7 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     }
 
     // 카테고리별 조회
-    @Override
-    public CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategory(String userCardId, String yearMonth, String categoryId) {
+    private CardCategoryMonthlyDetailsOut buildMonthlyTransactionsByCategory(String userCardId, String yearMonth, String categoryId) {
 
         // 입력값 검증
         if (!StringUtils.hasText(userCardId) || !StringUtils.hasText(yearMonth) || !StringUtils.hasText(categoryId)) {
@@ -414,6 +436,12 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
             .totals(totals)
             .transactions(items)
             .build();
+    }
+
+    @Override
+    public CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategoryForUser(Long userId, String yearMonth, String categoryId) {
+        String resolvedUserCardId = resolveUserCardIdForUser(userId);
+        return buildMonthlyTransactionsByCategory(resolvedUserCardId, yearMonth, categoryId);
     }
 
     private static BigDecimal scale(BigDecimal value, int scale) {

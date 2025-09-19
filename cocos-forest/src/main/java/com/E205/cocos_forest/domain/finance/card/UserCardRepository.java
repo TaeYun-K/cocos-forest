@@ -10,4 +10,5 @@ public interface UserCardRepository extends JpaRepository<UserCard, Long> {
     Optional<UserCard> findByUserIdAndCardUniqueNo(Long userId, String cardUniqueNo);
     List<UserCard> findByUserId(Long userId);
     Optional<UserCard> findByCardUniqueNo(String cardUniqueNo);
+    Optional<UserCard> findTopByUserIdOrderByCreatedAtDesc(Long userId);
 }

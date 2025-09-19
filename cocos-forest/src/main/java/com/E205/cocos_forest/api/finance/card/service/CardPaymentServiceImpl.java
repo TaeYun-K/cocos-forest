@@ -37,22 +37,22 @@ public class CardPaymentServiceImpl implements CardPaymentService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public CardPaymentOut pay(Long userId, String userCardId, CardPaymentCreateIn in) {
-        if (userId == null || !StringUtils.hasText(userCardId) || in == null || in.getMerchantId() == null || in.getPaymentBalance() == null) {
+    public CardPaymentOut pay(Long userId, CardPaymentCreateIn in) {
+        if (userId == null || in == null || in.getMerchantId() == null || in.getPaymentBalance() == null) {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
 
-        // userCardId로 사용자 카드 정보 조회 및 소유권 확인
-        UserCard userCard = userCardRepository.findById(Long.valueOf(userCardId)) 
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Card not found"));
+        // 기본(최근) 카드 선택 및 소유권 검증
+        UserCard userCard = userCardRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "No linked card"));
         if (!userCard.getUserId().equals(userId)) {
-            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Card does not belong to user");
+            throw new BaseException(BaseResponseStatus.NO_ACCESS_AUTHORITY, "Forbidden card access");
         }
 
         // 사용자 SSAFY 연동 정보 조회
         String userKey = ssafyLinkageRepository.findByUserId(userId)
             .map(SsafyLinkage::getUserKey)
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.LINKAGE_NOT_FOUND));
 
         // cardNo, cvc 로 결제 API 호출
         var list = ssafyGateway.inquireSignUpCreditCardList(userKey); // ssafy api 에서 userKey로 연결된 카드 목록 조회
