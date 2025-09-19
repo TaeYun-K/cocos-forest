@@ -42,7 +42,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
                 // 인증/회원가입 관련 (인증 불필요)
-                .requestMatchers(HttpMethod.POST, "/api/user/signup", "/api/user/login", "/api/user/logout").permitAll()
+                .requestMatchers("/api/user/signup", "/api/user/login", "/api/user/logout", "/api/user/reissue").permitAll()
 
                 // 그 외 모든 API는 인증 필요
                 .requestMatchers("/api/**").authenticated()
