@@ -7,6 +7,7 @@ import com.E205.cocos_forest.api.finance.card.dto.out.CardDailyDetailsOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardLinkOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardMonthlySummaryOut;
 import com.E205.cocos_forest.api.finance.card.dto.out.CardPaymentOut;
+import com.E205.cocos_forest.api.finance.card.dto.out.UserCardOut;
 import com.E205.cocos_forest.api.finance.card.service.CardTransactionQueryService;
 import com.E205.cocos_forest.api.finance.card.service.UserCardService;
 import com.E205.cocos_forest.api.finance.card.service.CardPaymentService;
@@ -18,6 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @Tag(name = "카드 API", description = "카드 연결, 소비내역/탄소배출량 조회 API")
 @RestController
@@ -68,5 +70,12 @@ public class CardController {
                                             @RequestBody @Valid CardPaymentCreateIn in) {
         Long userId = principal.getUser().getId();
         return new BaseResponse<>(cardPaymentService.pay(userId, in));
+    }
+
+    @Operation(summary = "연결된 카드 목록 조회", description = "사용자의 연결된 카드 목록을 조회합니다.")
+    @GetMapping
+    public BaseResponse<List<UserCardOut>> listMyCards(@AuthenticationPrincipal CustomUserDetails principal) {
+        Long userId = principal.getUser().getId();
+        return new BaseResponse<>(userCardService.getUserCards(userId));
     }
 }
