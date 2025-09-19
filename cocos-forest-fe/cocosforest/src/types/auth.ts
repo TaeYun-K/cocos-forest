@@ -109,6 +109,10 @@ export interface EmailSendRequest {
   email: string;
 }
 
+export interface NicknameCheckRequest {
+  nickname: string;
+}
+
 export interface EmailVerifyRequest {
   email: string;
   code: string;
