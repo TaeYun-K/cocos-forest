@@ -5,7 +5,14 @@ export type Cell = {
   sy: number;
   path: string;
 };
-export type Marker = { x: number; z: number; sx: number; sy: number };
+
+export type Marker = {
+  x: number;
+  z: number;
+  sx: number;
+  sy: number;
+  growthStage?: 'SMALL' | 'MEDIUM' | 'LARGE'; // 추가
+};
 export type Layout = { w: number; h: number };
 
 // 서버에서 받아오는 좌표

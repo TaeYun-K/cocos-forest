@@ -11,10 +11,28 @@ import {
 } from "../../utils/iso";
 import type { Cell, Marker } from "../../types/forest";
 
-const DIRT_IMG = require("../../../assets/tiles/dirt.png"); // ✅ 바닥층
+const DIRT_IMG = require("../../../assets/tiles/dirt.png");
 const GRASS_IMG = require("../../../assets/tiles/grass.png");
 const WATER_IMG = require("../../../assets/tiles/water.png");
-const MARKER_IMG = require("../../../assets/models/tree.png");
+const MARKER_IMG = require("../../../assets/models/medium_tree.png");
+
+const SMALL_TREE_IMG = require("../../../assets/models/small_tree.png");
+const MEDIUM_TREE_IMG = require("../../../assets/models/medium_tree.png");
+const LARGE_TREE_IMG = require("../../../assets/models/medium_tree.png");
+
+// 나무 상태에 따른 에셋 선택 함수
+const getTreeAsset = (growthStage?: string) => {
+  switch (growthStage) {
+    case 'SMALL':
+      return SMALL_TREE_IMG;
+    case 'MEDIUM':
+      return MEDIUM_TREE_IMG;
+    case 'LARGE':
+      return LARGE_TREE_IMG;
+    default:
+      return MARKER_IMG;
+  }
+};
 
 type Props = {
   cells: Cell[];
@@ -22,9 +40,8 @@ type Props = {
   layoutW: number;
   showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
+  selectedCell?: Cell | null; // 선택된 셀 추가
 };
-
-// ...상단 import와 상수 동일
 
 export default function Board({
   cells,
@@ -32,27 +49,29 @@ export default function Board({
   layoutW,
   showHitbox,
   onCellPress,
+  selectedCell, // 선택된 셀 prop 추가
 }: Props) {
   const isWater = (c: Cell) => c.x >= 3 && c.z >= 3 && c.x <= 4 && c.z <= 4;
+  
+  // 선택된 셀인지 확인하는 함수
+  const isSelectedCell = (cell: Cell) => {
+    return selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z;
+  };
 
-  // ===== ① 기존 cells로부터 스텝 벡터/중심 추정 =====
-  // (x+1, z) - (x, z)
+  // 기존 스텝 벡터/중심 추정 로직
   const c00 = cells.find((c) => c.x === 0 && c.z === 0);
   const c10 = cells.find((c) => c.x === 1 && c.z === 0);
   const c01 = cells.find((c) => c.x === 0 && c.z === 1);
 
-  // 안전장치: 못 찾았을 경우 근접한 페어로 보정
-  const fallback = cells[0];
   const stepX =
     c00 && c10
       ? { dx: c10.sx - c00.sx, dy: c10.sy - c00.sy }
-      : { dx: SPRITE_W / 2, dy: FOOT_H / 2 }; // 대략적인 아이소 스텝
+      : { dx: SPRITE_W / 2, dy: FOOT_H / 2 };
   const stepZ =
     c00 && c01
       ? { dx: c01.sx - c00.sx, dy: c01.sy - c00.sy }
       : { dx: -SPRITE_W / 2, dy: FOOT_H / 2 };
 
-  // 현 8×8 그리드의 "화면상 중심"
   const center = (() => {
     const sum = cells.reduce(
       (acc, c) => ({ sx: acc.sx + c.sx, sy: acc.sy + c.sy }),
@@ -62,19 +81,15 @@ export default function Board({
     return { sx: sum.sx / n, sy: sum.sy / n };
   })();
 
-  // 16×16 범위 인덱스
   const RANGE16 = Array.from({ length: 16 }, (_, i) => i);
 
   return (
     <View style={s.board} pointerEvents="box-none">
-      {/* ===== Layer 0: 바닥층 dirt (16×16), 오프셋 규칙은 기존과 동일 ===== */}
+      {/* Layer 0: 바닥층 dirt (16×16) */}
       {RANGE16.map((ix) =>
         RANGE16.map((iz) => {
-          // 16×16의 중심은 (7.5, 7.5)
           const rx = ix - 7.5;
           const rz = iz - 7.5;
-
-          // 중심을 기준으로 아이소 스텝 누적
           const sx = center.sx + rx * stepX.dx + rz * stepZ.dx;
           const sy = center.sy + rx * stepX.dy + rz * stepZ.dy;
 
@@ -85,7 +100,6 @@ export default function Board({
               style={{
                 position: "absolute",
                 left: sx - SPRITE_W / 2,
-                // ✅ 오프셋은 "지금이 딱 맞으니" 기존 바닥층 규칙 그대로 유지
                 top: sy - FOOT_H / 2 - WALL_H,
                 width: SPRITE_W,
                 height: FOOT_H + WALL_H,
@@ -98,7 +112,7 @@ export default function Board({
         })
       )}
 
-      {/* ===== Layer 1: 기존 8×8 상층(잔디/물) — 변경 없음 ===== */}
+      {/* Layer 1: 기존 8×8 상층(잔디/물) */}
       {cells.map((c) => {
         const tileSource = isWater(c) ? WATER_IMG : GRASS_IMG;
         return (
@@ -119,11 +133,11 @@ export default function Board({
         );
       })}
 
-      {/* ===== Layer 2: 마커 ===== */}
+      {/* Layer 2: 마커 */}
       {markers.map((m) => (
         <Image
           key={`marker-${m.x}-${m.z}`}
-          source={MARKER_IMG}
+          source={getTreeAsset(m.growthStage)}
           style={{
             position: "absolute",
             left: m.sx - MARKER_SIZE / 2,
@@ -138,24 +152,52 @@ export default function Board({
         />
       ))}
 
-      {/* ===== Layer 3: 히트박스 ===== */}
+      {/* Layer 3: 히트박스 + 하이라이트 */}
       {layoutW > 0 && (
         <Svg
           style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
           pointerEvents="box-none"
         >
-          {cells.map((c) => (
-            <Path
-              key={`path-${c.x}-${c.z}`}
-              d={c.path}
-              fill={showHitbox ? "rgba(0,255,0,0.3)" : "#00FF00"}
-              fillOpacity={showHitbox ? 0.3 : 0}
-              stroke={showHitbox ? "blue" : "#000"}
-              strokeOpacity={showHitbox ? 1 : 0}
-              strokeWidth={1}
-              onPress={() => onCellPress(c)}
-            />
-          ))}
+          {cells.map((c) => {
+            const isSelected = isSelectedCell(c);
+            
+            return (
+              <Path
+                key={`path-${c.x}-${c.z}`}
+                d={c.path}
+                fill={
+                  isSelected 
+                    ? "rgba(255, 215, 0, 0.6)"  // 선택된 셀: 골드 색상
+                    : showHitbox 
+                      ? "rgba(0,255,0,0.3)" 
+                      : "#00FF00"
+                }
+                fillOpacity={
+                  isSelected 
+                    ? 0.6  // 선택된 셀: 더 진한 투명도
+                    : showHitbox 
+                      ? 0.3 
+                      : 0
+                }
+                stroke={
+                  isSelected 
+                    ? "#FFD700"  // 선택된 셀: 골드 테두리
+                    : showHitbox 
+                      ? "blue" 
+                      : "#000"
+                }
+                strokeOpacity={
+                  isSelected 
+                    ? 1  // 선택된 셀: 완전 불투명 테두리
+                    : showHitbox 
+                      ? 1 
+                      : 0
+                }
+                strokeWidth={isSelected ? 3 : 1}  // 선택된 셀: 더 굵은 테두리
+                onPress={() => onCellPress(c)}
+              />
+            );
+          })}
         </Svg>
       )}
     </View>

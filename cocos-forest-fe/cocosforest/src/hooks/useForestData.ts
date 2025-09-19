@@ -23,9 +23,9 @@ export function projectMarkers(
   centerX: number,
   topMargin: number
 ) {
-  return coords.map<Marker>(({ x, z }) => {
-    const { sx, sy } = toScreen(x, z, centerX, topMargin);
-    return { x, z, sx, sy };
+  return coords.map<Marker>((coord) => {
+    const { sx, sy } = toScreen(coord.x, coord.z, centerX, topMargin);
+    return { ...coord, sx, sy };  // 모든 기존 속성 유지하면서 sx, sy만 추가
   });
 }
 
