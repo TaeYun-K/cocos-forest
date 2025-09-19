@@ -37,7 +37,7 @@ export default function HomeScreen() {
   const [actionLoading, setActionLoading] = useState(false); // 나무심기/물주기 로딩
 
   // 원본 마커 좌표 저장용 (재투영을 위해)
-  const [originalMarkers, setOriginalMarkers] = useState<Array<{ x: number; z: number }>>([]);
+  const [originalMarkers, setOriginalMarkers] = useState<Array<{ x: number; z: number; growthStage: string }>>([]);
   
   // 나무 정보 저장용 (체력 등 상세 정보)
   const [treeData, setTreeData] = useState<Array<{
@@ -64,10 +64,10 @@ export default function HomeScreen() {
           fetchPoints(),
         ]);
 
-        // trees 배열을 markers 형태로 변환 (x, y -> x, z)
-        const treeMarkers = forestInfo.trees.map((tree) => ({
+       const treeMarkers = forestInfo.trees.map((tree) => ({
           x: tree.x,
           z: tree.y,
+          growthStage: tree.growthStage, // 추가
         }));
         setOriginalMarkers(treeMarkers);
         
@@ -127,6 +127,7 @@ export default function HomeScreen() {
       const treeMarkers = forestInfo.trees.map((tree) => ({
         x: tree.x,
         z: tree.y,
+        growthStage: tree.growthStage, // 추가
       }));
       setOriginalMarkers(treeMarkers);
       setTreeData(forestInfo.trees);
@@ -169,6 +170,7 @@ export default function HomeScreen() {
       const treeMarkers = forestInfo.trees.map((tree) => ({
         x: tree.x,
         z: tree.y,
+        growthStage: tree.growthStage, // 추가
       }));
       setOriginalMarkers(treeMarkers);
       setTreeData(forestInfo.trees);
@@ -240,6 +242,7 @@ export default function HomeScreen() {
           layoutW={layout.w}
           showHitbox={showHitbox}
           onCellPress={handleCellPress}
+          selectedCell={selected} 
         />
       </View>
 
