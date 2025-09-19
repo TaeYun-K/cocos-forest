@@ -44,10 +44,7 @@ public class SecurityConfig {
                 // 인증/회원가입 관련 (인증 불필요)
                 .requestMatchers(
                     "/api/email/**",
-                    "/api/user/signup",
-                    "/api/user/login",
-                    "/api/user/logout",
-                    "/api/user/reissue").permitAll()
+                    "/api/user/**").permitAll()
 
                 // 그 외 모든 API는 인증 필요
                 .requestMatchers("/api/**").authenticated()
