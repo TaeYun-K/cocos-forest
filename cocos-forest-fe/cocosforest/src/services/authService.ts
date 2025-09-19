@@ -1,120 +1,156 @@
-// src/services/authService.ts
-
-import { LoginForm, SignupForm, User, AuthResponse } from '../types/auth';
-
-// 로딩 시뮬레이션을 위한 delay 함수
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// 임시 사용자 데이터 (실제로는 백엔드에서 관리)
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'test@test.com',
-    nickname: 'coco',
-    phoneNumber: '01012345678'
-  }
-];
-
-let mockUserId = mockUsers.length + 1;
+import {
+  LoginForm,
+  SignupForm,
+  User,
+  AuthResponse,
+  TokenInfo,
+  BaseResponse,
+  SignupRequestDto,
+  SignupResponseDto,
+  EmailSendRequest,
+  EmailVerifyRequest,
+  LogoutRequest,
+  ReissueRequest,
+} from "../types/auth";
+import apiClient from "../api/axios";
 
 export const authService = {
   // 로그인
-  login: async (loginData: LoginForm): Promise<AuthResponse> => {
-    await delay(1000); // 1초 로딩 시뮬레이션
+  login: async (loginData: LoginForm): Promise<TokenInfo> => {
+    try {
+      const response = await apiClient.post<BaseResponse<TokenInfo>>(
+        "/api/user/login",
+        {
+          email: loginData.email,
+          password: loginData.password,
+        }
+      );
 
-    // 이메일로 사용자 찾기
-    const user = mockUsers.find(u => u.email === loginData.email);
-    
-    if (!user) {
-      throw new Error('존재하지 않는 이메일입니다.');
+      if (!response.data.isSuccess) {
+        throw new Error(response.data.message || "로그인에 실패했습니다.");
+      }
+
+      return response.data.result;
+    } catch (error) {
+      console.error("로그인 오류:", error);
+      throw error;
     }
-
-    // 간단한 비밀번호 검증 (실제로는 해시된 비밀번호 비교)
-    if (loginData.password !== '1234') {
-      throw new Error('비밀번호가 일치하지 않습니다.');
-    }
-
-    // AuthResponse 타입에 맞게 반환
-    const response: AuthResponse = {
-      user,
-      token: `mock_token_${user.id}_${Date.now()}`
-    };
-
-    return response;
   },
 
   // 회원가입
-  signup: async (signupData: SignupForm): Promise<AuthResponse> => {
-    await delay(1500); // 1.5초 로딩 시뮬레이션
+  signup: async (signupData: SignupForm): Promise<SignupResponseDto> => {
+    try {
+      const requestData: SignupRequestDto = {
+        email: signupData.email,
+        password: signupData.password,
+        nickname: signupData.nickname,
+        phoneNumber: signupData.phoneNumber,
+        termsAgreed: signupData.agreements.terms,
+        privacyPolicyAgreed: signupData.agreements.privacy,
+        marketingAgreed: signupData.agreements.marketing,
+      };
 
-    // 이메일 중복 체크
-    const existingUser = mockUsers.find(u => u.email === signupData.email);
-    if (existingUser) {
-      throw new Error('이미 사용 중인 이메일입니다.');
+      const response = await apiClient.post<BaseResponse<SignupResponseDto>>(
+        "/api/user/signup",
+        requestData
+      );
+
+      if (!response.data.isSuccess) {
+        throw new Error(response.data.message || "회원가입에 실패했습니다.");
+      }
+
+      return response.data.result;
+    } catch (error) {
+      console.error("회원가입 오류:", error);
+      throw error;
     }
-
-    // 닉네임 중복 체크
-    const existingNickname = mockUsers.find(u => u.nickname === signupData.nickname);
-    if (existingNickname) {
-      throw new Error('이미 사용 중인 닉네임입니다.');
-    }
-
-    // 비밀번호 확인
-    if (signupData.password !== signupData.passwordConfirm) {
-      throw new Error('비밀번호가 일치하지 않습니다.');
-    }
-
-    // 새 사용자 생성
-    const newUser: User = {
-      id: mockUserId.toString(),
-      email: signupData.email,
-      nickname: signupData.nickname,
-      phoneNumber: signupData.phoneNumber
-    };
-
-    mockUsers.push(newUser);
-    mockUserId++;
-
-    // AuthResponse 타입에 맞게 반환
-    const response: AuthResponse = {
-      user: newUser,
-      token: `mock_token_${newUser.id}_${Date.now()}`
-    };
-
-    return response;
   },
 
-  // 이메일 중복 체크
+  // 이메일 중복 체크 (별도 API 엔드포인트가 필요하면 추가)
   checkEmailDuplicate: async (email: string): Promise<boolean> => {
-    await delay(500);
-    return mockUsers.some(u => u.email === email);
+    // 백엔드에 이메일 중복 체크 API가 있다면 사용
+    // 현재는 임시로 false 반환 (중복 없음으로 가정)
+    return false;
   },
 
-  // 닉네임 중복 체크
+  // 닉네임 중복 체크 (별도 API 엔드포인트가 필요하면 추가)
   checkNicknameDuplicate: async (nickname: string): Promise<boolean> => {
-    await delay(500);
-    return mockUsers.some(u => u.nickname === nickname);
+    // 백엔드에 닉네임 중복 체크 API가 있다면 사용
+    // 현재는 임시로 false 반환 (중복 없음으로 가정)
+    return false;
   },
 
-  // 인증번호 발송 (목업)
-  sendVerificationCode: async (email: string): Promise<{ code: string }> => {
-    await delay(1000);
-    const mockCode = '1234'; // 실제로는 랜덤 코드 생성
-    console.log(`인증번호 발송: ${email} -> ${mockCode}`);
-    return { code: mockCode };
+  // 인증번호 발송
+  sendVerificationCode: async (email: string): Promise<void> => {
+    try {
+      const requestData: EmailSendRequest = { email };
+      const response = await apiClient.post<BaseResponse<void>>(
+        "/api/email/send-verification",
+        requestData
+      );
+
+      if (!response.data.isSuccess) {
+        throw new Error(
+          response.data.message || "인증번호 발송에 실패했습니다."
+        );
+      }
+    } catch (error) {
+      console.error("인증번호 발송 오류:", error);
+      throw error;
+    }
   },
 
   // 인증번호 확인
   verifyCode: async (email: string, code: string): Promise<boolean> => {
-    await delay(500);
-    // 목업에서는 '1234'만 유효한 코드로 처리
-    return code === '1234';
+    try {
+      const requestData: EmailVerifyRequest = { email, code };
+      const response = await apiClient.post<BaseResponse<void>>(
+        "/api/email/verify-code",
+        requestData
+      );
+
+      return response.data.isSuccess;
+    } catch (error) {
+      console.error("인증번호 검증 오류:", error);
+      throw error;
+    }
   },
 
   // 로그아웃 (토큰 무효화 등)
-  logout: async (): Promise<void> => {
-    await delay(300);
-    // 실제로는 서버에서 토큰 무효화
-    console.log('로그아웃 완료');
-  }
+  logout: async (refreshToken: string): Promise<void> => {
+    try {
+      const requestData: LogoutRequest = { refreshToken };
+      const response = await apiClient.post<BaseResponse<void>>(
+        "/api/user/logout",
+        requestData
+      );
+
+      if (!response.data.isSuccess) {
+        throw new Error(response.data.message || "로그아웃에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("로그아웃 오류:", error);
+      throw error;
+    }
+  },
+
+  // 토큰 재발급
+  reissue: async (refreshToken: string): Promise<TokenInfo> => {
+    try {
+      const requestData: ReissueRequest = { refreshToken };
+      const response = await apiClient.post<BaseResponse<TokenInfo>>(
+        "/api/user/reissue",
+        requestData
+      );
+
+      if (!response.data.isSuccess) {
+        throw new Error(response.data.message || "토큰 재발급에 실패했습니다.");
+      }
+
+      return response.data.result;
+    } catch (error) {
+      console.error("토큰 재발급 오류:", error);
+      throw error;
+    }
+  },
 };

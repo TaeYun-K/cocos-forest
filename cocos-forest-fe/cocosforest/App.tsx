@@ -2,23 +2,27 @@
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
+import { QueryClientProvider } from "@tanstack/react-query";
 
-// ❌ Mock 비활성화 - 실제 백엔드 API 사용
+// Mock 설정 제거 (실제 API 연동 시)
 // import "./src/mocks/setupMocks";
 
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { validateEnv } from "./src/config/env";
+import { queryClient } from "./src/config/queryClient";
 
 export default function App() {
   useEffect(() => {
-    if (__DEV__) {
-      console.log("✅ axios-mock-adapter initialized");
-    }
+    // 환경변수 검증
+    validateEnv();
   }, []);
 
   return (
-    <NavigationContainer>
-      <RootNavigator />
-      <StatusBar style="light" />
-    </NavigationContainer>
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        <RootNavigator />
+        <StatusBar style="light" />
+      </NavigationContainer>
+    </QueryClientProvider>
   );
 }
