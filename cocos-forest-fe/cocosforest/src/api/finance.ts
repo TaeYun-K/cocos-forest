@@ -119,7 +119,7 @@ export const fetchAccountProducts = async (bankCode: string): Promise<AccountPro
  * 사용자 계좌 목록 조회
  */
 export const fetchUserAccounts = async (userId: number): Promise<UserAccount[]> => {
-  const response = await apiClient.get<ApiResponse<UserAccount[]>>(`/api/finance/accounts/user/${userId}`);
+  const response = await apiClient.get<ApiResponse<UserAccount[]>>(`/api/finance/accounts/user`);
   return response.data.result;
 };
 
