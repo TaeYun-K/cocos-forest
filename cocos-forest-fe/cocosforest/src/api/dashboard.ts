@@ -23,7 +23,7 @@ export const fetchDayDetails = async (
   try {
     console.log(`🔍 fetchDayDetails 시작: ${date}`);
 
-    const response = await apiClient.get(`/api/finance/user-cards/${CARD_ID}/transactions/daily-details`, {
+    const response = await apiClient.get(`/api/finance/user-cards/transactions/daily-details`, {
       params: {
         date,
         force,
@@ -59,7 +59,7 @@ export const fetchMonthlyReport = async (
   try {
     console.log(`🔍 fetchMonthlyReport 시작: ${yearMonth}`);
 
-    const response = await apiClient.get(`/api/finance/user-cards/${CARD_ID}/transactions/monthly-summary`, {
+    const response = await apiClient.get(`/api/finance/user-cards/transactions/monthly-summary`, {
       params: {
         yearMonth,
         includeByCategory: true,
@@ -129,7 +129,7 @@ export const fetchCategoryMonthlyDetails = async (
     console.log(`📋 API 요청 파라미터:`, params);
 
     const response = await apiClient.get<CategoryMonthlyDetailsResponse>(
-      `/api/finance/user-cards/${userCardId}/transactions/${categoryId}`,
+      `/api/finance/user-cards/transactions/${categoryId}`,
       { params }
     );
 
@@ -179,5 +179,37 @@ export const fetchTodayData = async (): Promise<DayData> => {
   console.log(`🌱 오늘 탄소배출량: ${result?.totals?.carbonTotalKg}kg`);
 
   return result;
+};
+
+/**
+ * 새로운 결제 추가
+ * @param userId - 사용자 ID
+ * @param userCardId - 사용자 카드 ID
+ * @returns 결제 결과
+ */
+export const addNewPayment = async (
+  userId: number,
+  userCardId: number
+): Promise<any> => {
+  try {
+    console.log(`💳 새로운 결제 추가 시작: userId=${userId}, userCardId=${userCardId}`);
+
+    const requestBody = {
+      merchantId: 14261,
+      paymentBalance: 50000
+    };
+
+    console.log('📦 결제 요청 데이터:', requestBody);
+
+    const response = await apiClient.post(`/api/finance/user-cards/transactions/pay`, requestBody);
+
+    console.log(`✅ 결제 추가 성공`);
+    console.log('📦 결제 응답 데이터:', response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`❌ 결제 추가 에러:`, error);
+    throw error;
+  }
 };
 

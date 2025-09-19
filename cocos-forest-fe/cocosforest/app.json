@@ -31,8 +31,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "019eed11-10ee-43e1-bad0-2d788a586ff6"
+        "projectId": "29348cb4-c570-4cda-a867-c1e2523699cf"
       }
-    }
+    },
+    "owner": "kwonin"
   }
 }
