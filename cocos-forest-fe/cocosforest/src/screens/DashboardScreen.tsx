@@ -1,17 +1,23 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
 import useDashboardStore from '../store/dashboardStore';
-import { useMonthlyReport, useTodayData } from '../hooks/useDashboardQueries';
+import { useMonthlyReport, useTodayData, useDashboardInvalidation } from '../hooks/useDashboardQueries';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
 import {
   AIAnalysisCard,
   TodayEmissionStatus,
   MonthlyCalendar,
   CategoryReport,
-  DayDetailCard
+  DayDetailCard,
+  PaymentButton,
+  PaymentSuccessModal
 } from '../components/dashboard';
 
 export default function DashboardScreen() {
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const { invalidateTodayData, invalidateAllDashboard } = useDashboardInvalidation();
+
   const {
     // 상태
     selectedMonth,
@@ -46,12 +52,30 @@ export default function DashboardScreen() {
   // 로딩 상태 통합
   const isLoading = todayLoading || monthlyLoading;
 
+  // 결제 성공 후 데이터 새로고침
+  const handlePaymentSuccess = () => {
+    setShowSuccessModal(true);
+    // React Query 캐시 무효화로 데이터 재요청
+    invalidateTodayData();
+    invalidateAllDashboard();
+  };
+
+  // 성공 모달 확인 버튼
+  const handleModalConfirm = () => {
+    setShowSuccessModal(false);
+  };
+
 
 
 
   return (
     <SafeAreaView style={commonStyles.container}>
       <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
+
+        {/* 결제하기 버튼 */}
+        <View style={commonStyles.section}>
+          <PaymentButton onPaymentSuccess={handlePaymentSuccess} />
+        </View>
 
         {/* AI 분석 결과 */}
         <View style={[commonStyles.section, { marginBottom: -155 }]}>
@@ -118,8 +142,13 @@ export default function DashboardScreen() {
           <DayDetailCard />
         )}
 
-
       </ScrollView>
+
+      {/* 결제 성공 모달 */}
+      <PaymentSuccessModal
+        visible={showSuccessModal}
+        onConfirm={handleModalConfirm}
+      />
     </SafeAreaView>
   );
 }
