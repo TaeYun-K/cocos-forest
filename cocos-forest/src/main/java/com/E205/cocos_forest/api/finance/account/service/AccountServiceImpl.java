@@ -18,6 +18,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import com.E205.cocos_forest.domain.finance.bank.BankRepository;
+import com.E205.cocos_forest.domain.finance.bank.Bank;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -26,6 +29,7 @@ public class AccountServiceImpl implements AccountService {
     private final SsafyGateway ssafyGateway;
     private final SsafyLinkageRepository ssafyLinkageRepository;
     private final com.E205.cocos_forest.api.finance.account.service.UserAccountService userAccountService;
+    private final BankRepository bankRepository;
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     @Override
@@ -81,11 +85,15 @@ public class AccountServiceImpl implements AccountService {
     }
 
     private UserAccountOut convertToUserAccountOut(UserAccount account) {
+        String bankName = bankRepository.findById(account.getBankCode())
+                .map(Bank::getBankName)
+                .orElse(null);
         return UserAccountOut.builder()
                 .accountId(account.getAccountId())
                 .userId(account.getUserId())
                 .accountNo(account.getAccountNo())
                 .bankCode(account.getBankCode())
+                .bankName(bankName)
                 .accountTypeUniqueNo(account.getAccountTypeUniqueNo())
                 .currency(account.getCurrency())
                 .currencyName(account.getCurrencyName())

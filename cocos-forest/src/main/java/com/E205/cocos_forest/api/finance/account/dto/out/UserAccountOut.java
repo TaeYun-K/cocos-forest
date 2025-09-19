@@ -10,6 +10,7 @@ public class UserAccountOut {
     private Long userId;
     private String accountNo;
     private String bankCode;
+    private String bankName;
     private String accountTypeUniqueNo;
     private String currency;
     private String currencyName;

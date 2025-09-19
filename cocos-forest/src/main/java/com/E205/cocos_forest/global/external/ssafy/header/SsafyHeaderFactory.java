@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
@@ -20,7 +21,7 @@ public class SsafyHeaderFactory {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HHmmss");
 
     public SsafyHeader create(String apiName, String apiServiceCode, String userKeyNullable) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         return SsafyHeader.builder()
                 .apiName(apiName)
                 .apiServiceCode(apiServiceCode)
@@ -35,7 +36,7 @@ public class SsafyHeaderFactory {
     }
 
     private String genTxnId() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         String timestamp = now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String random6 = String.format("%06d", (int)(Math.random() * 1_000_000));
         return timestamp + random6; // 총 20자리
