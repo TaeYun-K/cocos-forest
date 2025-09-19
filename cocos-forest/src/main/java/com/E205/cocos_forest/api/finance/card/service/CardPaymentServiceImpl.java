@@ -52,7 +52,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         // 사용자 SSAFY 연동 정보 조회
         String userKey = ssafyLinkageRepository.findByUserId(userId)
             .map(SsafyLinkage::getUserKey)
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.LINKAGE_NOT_FOUND));
 
         // cardNo, cvc 로 결제 API 호출
         var list = ssafyGateway.inquireSignUpCreditCardList(userKey); // ssafy api 에서 userKey로 연결된 카드 목록 조회

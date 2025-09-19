@@ -32,7 +32,7 @@ public class AccountServiceImpl implements AccountService {
     public AccountCreateOut createDemandDepositAccount(Long userId, AccountCreateIn request) {
         // 1) 현재 사용자의 SSAFY 연동 정보 조회
         SsafyLinkage linkage = ssafyLinkageRepository.findByUserId(userId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.LINKAGE_NOT_FOUND));
 
         if (linkage.getUserKey() == null || linkage.getUserKey().isBlank()) {
             throw new BaseException(BaseResponseStatus.EXTERNAL_API_ERROR);

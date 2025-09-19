@@ -19,6 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+
     @PostMapping("/login")
     public BaseResponse<TokenInfo> login(@RequestBody LoginRequestDto loginRequestDto) {
         TokenInfo tokenInfo = authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
