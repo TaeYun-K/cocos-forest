@@ -107,7 +107,8 @@ public enum BaseResponseStatus {
   // ===== 외부 API 관련 에러 코드 (5000번대) =====
   // ===================================================================================
   EXTERNAL_API_ERROR(HttpStatus.NOT_FOUND, false, 5201, "외부 금융 API 호출 중 오류가 발생했습니다."),
-  LINKAGE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 5203, "해당 유저의 SSAFY 연동 정보가 존재하지 않습니다.");
+  LINKAGE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 5203, "해당 유저의 SSAFY 연동 정보가 존재하지 않습니다."),
+  ACCOUNT_FETCH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 5001, "계좌 정보 조회에 실패했습니다.");
 
 
   private final HttpStatus httpStatus;
