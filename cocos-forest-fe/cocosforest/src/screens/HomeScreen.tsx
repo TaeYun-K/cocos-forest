@@ -7,7 +7,7 @@ import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker } from "../types/forest";
-import { fetchMarkers, fetchStats } from "../api/home";
+import { fetchForestInfo, fetchPoints, plantTree } from "../api/home";
 
 export default function HomeScreen() {
   // 레이아웃
@@ -33,40 +33,112 @@ export default function HomeScreen() {
   // 포인트/성장률 (API)
   const [points, setPoints] = useState("0");
   const [growth, setGrowth] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false); // 나무심기/물주기 로딩
 
-  // API 호출
+  // 원본 마커 좌표 저장용 (재투영을 위해)
+  const [originalMarkers, setOriginalMarkers] = useState<
+    Array<{ x: number; z: number }>
+  >([]);
+
+  // 홈 화면 진입시마다 API 호출 (대시보드처럼)
   useEffect(() => {
-    (async () => {
+    const loadForestData = async () => {
       try {
-        const [{ markers: markerCoords }, stats] = await Promise.all([
-          fetchMarkers(),
-          fetchStats(),
-        ]);
-        setMarkers(projectMarkers(markerCoords, centerX, topMargin));
-        setPoints(stats.points.toLocaleString() + " P");
-        setGrowth(stats.growth);
-      } catch (e) {
-        // 실패시에도 UI는 동작하도록 no-op
-        // console.warn(e);
-      }
-    })();
-  }, [centerX, topMargin]);
+        setLoading(true);
 
-  // 반응형: 레이아웃 변하면 마커 위치 재투영
+        // 병렬로 숲 정보와 포인트 정보 조회
+        const [forestInfo, pointsData] = await Promise.all([
+          fetchForestInfo(),
+          fetchPoints(),
+        ]);
+
+        // trees 배열을 markers 형태로 변환 (x, y -> x, z)
+        const treeMarkers = forestInfo.trees.map((tree) => ({
+          x: tree.x,
+          z: tree.y,
+        }));
+        setOriginalMarkers(treeMarkers);
+
+        // 성장률 계산 (살아있는 나무 / 전체 나무 * 100)
+        const growthRate =
+          forestInfo.trees.length > 0
+            ? Math.round(
+                (forestInfo.aliveTreeCount / forestInfo.trees.length) * 100
+              )
+            : 0;
+        setGrowth(growthRate);
+
+        // 포인트 데이터 처리 (숫자가 바로 반환됨)
+        setPoints(pointsData.toLocaleString() + " P");
+      } catch (error) {
+        console.error("Failed to load forest data:", error);
+        // 실패시에도 UI는 동작하도록 기본값 유지
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // 화면에 들어올 때마다 API 호출
+    loadForestData();
+  }, []); // 컴포넌트 마운트시마다 실행
+
+  // 레이아웃 변경 시 마커 위치 재투영
   useEffect(() => {
-    setMarkers((prev) =>
-      projectMarkers(
-        prev.map(({ x, z }) => ({ x, z })),
-        centerX,
-        topMargin
-      )
-    );
-  }, [centerX, topMargin]);
+    if (originalMarkers.length > 0 && centerX > 0 && topMargin > 0) {
+      setMarkers(projectMarkers(originalMarkers, centerX, topMargin));
+    }
+  }, [originalMarkers, centerX, topMargin]);
 
   const handleCellPress = useCallback((cell: Cell) => {
     setSelected(cell);
     setModalVisible(true);
   }, []);
+
+  // 나무 심기 핸들러
+  const handlePlantTree = async () => {
+    if (!selected || actionLoading) return;
+
+    try {
+      setActionLoading(true);
+
+      // 나무 심기 API 호출 (z를 y로 변환)
+      await plantTree(selected.x, selected.z);
+
+      // 성공 후 숲 데이터 다시 로드
+      const [forestInfo, pointsData] = await Promise.all([
+        fetchForestInfo(),
+        fetchPoints(),
+      ]);
+
+      // 데이터 업데이트
+      const treeMarkers = forestInfo.trees.map((tree) => ({
+        x: tree.x,
+        z: tree.y,
+      }));
+      setOriginalMarkers(treeMarkers);
+
+      const growthRate =
+        forestInfo.trees.length > 0
+          ? Math.round(
+              (forestInfo.aliveTreeCount / forestInfo.trees.length) * 100
+            )
+          : 0;
+      setGrowth(growthRate);
+      setPoints(pointsData.toLocaleString() + " P");
+
+      // 모달 닫기
+      setModalVisible(false);
+    } catch (error) {
+      console.error("나무 심기 실패:", error);
+      // 에러 처리 (토스트 메시지나 알림 등)
+      alert(
+        "나무 심기에 실패했습니다. 포인트가 부족하거나 이미 나무가 있을 수 있습니다."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const isMarked = selected
     ? markerSet.has(`${selected.x},${selected.z}`)
@@ -74,7 +146,10 @@ export default function HomeScreen() {
 
   return (
     <View style={s.container}>
-      <InfoBar points={points} growth={String(growth)} />
+      <InfoBar
+        points={loading ? "로딩 중..." : points}
+        growth={loading ? "0" : String(growth)}
+      />
       <Coco showTip={showCocoTip} onToggle={() => setShowCocoTip((v) => !v)} />
 
       <View style={{ flex: 1 }} onLayout={onLayout}>
@@ -109,12 +184,61 @@ export default function HomeScreen() {
               좌표: x = {selected?.x}, z = {selected?.z}
             </Text>
             <Text style={s.modalHint}>{isMarked ? "물주기" : "나무심기"}</Text>
-            <Pressable
-              style={s.modalBtn}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={s.modalBtnText}>닫기</Text>
-            </Pressable>
+
+            {/* 액션 버튼들 */}
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 15 }}>
+              {!isMarked && (
+                <Pressable
+                  style={[
+                    s.modalBtn,
+                    {
+                      backgroundColor: actionLoading ? "#9CA3AF" : "#10B981",
+                      flex: 1,
+                    },
+                  ]}
+                  onPress={handlePlantTree}
+                  disabled={actionLoading}
+                >
+                  <Text style={s.modalBtnText}>
+                    {actionLoading ? "심는중..." : "나무 심기"}
+                  </Text>
+                </Pressable>
+              )}
+
+              {isMarked && (
+                <Pressable
+                  style={[
+                    s.modalBtn,
+                    {
+                      backgroundColor: actionLoading ? "#9CA3AF" : "#3B82F6",
+                      flex: 1,
+                    },
+                  ]}
+                  onPress={() => {
+                    // TODO: 물주기 API 구현 후 추가
+                    alert("물주기 기능은 곧 추가됩니다!");
+                  }}
+                  disabled={actionLoading}
+                >
+                  <Text style={s.modalBtnText}>
+                    {actionLoading ? "물주는중..." : "물주기"}
+                  </Text>
+                </Pressable>
+              )}
+
+              <Pressable
+                style={[
+                  s.modalBtn,
+                  {
+                    backgroundColor: "#6B7280",
+                    flex: 1,
+                  },
+                ]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={s.modalBtnText}>닫기</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
