@@ -7,7 +7,7 @@ import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker } from "../types/forest";
-import { fetchForestInfo, fetchPoints, plantTree } from "../api/home";
+import { fetchForestInfo, fetchPoints } from "../api/home";
 
 export default function HomeScreen() {
   // 레이아웃
@@ -41,6 +41,21 @@ export default function HomeScreen() {
     Array<{ x: number; z: number }>
   >([]);
 
+  // 나무 정보 저장용 (체력 등 상세 정보)
+  const [treeData, setTreeData] = useState<
+    Array<{
+      x: number;
+      y: number;
+      treeId: number;
+      health: number;
+      maxHealth: number;
+      growthStage: string;
+      isDead: boolean;
+      waterCountToday: number;
+      lastWateredDate: string | null;
+    }>
+  >([]);
+
   // 홈 화면 진입시마다 API 호출 (대시보드처럼)
   useEffect(() => {
     const loadForestData = async () => {
@@ -59,6 +74,9 @@ export default function HomeScreen() {
           z: tree.y,
         }));
         setOriginalMarkers(treeMarkers);
+
+        // 나무 상세 정보 저장
+        setTreeData(forestInfo.trees);
 
         // 성장률 계산 (살아있는 나무 / 전체 나무 * 100)
         const growthRate =
@@ -117,6 +135,7 @@ export default function HomeScreen() {
         z: tree.y,
       }));
       setOriginalMarkers(treeMarkers);
+      setTreeData(forestInfo.trees);
 
       const growthRate =
         forestInfo.trees.length > 0
@@ -143,6 +162,20 @@ export default function HomeScreen() {
   const isMarked = selected
     ? markerSet.has(`${selected.x},${selected.z}`)
     : false;
+
+  // 선택된 셀의 나무 정보 찾기
+  const selectedTree =
+    selected && isMarked
+      ? treeData.find((tree) => tree.x === selected.x && tree.y === selected.z)
+      : null;
+
+  // 체력 상태에 따른 색상
+  const getHealthColor = (health: number, maxHealth: number) => {
+    const percentage = (health / maxHealth) * 100;
+    if (percentage >= 70) return "#10B981"; // 건강 (녹색)
+    if (percentage >= 40) return "#F59E0B"; // 보통 (주황)
+    return "#EF4444"; // 위험 (빨강)
+  };
 
   return (
     <View style={s.container}>
@@ -183,7 +216,83 @@ export default function HomeScreen() {
             <Text style={s.modalText}>
               좌표: x = {selected?.x}, z = {selected?.z}
             </Text>
-            <Text style={s.modalHint}>{isMarked ? "물주기" : "나무심기"}</Text>
+
+            {/* 나무가 있는 경우 상세 정보 표시 */}
+            {selectedTree ? (
+              <View style={{ marginVertical: 10 }}>
+                <Text
+                  style={[s.modalHint, { fontSize: 16, fontWeight: "bold" }]}
+                >
+                  🌳 나무 정보
+                </Text>
+                <View
+                  style={{
+                    backgroundColor: "#F3F4F6",
+                    padding: 10,
+                    borderRadius: 8,
+                    marginTop: 5,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, marginBottom: 4 }}>
+                    <Text style={{ fontWeight: "bold" }}>체력: </Text>
+                    <Text
+                      style={{
+                        color: getHealthColor(
+                          selectedTree.health,
+                          selectedTree.maxHealth
+                        ),
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {selectedTree.health}/{selectedTree.maxHealth}
+                    </Text>
+                    <Text style={{ color: "#6B7280" }}>
+                      (
+                      {Math.round(
+                        (selectedTree.health / selectedTree.maxHealth) * 100
+                      )}
+                      %)
+                    </Text>
+                  </Text>
+                  <Text style={{ fontSize: 14, marginBottom: 4 }}>
+                    <Text style={{ fontWeight: "bold" }}>성장 단계: </Text>
+                    <Text style={{ color: "#374151" }}>
+                      {selectedTree.growthStage}
+                    </Text>
+                  </Text>
+                  <Text style={{ fontSize: 14, marginBottom: 4 }}>
+                    <Text style={{ fontWeight: "bold" }}>오늘 물준 횟수: </Text>
+                    <Text style={{ color: "#3B82F6" }}>
+                      {selectedTree.waterCountToday}회
+                    </Text>
+                  </Text>
+                  {selectedTree.lastWateredDate && (
+                    <Text style={{ fontSize: 14 }}>
+                      <Text style={{ fontWeight: "bold" }}>
+                        마지막 물준 날:{" "}
+                      </Text>
+                      <Text style={{ color: "#6B7280" }}>
+                        {selectedTree.lastWateredDate}
+                      </Text>
+                    </Text>
+                  )}
+                  {selectedTree.isDead && (
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: "#EF4444",
+                        fontWeight: "bold",
+                        marginTop: 4,
+                      }}
+                    >
+                      💀 나무가 죽었습니다
+                    </Text>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <Text style={s.modalHint}>나무심기</Text>
+            )}
 
             {/* 액션 버튼들 */}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 15 }}>
@@ -205,7 +314,7 @@ export default function HomeScreen() {
                 </Pressable>
               )}
 
-              {isMarked && (
+              {isMarked && selectedTree && !selectedTree.isDead && (
                 <Pressable
                   style={[
                     s.modalBtn,
@@ -221,7 +330,7 @@ export default function HomeScreen() {
                   disabled={actionLoading}
                 >
                   <Text style={s.modalBtnText}>
-                    {actionLoading ? "물주는중..." : "물주기"}
+                    {actionLoading ? "물주는중..." : "💧 물주기"}
                   </Text>
                 </Pressable>
               )}
