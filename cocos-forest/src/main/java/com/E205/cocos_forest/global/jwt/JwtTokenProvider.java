@@ -93,17 +93,17 @@ public class JwtTokenProvider {
         try {
             Claims claims = parseClaims(accessToken);
 
-            // JWT에서 userId 추출
-            Long userId = claims.get("userId", Long.class);
             String email = claims.getSubject();
-
-            log.debug("JWT 토큰에서 추출된 정보 - userId: {}, email: {}", userId, email);
-
+            log.debug("JWT 토큰에서 추출된 정보 - email: {}", email);
+            if (email == null) {
+                log.warn("JWT 토큰에 Subject(email) 정보가 없습니다.");
+                return null;
+            }
             // DB에서 사용자 조회
-            User user = userRepository.findById(userId).orElse(null);
+            User user = userRepository.findByEmail(email).orElse(null);
 
             if (user == null) {
-                log.warn("JWT 토큰의 userId({})에 해당하는 사용자를 찾을 수 없습니다.", userId);
+                log.warn("JWT 토큰의 email({})에 해당하는 사용자를 찾을 수 없습니다.", email);
                 return null;
             }
 
