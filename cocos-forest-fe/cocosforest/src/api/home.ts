@@ -1,5 +1,5 @@
 // api/forest.ts
-import apiClient, { mock } from "./axios";
+import apiClient from "./axios";
 import type { MarkerCoord } from "../types/forest";
 
 export type StatsDto = { points: number; growth: number };
@@ -15,14 +15,4 @@ export async function fetchMarkers(): Promise<MarkersDto> {
   return res.data;
 }
 
-// 개발환경 mock
-if (__DEV__ && mock) {
-  mock.onGet("/stats").reply(200, { points: 12345, growth: 73 });
-  mock.onGet("/markers").reply(200, {
-    markers: [
-      { x: 2, z: 3 },
-      { x: 5, z: 6 },
-      { x: 1, z: 4 },
-    ],
-  });
-}
+// Mock 제거 - 실제 백엔드 API 호출
