@@ -5,8 +5,8 @@ import com.E205.cocos_forest.api.finance.card.dto.out.CardCategoryMonthlyDetails
 import com.E205.cocos_forest.api.finance.card.dto.out.CardDailyDetailsOut;
 
 public interface CardTransactionQueryService {
-    // Resolve default/owned card for authenticated user
-    CardMonthlySummaryOut getMonthlySummaryForUser(Long userId, String yearMonth, String userCardId);
-    CardDailyDetailsOut getDailyDetailsForUser(Long userId, String date, String userCardId);
-    CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategoryForUser(Long userId, String yearMonth, String categoryId, String userCardId);
+    // Resolves default/owned card internally based on userId
+    CardMonthlySummaryOut getMonthlySummaryForUser(Long userId, String yearMonth);
+    CardDailyDetailsOut getDailyDetailsForUser(Long userId, String date);
+    CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategoryForUser(Long userId, String yearMonth, String categoryId);
 }

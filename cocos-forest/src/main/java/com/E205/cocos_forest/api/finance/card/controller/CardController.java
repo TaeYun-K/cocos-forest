@@ -31,69 +31,42 @@ public class CardController {
 
     @Operation(summary = "카드 연결 api", description = "카드를 연결합니다.")
     @PostMapping
-    public BaseResponse<CardLinkOut> link(@RequestParam Long userId,
-                                            @RequestBody @Valid CardLinkCreateIn in) {
+    public BaseResponse<CardLinkOut> link(@AuthenticationPrincipal CustomUserDetails principal,
+                                          @RequestBody @Valid CardLinkCreateIn in) {
+        Long userId = principal.getUser().getId();
         return new BaseResponse<>(userCardService.linkCard(userId, in));
     }
 
-    @Operation(summary = "월별 카드 사용 내역 요약 조회 api", description = "특정 카드의 월별 사용 내역 요약을 조회합니다.")
-    @GetMapping("/{userCardId}/transactions/monthly-summary")
-    public BaseResponse<CardMonthlySummaryOut> getMonthlySummary(@AuthenticationPrincipal CustomUserDetails principal,
-                                                                @PathVariable String userCardId,
-                                                                @RequestParam String yearMonth) {
-        Long userId = principal.getUser().getId();
-        return new BaseResponse<>(cardTransactionQueryService.getMonthlySummaryForUser(userId, yearMonth, userCardId));
-    }
-
-    // Default-card version (no userCardId in path)
+    @Operation(summary = "월별 카드 사용 내역 조회 api", description = "한달 소비 내역 정보를 조회합니다.")
     @GetMapping("/transactions/monthly-summary")
     public BaseResponse<CardMonthlySummaryOut> getMonthlySummaryDefault(@AuthenticationPrincipal CustomUserDetails principal,
                                                                         @RequestParam String yearMonth) {
         Long userId = principal.getUser().getId();
-        return new BaseResponse<>(cardTransactionQueryService.getMonthlySummaryForUser(userId, yearMonth, null));
+        return new BaseResponse<>(cardTransactionQueryService.getMonthlySummaryForUser(userId, yearMonth));
     }
 
     @Operation(summary = "월별 카드 사용 내역 조회 api (카테고리별)", description = "카테고리별로 한달 소비 내역 정보를 조회합니다.")
-    @GetMapping("/{userCardId}/transactions/{categoryId}")
-    public BaseResponse<CardCategoryMonthlyDetailsOut> getMonthlyTransactionsByCategory(@AuthenticationPrincipal CustomUserDetails principal,
-                                                                                       @PathVariable String userCardId,
-                                                                                       @PathVariable String categoryId,
-                                                                                       @RequestParam String yearMonth) {
-        Long userId = principal.getUser().getId();
-        return new BaseResponse<>(cardTransactionQueryService.getMonthlyTransactionsByCategoryForUser(userId, yearMonth, categoryId, userCardId));
-    }
-
-    // Default-card version (no userCardId in path)
     @GetMapping("/transactions/{categoryId}")
     public BaseResponse<CardCategoryMonthlyDetailsOut> getMonthlyTransactionsByCategoryDefault(@AuthenticationPrincipal CustomUserDetails principal,
                                                                                                @PathVariable String categoryId,
                                                                                                @RequestParam String yearMonth) {
         Long userId = principal.getUser().getId();
-        return new BaseResponse<>(cardTransactionQueryService.getMonthlyTransactionsByCategoryForUser(userId, yearMonth, categoryId, null));
+        return new BaseResponse<>(cardTransactionQueryService.getMonthlyTransactionsByCategoryForUser(userId, yearMonth, categoryId));
     }
 
-    @Operation(summary = "일별 카드 상세 조회 api", description = "지정 일자의 카드 거래 상세와 합계를 조회합니다.")
-    @GetMapping("/{userCardId}/transactions/daily-details")
-    public BaseResponse<CardDailyDetailsOut> getDailyDetails(@AuthenticationPrincipal CustomUserDetails principal,
-                                                            @PathVariable String userCardId,
-                                                            @RequestParam String date) {
-        Long userId = principal.getUser().getId();
-        return new BaseResponse<>(cardTransactionQueryService.getDailyDetailsForUser(userId, date, userCardId));
-    }
-
-    // Default-card version (no userCardId in path)
+    @Operation(summary = "일별 카드 사용 상세 내역 조회 api", description = "해당 일의 상세 소비 내역 정보를 조회합니다.")
     @GetMapping("/transactions/daily-details")
     public BaseResponse<CardDailyDetailsOut> getDailyDetailsDefault(@AuthenticationPrincipal CustomUserDetails principal,
                                                                     @RequestParam String date) {
         Long userId = principal.getUser().getId();
-        return new BaseResponse<>(cardTransactionQueryService.getDailyDetailsForUser(userId, date, null));
+        return new BaseResponse<>(cardTransactionQueryService.getDailyDetailsForUser(userId, date));
     }
 
     @Operation(summary = "카드 결제 이벤트 생성 api", description = "SSAFY 결제 API 호출 후 내부 거래 저장")
-    @PostMapping("/{userCardId}/transactions/pay")
-    public BaseResponse<CardPaymentOut> pay(@RequestParam Long userId,
-                                            @PathVariable String userCardId,
+    @PostMapping("/transactions/pay")
+    public BaseResponse<CardPaymentOut> pay(@AuthenticationPrincipal CustomUserDetails principal,
                                             @RequestBody @Valid CardPaymentCreateIn in) {
-        return new BaseResponse<>(cardPaymentService.pay(userId, userCardId, in));
+        Long userId = principal.getUser().getId();
+        return new BaseResponse<>(cardPaymentService.pay(userId, in));
     }
 }

@@ -5,12 +5,14 @@ import com.E205.cocos_forest.api.finance.account.dto.out.AccountCreateOut;
 import com.E205.cocos_forest.api.finance.account.dto.out.UserAccountOut;
 import com.E205.cocos_forest.api.finance.account.service.AccountService;
 import com.E205.cocos_forest.global.response.BaseResponse;
+import com.E205.cocos_forest.global.config.security.CustomUserDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 
@@ -29,8 +31,9 @@ public class AccountController {
     @Operation (summary = "수시 입출금 계좌 발급", description = "사용자 ID와 은행 코드, 계좌 상품 코드를 받아 수시 입출금 계좌를 발급합니다.")
     @PostMapping("/demand-deposit")
     public BaseResponse<AccountCreateOut> createDemandDepositAccount(
-            @RequestParam Long userId,
+            @AuthenticationPrincipal CustomUserDetails principal,
             @RequestBody @Valid AccountCreateIn request) {
+        Long userId = principal.getUser().getId();
         AccountCreateOut result = accountService.createDemandDepositAccount(userId, request);
         return new BaseResponse<>(result);
     }
@@ -39,8 +42,9 @@ public class AccountController {
      * 사용자의 계좌 목록 조회
      */
     @Operation(summary = "사용자의 계좌 목록 조회", description = "사용자 ID를 받아 해당 사용자가 보유한 모든 계좌의 목록을 조회합니다.")
-    @GetMapping("/user/{userId}")
-    public BaseResponse<List<UserAccountOut>> getUserAccounts(@PathVariable Long userId) {
+    @GetMapping("/user")
+    public BaseResponse<List<UserAccountOut>> getUserAccounts(@AuthenticationPrincipal CustomUserDetails principal) {
+        Long userId = principal.getUser().getId();
         List<UserAccountOut> accounts = accountService.getUserAccounts(userId);
         return new BaseResponse<>(accounts);
     }

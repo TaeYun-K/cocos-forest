@@ -142,8 +142,8 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     }
 
     @Override
-    public CardMonthlySummaryOut getMonthlySummaryForUser(Long userId, String yearMonth, String userCardId) {
-        String resolvedUserCardId = resolveUserCardIdForUser(userId, userCardId);
+    public CardMonthlySummaryOut getMonthlySummaryForUser(Long userId, String yearMonth) {
+        String resolvedUserCardId = resolveUserCardIdForUser(userId);
         return buildMonthlySummary(resolvedUserCardId, yearMonth);
     }
     
@@ -220,9 +220,9 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
                 Comparator.nullsLast(String::compareTo)).reversed())
             .toList();
 
-        // PENDING 상태인 거래만 합계에 포함하며 집계
+        // 승인된 상태만 조회
         List<CardDailyDetailsOut.TransactionItem> pendingItems = items.stream()
-            .filter(i -> "PENDING".equals(i.getStatus()))
+            .filter(i -> "APPROVED".equals(i.getStatus()))
             .toList();
 
         long amountTotal = pendingItems.stream().mapToLong(CardDailyDetailsOut.TransactionItem::getAmountKrw).sum();
@@ -257,9 +257,9 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     }
 
     @Override
-    public CardDailyDetailsOut getDailyDetailsForUser(Long userId, String date, String userCardId) {
-        String resolvedUserCardId = resolveUserCardIdForUser(userId, userCardId);
-        return buildDailyDetails(resolvedUserCardId, date);
+    public CardDailyDetailsOut getDailyDetailsForUser(Long userId, String date) {
+        String userCardId = resolveUserCardIdForUser(userId);
+        return buildDailyDetails(userCardId, date);
     }
 
     // yearMont 를 yyyy-MM 형식으로 파싱
@@ -278,20 +278,14 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     }
 
     // 사용자가 가지고 있는 카드가 유효한지 검증 
-    private String resolveUserCardIdForUser(Long userId, String userCardId) {
+    private String resolveUserCardIdForUser(Long userId) {
         if (userId == null) {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "Missing userId");
         }
 
-        if (StringUtils.hasText(userCardId)) {
-            UserCard uc = resolveUserCard(userCardId);
-            if (!userId.equals(uc.getUserId())) {
-                throw new BaseException(BaseResponseStatus.NO_ACCESS_AUTHORITY, "Forbidden card access");
-            }
-            return userCardId;
-        }
+      StringUtils.hasText(null);
 
-        return userCardRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+      return userCardRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
             .map(uc -> String.valueOf(uc.getUserCardId()))
             .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "No linked card"));
     }
@@ -445,8 +439,8 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
     }
 
     @Override
-    public CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategoryForUser(Long userId, String yearMonth, String categoryId, String userCardId) {
-        String resolvedUserCardId = resolveUserCardIdForUser(userId, userCardId);
+    public CardCategoryMonthlyDetailsOut getMonthlyTransactionsByCategoryForUser(Long userId, String yearMonth, String categoryId) {
+        String resolvedUserCardId = resolveUserCardIdForUser(userId);
         return buildMonthlyTransactionsByCategory(resolvedUserCardId, yearMonth, categoryId);
     }
 
