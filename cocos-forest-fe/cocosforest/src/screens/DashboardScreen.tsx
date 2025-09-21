@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import { memo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboard } from '../hooks/useDashboard';
@@ -124,5 +124,3 @@ const DashboardScreen = memo(() => {
 DashboardScreen.displayName = 'DashboardScreen';
 
 export default DashboardScreen;
-
-// 스타일은 commonStyles로 이동됨
