@@ -2,9 +2,9 @@
 
 // GIF 파일 경로들
 const COCO_GIFS = {
-  SMILE: require('../assets/coco-smile-unscreen.gif'),
-  SAD: require('../assets/coco-sad-unscreen.gif'),
-  INIT: require('../assets/coco-init-unscreen.gif'),
+  SMILE: require('../../assets/dashboard/coco-init-unscreen.gif'),
+  SAD: require('../../assets/dashboard/coco-sad-unscreen.gif'),
+  INIT: require('../../assets/dashboard/coco-init-unscreen.gif'),
 } as const;
 
 // 탄소배출량 임계값 설정
