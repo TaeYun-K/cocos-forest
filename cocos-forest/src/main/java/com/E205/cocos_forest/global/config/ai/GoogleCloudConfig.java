@@ -26,10 +26,10 @@ public class GoogleCloudConfig {
   @Value("${gcp.project.id}")
   private String projectId;
 
-  @Value("${gcp.credentials.location}")
+  @Value("${GCP_CREDENTIALS_BASE64}")
   private String credentialsPath;
 
-  @Value("${GCP_CREDENTIALS_BASE64}")
+  @Value("${vertex.ai.location}")
   private String location;
 
   /**
