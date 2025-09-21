@@ -1,42 +1,53 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import useDashboardStore from '../../store/dashboardStore';
 import { useMonthlyReport } from '../../hooks/useDashboardQueries';
+import { LoadingSpinner, ErrorMessage } from '../common';
 
 export const MonthlyCalendar: React.FC = () => {
   const {
     selectedYear,
     selectedMonth,
-    handleDayPress,
-    handlePreviousMonth,
-    handleNextMonth
+    openDayDetail,
+    changeMonth
   } = useDashboardStore();
 
-  const { data: monthlyReportData, isLoading, error } = useMonthlyReport(selectedYear, selectedMonth);
-  const monthNames = [
+  const { data: monthlyReportData, isLoading, error, refetch } = useMonthlyReport(selectedYear, selectedMonth);
+
+  const monthNames = useMemo(() => [
     '1월', '2월', '3월', '4월', '5월', '6월',
     '7월', '8월', '9월', '10월', '11월', '12월'
-  ];
+  ], []);
 
   // 탄소 배출량에 따른 색상 결정 (kg 단위에 맞게 조정)
-  const getEmissionColor = (emission: number) => {
+  const getEmissionColor = useMemo(() => (emission: number) => {
     if (emission >= 0.8) return '#ef4444'; // 0.8kg 이상: 높음 (빨강)
     if (emission >= 0.4) return '#eab308';  // 0.4-0.8kg: 보통 (노랑)
     return '#15803d'; // 0.4kg 미만: 낮음 (초록)
-  };
+  }, []);
 
-  // 달력 생성
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
+  // 달력 생성을 위한 계산값들 메모이제이션
+  const calendarData = useMemo(() => {
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
 
-  const getFirstDayOfMonth = (month: number, year: number) => {
-    return new Date(year, month, 1).getDay();
-  };
+    return { daysInMonth, firstDay };
+  }, [selectedYear, selectedMonth]);
+
+  // 일별 데이터를 Map으로 변환하여 O(1) 조회 가능하게 최적화
+  const dailyDataMap = useMemo(() => {
+    if (!monthlyReportData?.daily) return new Map();
+
+    const map = new Map();
+    monthlyReportData.daily.forEach(dayData => {
+      const day = dayData.date.split('-').pop();
+      map.set(day, dayData.carbonTotalKg || 0);
+    });
+    return map;
+  }, [monthlyReportData?.daily]);
 
   const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
-    const firstDay = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const { daysInMonth, firstDay } = calendarData;
     const days: React.ReactNode[] = [];
 
     // 빈 칸 추가
@@ -46,12 +57,10 @@ export const MonthlyCalendar: React.FC = () => {
 
     // 날짜 추가
     for (let day = 1; day <= daysInMonth; day++) {
-      // monthlyReportData.daily에서 해당 날짜의 탄소배출량 찾기
       const dayStr = String(day).padStart(2, '0');
-      const dailyData = monthlyReportData?.daily?.find(d => d.date.endsWith(`-${dayStr}`));
-      const emission = dailyData?.carbonTotalKg || 0;
+      const emission = dailyDataMap.get(dayStr) || 0;
       days.push(
-        <TouchableOpacity key={day} style={styles.calendarDay} onPress={() => handleDayPress(day)}>
+        <TouchableOpacity key={day} style={styles.calendarDay} onPress={() => openDayDetail(day)}>
           <View style={[styles.calendarDayBackground, { backgroundColor: getEmissionColor(emission) }]} />
           <Text style={styles.calendarDayText}>{day}</Text>
         </TouchableOpacity>
@@ -67,18 +76,18 @@ export const MonthlyCalendar: React.FC = () => {
         <View style={styles.calendarHeader}>
           <Text style={styles.cardTitle}>월별 탄소 배출량</Text>
           <View style={styles.monthSelector}>
-            <TouchableOpacity style={styles.monthButton} onPress={handlePreviousMonth}>
+            <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth('prev')}>
               <Text style={styles.monthButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.monthText}>
               {selectedYear}년 {monthNames[selectedMonth]}
             </Text>
-            <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
+            <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth('next')}>
               <Text style={styles.monthButtonText}>→</Text>
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
+        <LoadingSpinner message="월별 데이터를 불러오는 중..." />
       </View>
     );
   }
@@ -89,18 +98,22 @@ export const MonthlyCalendar: React.FC = () => {
         <View style={styles.calendarHeader}>
           <Text style={styles.cardTitle}>월별 탄소 배출량</Text>
           <View style={styles.monthSelector}>
-            <TouchableOpacity style={styles.monthButton} onPress={handlePreviousMonth}>
+            <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth('prev')}>
               <Text style={styles.monthButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.monthText}>
               {selectedYear}년 {monthNames[selectedMonth]}
             </Text>
-            <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
+            <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth('next')}>
               <Text style={styles.monthButtonText}>→</Text>
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={styles.errorText}>데이터를 불러올 수 없습니다.</Text>
+        <ErrorMessage
+          title="월별 데이터 오류"
+          message="월별 탄소 배출량 데이터를 불러올 수 없습니다."
+          onRetry={refetch}
+        />
       </View>
     );
   }
@@ -110,13 +123,13 @@ export const MonthlyCalendar: React.FC = () => {
       <View style={styles.calendarHeader}>
         <Text style={styles.cardTitle}>월별 탄소 배출량</Text>
         <View style={styles.monthSelector}>
-          <TouchableOpacity style={styles.monthButton} onPress={handlePreviousMonth}>
+          <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth('prev')}>
             <Text style={styles.monthButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.monthText}>
             {selectedYear}년 {monthNames[selectedMonth]}
           </Text>
-          <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
+          <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth('next')}>
             <Text style={styles.monthButtonText}>→</Text>
           </TouchableOpacity>
         </View>
@@ -244,17 +257,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     zIndex: 1,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    paddingVertical: 40,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#ef4444',
-    textAlign: 'center',
-    paddingVertical: 40,
   },
 });

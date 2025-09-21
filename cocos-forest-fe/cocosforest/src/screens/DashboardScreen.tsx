@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboard } from '../hooks/useDashboard';
@@ -12,22 +13,21 @@ import {
   PaymentButton,
   PaymentSuccessModal
 } from '../components/dashboard';
+import { ErrorBoundary } from '../components/common';
 
-export default function DashboardScreen() {
+const DashboardScreen = memo(() => {
   const {
     // 상태
     activeTab,
     showDetailCard,
     selectedDay,
     showSuccessModal,
-    isLoading,
 
     // 데이터
     cocoGif,
 
     // 액션
     handleTabChange,
-    closeDayDetail,
     handlePaymentSuccess,
     handlePaymentModalConfirm,
   } = useDashboard();
@@ -37,8 +37,9 @@ export default function DashboardScreen() {
 
 
   return (
-    <SafeAreaView style={commonStyles.container}>
-      <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
+    <ErrorBoundary>
+      <SafeAreaView style={commonStyles.container}>
+        <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
 
         {/* 결제하기 버튼 */}
         <View style={commonStyles.section}>
@@ -108,15 +109,20 @@ export default function DashboardScreen() {
           <DayDetailCard />
         )}
 
-      </ScrollView>
+        </ScrollView>
 
-      {/* 결제 성공 모달 */}
-      <PaymentSuccessModal
-        visible={showSuccessModal}
-        onConfirm={handlePaymentModalConfirm}
-      />
-    </SafeAreaView>
+        {/* 결제 성공 모달 */}
+        <PaymentSuccessModal
+          visible={showSuccessModal}
+          onConfirm={handlePaymentModalConfirm}
+        />
+      </SafeAreaView>
+    </ErrorBoundary>
   );
-}
+});
+
+DashboardScreen.displayName = 'DashboardScreen';
+
+export default DashboardScreen;
 
 // 스타일은 commonStyles로 이동됨

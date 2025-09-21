@@ -4,7 +4,7 @@ import { View, ViewStyle, StyleSheet } from 'react-native';
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
-  variant?: 'default' | 'small';
+  variant?: 'default' | 'small' | 'medium';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -12,7 +12,10 @@ export const Card: React.FC<CardProps> = ({
   style,
   variant = 'default'
 }) => {
-  const cardStyle = variant === 'small' ? styles.cardSmall : styles.card;
+  const cardStyle =
+    variant === 'small' ? styles.cardSmall :
+    variant === 'medium' ? styles.cardMedium :
+    styles.card;
 
   return (
     <View style={[cardStyle, style]}>
@@ -41,6 +44,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    elevation: 2,
+  },
+  cardMedium: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
   },
 });

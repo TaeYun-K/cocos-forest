@@ -5,6 +5,7 @@ export const colors = {
   // 기본 색상
   background: '#fefdf8',
   white: '#ffffff',
+  black: '#000000',
 
   // 텍스트 색상
   textPrimary: '#1f2937',

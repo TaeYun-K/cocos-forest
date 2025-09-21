@@ -13,6 +13,13 @@ export const CategorySummary: React.FC<CategorySummaryProps> = ({
   selectedYear,
   selectedMonth
 }) => {
+  // 활성 일수 계산 (거래가 있는 날의 수)
+  const daysActive = monthlyReportData.daily.filter(day => day.transactionCount > 0).length;
+
+  // 일평균 탄소 배출량 계산
+  const avgPerDayCarbonKg = daysActive > 0
+    ? (monthlyReportData.totals.carbonTotalKg / daysActive).toFixed(2)
+    : '0.00';
   return (
     <View>
       <Text style={styles.cardTitle}>
@@ -46,13 +53,13 @@ export const CategorySummary: React.FC<CategorySummaryProps> = ({
           <View style={styles.statRow}>
             <Text style={styles.statSecondaryLabel}>활성 일수</Text>
             <Text style={styles.statSecondaryValue}>
-              {monthlyReportData.totals.daysActive}일
+              {daysActive}일
             </Text>
           </View>
           <View style={styles.statRow}>
             <Text style={styles.statSecondaryLabel}>일평균 배출량</Text>
             <Text style={[styles.statSecondaryValue, { color: '#ef4444', fontWeight: '600' }]}>
-              {monthlyReportData.totals.avgPerDayCarbonKg}kg CO₂
+              {avgPerDayCarbonKg}kg CO₂
             </Text>
           </View>
         </View>
