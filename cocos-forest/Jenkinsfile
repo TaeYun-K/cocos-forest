@@ -50,6 +50,8 @@ pipeline {
           file(credentialsId: 'gcp-credentials-json', variable: 'GCP_KEY_FILE_PATH')
         ]) {
           script {
+            sh 'echo "GCP Key file path from Jenkins is: $GCP_KEY_FILE_PATH"'
+            sh 'ls -la $GCP_KEY_FILE_PATH'
             sh 'docker stop "$CONTAINER_NAME" || true'
             sh 'docker rm "$CONTAINER_NAME" || true'
             // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
