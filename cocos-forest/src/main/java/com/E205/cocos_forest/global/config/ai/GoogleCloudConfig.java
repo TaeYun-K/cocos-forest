@@ -4,12 +4,8 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import com.google.cloud.vertexai.VertexAI;
-import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -44,41 +40,15 @@ public class GoogleCloudConfig {
    */
   @Bean
   public GoogleCredentials googleCredentials() throws IOException {
-    // 1) Jenkins에서 주입하는 Base64 비밀(권장)
-    String b64 = System.getenv("GCP_CREDENTIALS_BASE64");
-    if (b64 != null && !b64.isBlank()) {
-      byte[] decoded = Base64.getDecoder().decode(b64);
-      try (var in = new ByteArrayInputStream(decoded)) {
-        return GoogleCredentials.fromStream(in)
-            .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-      }
-    }
-
-    // 2) 기존 파일 경로 방식 (classpath:, file:, 일반 경로)
-    if (credentialsPath == null || credentialsPath.isBlank()) {
-      throw new FileNotFoundException(
-          "No GCP credentials: set env GCP_CREDENTIALS_BASE64 or property gcp.credentials.location");
-    }
-
     if (credentialsPath.startsWith("classpath:")) {
-      String relativePath = credentialsPath.replaceFirst("^classpath:", "");
+      String relativePath = credentialsPath.replace("classpath:", "");
       Resource resource = new ClassPathResource(relativePath);
-      try (var in = resource.getInputStream()) {
-        return GoogleCredentials.fromStream(in)
-            .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-      }
+      return GoogleCredentials.fromStream(resource.getInputStream())
+          .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
     } else {
-      // file: 접두어 제거
-      String cleanPath = credentialsPath.replaceFirst("^file:", "");
-      File f = new File(cleanPath);
-      if (f.isDirectory()) {
-        // 과거 에러 메시지와 동일 원인 대비
-        throw new FileNotFoundException(cleanPath + " is a directory, expected a JSON file");
-      }
-      try (var in = new FileInputStream(f)) {
-        return GoogleCredentials.fromStream(in)
-            .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
-      }
+      String cleanPath = credentialsPath.replace("file:", "");
+      return GoogleCredentials.fromStream(new FileInputStream(cleanPath))
+          .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
     }
   }
 
