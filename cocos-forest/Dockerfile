@@ -4,6 +4,8 @@ FROM openjdk:17-jdk-slim
 # 2. 빌드된 Jar 파일 경로를 변수로 지정합니다.
 ARG JAR_FILE=build/libs/*.jar
 
+WORKDIR /app
+
 # 3. Jar 파일을 컨테이너 내부로 복사하고 이름을 app.jar로 변경합니다.
 COPY ${JAR_FILE} app.jar
 
