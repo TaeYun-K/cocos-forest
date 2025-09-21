@@ -1,8 +1,9 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
 import useDashboardStore from '../store/dashboardStore';
-import { useMonthlyReport, useTodayData, useDashboardInvalidation } from '../hooks/useDashboardQueries';
+import usePaymentStore from '../store/paymentStore';
+import { useMonthlyReport, useTodayData } from '../hooks/useDashboardQueries';
+import { usePaymentActions } from '../hooks/usePaymentActions';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
 import {
   AIAnalysisCard,
@@ -15,20 +16,20 @@ import {
 } from '../components/dashboard';
 
 export default function DashboardScreen() {
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const { invalidateTodayData, invalidateAllDashboard } = useDashboardInvalidation();
-
+  // Dashboard 상태
   const {
-    // 상태
     selectedMonth,
     selectedYear,
     selectedDay,
     activeTab,
     showDetailCard,
-    // 액션
     setActiveTab,
-    handleCloseDetailCard,
+    closeDayDetail,
   } = useDashboardStore();
+
+  // Payment 상태 및 액션
+  const { showSuccessModal } = usePaymentStore();
+  const { handlePaymentSuccess, handlePaymentModalConfirm } = usePaymentActions();
 
   // React Query hooks
   const { data: todayData, isLoading: todayLoading, error: todayError } = useTodayData();
@@ -52,18 +53,6 @@ export default function DashboardScreen() {
   // 로딩 상태 통합
   const isLoading = todayLoading || monthlyLoading;
 
-  // 결제 성공 후 데이터 새로고침
-  const handlePaymentSuccess = () => {
-    setShowSuccessModal(true);
-    // React Query 캐시 무효화로 데이터 재요청
-    invalidateTodayData();
-    invalidateAllDashboard();
-  };
-
-  // 성공 모달 확인 버튼
-  const handleModalConfirm = () => {
-    setShowSuccessModal(false);
-  };
 
 
 
@@ -118,7 +107,7 @@ export default function DashboardScreen() {
                 onPress={() => {
                   setActiveTab(1);
                   if (showDetailCard) {
-                    handleCloseDetailCard();
+                    closeDayDetail();
                   }
                 }}
               >
@@ -147,7 +136,7 @@ export default function DashboardScreen() {
       {/* 결제 성공 모달 */}
       <PaymentSuccessModal
         visible={showSuccessModal}
-        onConfirm={handleModalConfirm}
+        onConfirm={handlePaymentModalConfirm}
       />
     </SafeAreaView>
   );
