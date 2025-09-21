@@ -50,7 +50,10 @@ pipeline {
           file(credentialsId: 'gcp-credentials-json', variable: 'GCP_KEY_FILE_PATH')
         ]) {
           script {
-            sh 'chmod 644 "$GCP_KEY_FILE_PATH"'
+            // 변수에 할당된 경로와 파일 타입 확인
+            sh 'ls -la $GCP_KEY_FILE_PATH'
+            // 파일 내용이 JSON인지 확인 (보안에 유의하여 잠시만 사용)
+            sh 'cat $GCP_KEY_FILE_PATH'
 
             sh 'docker stop "$CONTAINER_NAME" || true'
             sh 'docker rm "$CONTAINER_NAME" || true'
