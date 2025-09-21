@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboard } from '../hooks/useDashboard';
 import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
-import { commonStyles, tabStyles } from '../styles/commonStyles';
+import { commonStyles, tabStyles } from '../styles/dashboard';
 import {
   AIAnalysisCard,
   TodayEmissionStatus,

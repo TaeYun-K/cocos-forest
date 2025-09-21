@@ -74,13 +74,6 @@ export interface Transaction {
   carbonCoefId: string;
 }
 
-// API 응답 공통 타입
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  success?: boolean;
-}
-
 // 카테고리별 월별 상세 데이터 타입 (task.md 응답 형식 기반)
 export interface CategoryMonthlyDetails {
   userCardId: string;
@@ -134,18 +127,3 @@ export interface PaymentResponse {
   result: PaymentResult;
 }
 
-// 에러 타입 (공통)
-export interface ApiError {
-  message: string;
-  code?: string | number;
-  status?: number;
-}
-
-// 표준 API 에러 응답 타입
-export interface StandardApiErrorResponse {
-  httpStatus: string;
-  isSuccess: false;
-  message: string;
-  code: number;
-  result?: null;
-}
