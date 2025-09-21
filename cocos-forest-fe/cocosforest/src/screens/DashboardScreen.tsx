@@ -1,9 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import useDashboardStore from '../store/dashboardStore';
-import usePaymentStore from '../store/paymentStore';
-import { useMonthlyReport, useTodayData } from '../hooks/useDashboardQueries';
-import { usePaymentActions } from '../hooks/usePaymentActions';
+import { useDashboard } from '../hooks/useDashboard';
+import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
 import {
   AIAnalysisCard,
@@ -16,42 +14,23 @@ import {
 } from '../components/dashboard';
 
 export default function DashboardScreen() {
-  // Dashboard 상태
   const {
-    selectedMonth,
-    selectedYear,
-    selectedDay,
+    // 상태
     activeTab,
     showDetailCard,
-    setActiveTab,
+    selectedDay,
+    showSuccessModal,
+    isLoading,
+
+    // 데이터
+    cocoGif,
+
+    // 액션
+    handleTabChange,
     closeDayDetail,
-  } = useDashboardStore();
-
-  // Payment 상태 및 액션
-  const { showSuccessModal } = usePaymentStore();
-  const { handlePaymentSuccess, handlePaymentModalConfirm } = usePaymentActions();
-
-  // React Query hooks
-  const { data: todayData, isLoading: todayLoading, error: todayError } = useTodayData();
-  const { data: monthlyReportData, isLoading: monthlyLoading, error: monthlyError } = useMonthlyReport(selectedYear, selectedMonth);
-
-  // GIF 선택 로직
-  const getCocoGif = () => {
-    const todayEmission = todayData?.totals?.carbonTotalKg ?? 0.5;
-    const averageEmission = 0.8;
-
-    if (todayEmission < 0.4) {
-      return require('../assets/coco-smile-unscreen.gif');
-    } else if (todayEmission > averageEmission) {
-      return require('../assets/coco-sad-unscreen.gif');
-    } else {
-      return require('../assets/coco-init-unscreen.gif');
-    }
-  };
-
-
-  // 로딩 상태 통합
-  const isLoading = todayLoading || monthlyLoading;
+    handlePaymentSuccess,
+    handlePaymentModalConfirm,
+  } = useDashboard();
 
 
 
@@ -67,17 +46,20 @@ export default function DashboardScreen() {
         </View>
 
         {/* AI 분석 결과 */}
-        <View style={[commonStyles.section, { marginBottom: -155 }]}>
+        <View style={[commonStyles.section, { marginBottom: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.AI_ANALYSIS_BOTTOM }]}>
           <AIAnalysisCard />
         </View>
 
         {/* Coco GIF */}
-        <View style={[commonStyles.section, { paddingVertical: 0, marginTop: -25 }]}>
+        <View style={[commonStyles.section, {
+          paddingVertical: DASHBOARD_STYLE_CONSTANTS.SECTION_PADDING.VERTICAL,
+          marginTop: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.COCO_GIF_TOP
+        }]}>
           <Image
-            source={getCocoGif()}
+            source={cocoGif}
             style={{
-              width: 600,
-              height: 600,
+              width: DASHBOARD_STYLE_CONSTANTS.COCO_GIF.WIDTH,
+              height: DASHBOARD_STYLE_CONSTANTS.COCO_GIF.HEIGHT,
               alignSelf: 'center',
             }}
             resizeMode="contain"
@@ -85,7 +67,7 @@ export default function DashboardScreen() {
         </View>
 
         {/* 오늘 탄소 배출 현황 */}
-        <View style={[commonStyles.section, { marginTop: -180 }]}>
+        <View style={[commonStyles.section, { marginTop: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.TODAY_EMISSION_TOP }]}>
           <TodayEmissionStatus />
         </View>
 
@@ -96,7 +78,7 @@ export default function DashboardScreen() {
             <View style={tabStyles.tabContainer}>
               <TouchableOpacity
                 style={[tabStyles.tab, activeTab === 0 && tabStyles.activeTab]}
-                onPress={() => setActiveTab(0)}
+                onPress={() => handleTabChange(0)}
               >
                 <Text style={[tabStyles.tabText, activeTab === 0 && tabStyles.activeTabText]}>
                   일별
@@ -104,12 +86,7 @@ export default function DashboardScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[tabStyles.tab, activeTab === 1 && tabStyles.activeTab]}
-                onPress={() => {
-                  setActiveTab(1);
-                  if (showDetailCard) {
-                    closeDayDetail();
-                  }
-                }}
+                onPress={() => handleTabChange(1)}
               >
                 <Text style={[tabStyles.tabText, activeTab === 1 && tabStyles.activeTabText]}>
                   카테고리별

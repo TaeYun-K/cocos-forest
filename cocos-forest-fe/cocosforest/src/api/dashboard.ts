@@ -1,6 +1,7 @@
 // src/api/dashboard.ts
 import apiClient from './axios';
 import logger from '../utils/logger';
+import { getCategoryColor } from '../constants/dashboardStyles';
 import type {
   DayData,
   MonthlyReportData,
@@ -95,26 +96,12 @@ export const fetchMonthlyReport = async (
     const activeDays = response.data?.result?.totals?.daysActive;
     logger.carbonData(`월별 탄소배출량 (${yearMonth})`, monthlyCarbon || 0, { activeDays });
 
-    // 카테고리별 색상 매핑
-    const categoryColors = [
-      '#ef4444', // 빨간색
-      '#f97316', // 주황색
-      '#eab308', // 노란색
-      '#22c55e', // 초록색
-      '#3b82f6', // 파란색
-      '#8b5cf6', // 보라색
-      '#ec4899', // 분홍색
-      '#06b6d4', // 청록색
-      '#84cc16', // 라임색
-      '#f59e0b', // 호박색
-    ];
-
     // API 응답을 컴포넌트가 기대하는 형태로 변환
     const transformedData = {
       ...response.data.result,
       byCategory: response.data.result.byCategory?.map((category: any, index: number) => ({
         ...category,
-        color: category.color || categoryColors[index % categoryColors.length] // color 필드가 없으면 기본 색상 사용
+        color: category.color || getCategoryColor(index) // color 필드가 없으면 기본 색상 사용
       })) || []
     };
 
