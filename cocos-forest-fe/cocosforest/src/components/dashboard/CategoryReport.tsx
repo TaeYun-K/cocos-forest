@@ -8,6 +8,30 @@ import { CategoryItem } from './CategoryItem';
 import { CategoryDetailModal } from './CategoryDetailModal';
 import { LoadingSpinner, ErrorMessage } from '../common';
 
+/**
+ * 카테고리별 탄소 배출량 분석을 표시하는 컴포넌트
+ *
+ * @description
+ * - 월별 카테고리별 탄소 배출량 데이터를 시각적으로 표시
+ * - 파이차트를 통한 비율 표시
+ * - 카테고리별 상세 분석 리스트
+ * - 월별 요약 정보 제공
+ * - 에러 및 로딩 상태 처리
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <CategoryReport />
+ * ```
+ *
+ * @features
+ * - 📊 카테고리별 요약 및 파이차트
+ * - 📋 정렬된 카테고리 분석 리스트
+ * - 🔄 자동 데이터 새로고침
+ * - 💰 결제 금액 및 탄소 배출량 표시
+ * - ⚡ 메모이제이션된 카테고리 정렬
+ * - 🎨 일관된 UI/UX
+ */
 export const CategoryReport: React.FC = () => {
   const {
     selectedYear,

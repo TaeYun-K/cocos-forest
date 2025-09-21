@@ -4,6 +4,30 @@ import useDashboardStore from '../../store/dashboardStore';
 import { useMonthlyReport } from '../../hooks/useDashboardQueries';
 import { LoadingSpinner, ErrorMessage } from '../common';
 
+/**
+ * 월별 탄소 배출량을 달력 형태로 표시하는 컴포넌트
+ *
+ * @description
+ * - 선택된 월의 일별 탄소 배출량을 색상으로 구분하여 달력에 표시
+ * - 월 네비게이션 기능 제공 (이전/다음 월)
+ * - 날짜 클릭 시 해당 날짜의 상세 정보를 표시
+ * - 배출량 범례 제공 (낮음/보통/높음)
+ * - 성능 최적화된 데이터 조회 및 렌더링
+ *
+ * @component
+ * @example
+ * ```tsx
+ * <MonthlyCalendar />
+ * ```
+ *
+ * @features
+ * - 🎨 탄소 배출량에 따른 시각적 표시 (색상 구분)
+ * - 📅 직관적인 달력 UI
+ * - 🔄 월 네비게이션
+ * - 📊 실시간 데이터 반영
+ * - ⚡ 메모이제이션을 통한 성능 최적화
+ * - 🔄 로딩 및 에러 상태 처리
+ */
 export const MonthlyCalendar: React.FC = () => {
   const {
     selectedYear,
