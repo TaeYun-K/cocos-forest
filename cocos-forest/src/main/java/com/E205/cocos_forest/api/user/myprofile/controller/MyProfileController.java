@@ -25,7 +25,9 @@ public class MyProfileController {
     public BaseResponse<MyProfileResponseDto> getMyProfile(
                     @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        MyProfileResponseDto profile = myProfileService.getMyProfile(userDetails.getUsername());
+        Long userId = userDetails.getUser().getId();
+
+        MyProfileResponseDto profile = myProfileService.getMyProfile(userId);
         return new BaseResponse<>(profile);
     }
 }

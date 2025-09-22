@@ -107,9 +107,15 @@ public enum BaseResponseStatus {
   // ===== 외부 API 관련 에러 코드 (5000번대) =====
   // ===================================================================================
   EXTERNAL_API_ERROR(HttpStatus.NOT_FOUND, false, 5201, "외부 금융 API 호출 중 오류가 발생했습니다."),
-  LINKAGE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 5203, "해당 유저의 SSAFY 연동 정보가 존재하지 않습니다."),
-  ACCOUNT_FETCH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 5001, "계좌 정보 조회에 실패했습니다.");
 
+  ACCOUNT_FETCH_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, false, 5001, "계좌 정보 조회에 실패했습니다."),
+
+  AI_RESPONSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, false, 5202, "AI 서비스로부터 유효하지 않은 응답을 받았습니다."),
+  LINKAGE_NOT_FOUND(HttpStatus.NOT_FOUND, false, 5203, "해당 유저의 SSAFY 연동 정보가 존재하지 않습니다."),
+  // ===================================================================================
+  // ===== 거래 및 분석 관련 에러 코드 (6000번대) =====
+  // ===================================================================================
+  TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, false, 6001, "해당 날짜의 거래 내역을 찾을 수 없습니다.");
 
   private final HttpStatus httpStatus;
   private final boolean isSuccess;

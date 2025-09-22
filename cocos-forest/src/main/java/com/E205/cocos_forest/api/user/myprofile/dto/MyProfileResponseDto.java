@@ -30,5 +30,8 @@ public class MyProfileResponseDto {
 
         @Schema(description = "은행코드", example = "001")
         private String bankCode;
+
+        @Schema(description = "은행명", example = "001")
+        private String bankName;
     }
 }

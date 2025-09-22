@@ -1,7 +1,7 @@
 package com.E205.cocos_forest.api.user.myprofile.service;
 
 import com.E205.cocos_forest.api.finance.account.dto.out.UserAccountOut;
-import com.E205.cocos_forest.api.finance.account.service.UserAccountService;
+import com.E205.cocos_forest.api.finance.account.service.AccountService;
 import com.E205.cocos_forest.api.user.myprofile.dto.MyProfileResponseDto;
 import com.E205.cocos_forest.domain.user.entity.User;
 import com.E205.cocos_forest.domain.user.repository.UserRepository;
@@ -22,12 +22,12 @@ import java.util.stream.Collectors;
 public class MyProfileService {
 
     private final UserRepository userRepository;
-    private final UserAccountService userAccountService;
+    private final AccountService accountService;
 
-    public MyProfileResponseDto getMyProfile(String userId) {
+    public MyProfileResponseDto getMyProfile(Long userId) {
         try {
             // 1. 사용자 정보 조회
-            User user = userRepository.findByEmail(userId)
+            User user = userRepository.findById(userId)
                             .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
             // 2. 연결된 계좌 정보 조회
@@ -49,14 +49,16 @@ public class MyProfileService {
         }
     }
 
-    private List<MyProfileResponseDto.ConnectedAccountDto> getConnectedAccounts(String userId) {
+    private List<MyProfileResponseDto.ConnectedAccountDto> getConnectedAccounts(Long userId) {
         try {
-            List<UserAccountOut> userAccounts = userAccountService.findByUserId(userId);
+            // AccountService의 getUserAccounts 메서드 사용
+            List<UserAccountOut> userAccounts = accountService.getUserAccounts(userId);
 
             return userAccounts.stream()
                             .map(account -> MyProfileResponseDto.ConnectedAccountDto.builder()
                                             .accountNo(account.getAccountNo())
-                                            .bankCode(account.getBankCode()) // bankName 대신 bankCode 사용
+                                            .bankCode(account.getBankCode())
+                                            .bankName(account.getBankName()) // 은행명 필드 추가
                                             .build())
                             .collect(Collectors.toList());
 
