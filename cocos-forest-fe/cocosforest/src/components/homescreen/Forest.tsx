@@ -171,7 +171,11 @@ export default function Board({
                 style={{
                   position: "absolute",
                   left: sx - SPRITE_W / 2,
-                  top: sy - FOOT_H / 2 - WALL_H,
+                  top: (isExpandable
+                  // 2층(잔디 외곽 1줄): 그대로 두어 3↔2 = 1칸 유지
+                  ? sy - FOOT_H / 2 - WALL_H
+                  // 1층(그 외곽의 넓은 흙): 반칸 더 내려서 2↔1 = 1칸로 맞춤
+                  : sy - FOOT_H / 2 - WALL_H + TOP_FACE_H / 2),
                   width: SPRITE_W,
                   height: FOOT_H + WALL_H,
                   zIndex: isExpandable ? 1 : 0, // 확장 가능 영역만 더 높은 zIndex
@@ -191,7 +195,7 @@ export default function Board({
               </TouchableOpacity>
               
               {/* 하이라이트를 별도 컨테이너로 분리 */}
-              {/* {isExpandable && (
+              {isExpandable && (
                 <View
                   style={{
                     position: "absolute",
@@ -213,7 +217,7 @@ export default function Board({
                     />
                   </Svg>
                 </View>
-              )} */}
+              )} 
             </View>
           );
         })
