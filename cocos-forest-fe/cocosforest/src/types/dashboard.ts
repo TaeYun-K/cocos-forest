@@ -1,33 +1,28 @@
 // src/types/dashboard.ts
 
-// 월별 리포트 데이터 타입 (실제 API 응답 기반)
+// 월별 리포트 데이터 타입 (API 명세 기준)
 export interface MonthlyReportData {
   userCardId: string;
-  yearMonth?: string; // API에서 직접 제공되지 않음, 클라이언트에서 추가
+  yearMonth: string; // API 응답에 포함됨
   currency: string;
   totals: {
     amountTotal: number;
     carbonTotalKg: number;
     transactionCount: number;
-    daysActive: number;
-    avgPerDayAmount: number;
-    avgPerDayCarbonKg: number;
   };
   daily: Array<DailySummary>;
   byCategory: Array<CategoryData>;
 }
 
-// 일별 요약 데이터 타입
+// 일별 요약 데이터 타입 (API 명세 기준)
 export interface DailySummary {
   date: string; // YYYY-MM-DD
   amountTotal: number;
   carbonTotalKg: number;
   transactionCount: number;
-  fresh?: boolean;
-  lastSyncedAt?: string;
 }
 
-// 카테고리 데이터 타입
+// 카테고리 데이터 타입 (API 명세 기준 + 클라이언트 확장)
 export interface CategoryData {
   categoryId: string;
   categoryName: string;
@@ -35,7 +30,7 @@ export interface CategoryData {
   carbonTotalKg: number;
   ratioAmount: number;
   ratioCarbon: number;
-  color: string;
+  color?: string; // 클라이언트에서 추가하는 필드
 }
 
 // 일일 상세 데이터 타입 (실제 API 응답 기반)
@@ -79,13 +74,6 @@ export interface Transaction {
   carbonCoefId: string;
 }
 
-// API 응답 공통 타입
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  success?: boolean;
-}
-
 // 카테고리별 월별 상세 데이터 타입 (task.md 응답 형식 기반)
 export interface CategoryMonthlyDetails {
   userCardId: string;
@@ -110,9 +98,32 @@ export interface CategoryMonthlyDetailsResponse {
   result: CategoryMonthlyDetails;
 }
 
-// 에러 타입
-export interface ApiError {
-  message: string;
-  code?: string;
-  status?: number;
+// 결제 요청 데이터 타입
+export interface PaymentRequest {
+  merchantId: number;
+  paymentBalance: number;
 }
+
+// 결제 응답 데이터 타입 (API 명세 기준)
+export interface PaymentResult {
+  transactionUniqueNo: string;
+  categoryId: string;
+  categoryName: string;
+  merchantId: number;
+  merchantName: string;
+  transactionDate: string;
+  transactionTime: string;
+  paymentBalance: number;
+  savedTransactionId: number;
+  status: string;
+}
+
+// 결제 API 응답 타입
+export interface PaymentResponse {
+  httpStatus: string;
+  isSuccess: boolean;
+  message: string;
+  code: number;
+  result: PaymentResult;
+}
+

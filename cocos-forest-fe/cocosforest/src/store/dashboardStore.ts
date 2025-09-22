@@ -37,11 +37,10 @@ interface DashboardActions {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
 
-  // 복합 액션
-  handleDayPress: (day: number) => void;
-  handleCloseDetailCard: () => void;
-  handlePreviousMonth: () => void;
-  handleNextMonth: () => void;
+  // 단순화된 액션들
+  openDayDetail: (day: number) => void;
+  closeDayDetail: () => void;
+  changeMonth: (direction: 'prev' | 'next') => void;
 }
 
 type DashboardStore = DashboardState & DashboardActions;
@@ -95,30 +94,27 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
   },
 
-  // 복합 액션들
-  handleDayPress: (day: number) => {
-    console.log(`📅 Day pressed: ${day}`);
+  // 단순화된 액션들
+  openDayDetail: (day: number) => {
     set({ selectedDay: day, showDetailCard: true });
-    console.log(`📍 Selected day set to: ${day}, showDetailCard: true`);
   },
 
-  handleCloseDetailCard: () => {
+  closeDayDetail: () => {
     set({ showDetailCard: false, selectedDay: null });
   },
 
-  handlePreviousMonth: () => {
-    const { goToPreviousMonth, handleCloseDetailCard, showDetailCard } = get();
-    goToPreviousMonth();
-    if (showDetailCard) {
-      handleCloseDetailCard();
-    }
-  },
+  changeMonth: (direction: 'prev' | 'next') => {
+    const { goToPreviousMonth, goToNextMonth, showDetailCard } = get();
 
-  handleNextMonth: () => {
-    const { goToNextMonth, handleCloseDetailCard, showDetailCard } = get();
-    goToNextMonth();
+    if (direction === 'prev') {
+      goToPreviousMonth();
+    } else {
+      goToNextMonth();
+    }
+
+    // 월 변경 시 열린 상세 카드 닫기
     if (showDetailCard) {
-      handleCloseDetailCard();
+      set({ showDetailCard: false, selectedDay: null });
     }
   },
 }));

@@ -34,6 +34,9 @@
         "projectId": "29348cb4-c570-4cda-a867-c1e2523699cf"
       }
     },
-    "owner": "kwonin"
+    "owner": "kwonin",
+    "plugins": [
+      "expo-asset"
+    ]
   }
 }

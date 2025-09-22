@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '../commonStyles';
+import { colors } from './dashboardStyles';
 
 export const paymentSuccessModalStyles = StyleSheet.create({
   overlay: {
