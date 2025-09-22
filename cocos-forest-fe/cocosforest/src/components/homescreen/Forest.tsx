@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Image, StyleSheet } from "react-native";
+import { View, Image, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { homeStyles as s } from "../../styles/homeStyles";
 import {
@@ -10,6 +10,7 @@ import {
   MARKER_SIZE,
 } from "../../utils/iso";
 import type { Cell, Marker } from "../../types/forest";
+import type { ForestInfoDto } from "../../types/forest";
 
 const DIRT_IMG = require("../../../assets/tiles/dirt.png");
 const GRASS_IMG = require("../../../assets/tiles/grass.png");
@@ -20,8 +21,26 @@ const SMALL_TREE_IMG = require("../../../assets/models/small_tree.png");
 const MEDIUM_TREE_IMG = require("../../../assets/models/medium_tree.png");
 const LARGE_TREE_IMG = require("../../../assets/models/medium_tree.png");
 
+// dead tree asset
+const DEAD_TREE_WARNING_IMG = require("../../../assets/tiles/alert.png");
+
 // 나무 상태에 따른 에셋 선택 함수
-const getTreeAsset = (growthStage?: string) => {
+const getTreeAsset = (growthStage?: string, isDead?: boolean, health?: number, maxHealth?: number) => {
+  // 죽은 나무인 경우 (health가 0이거나 isDead가 true)
+  if (isDead || (health !== undefined && health <= 0)) {
+    return DEAD_TREE_WARNING_IMG; // 죽은 나무는 경고 표시
+  }
+  
+  // 체력이 매우 낮은 경우 (30% 이하) - 시들어가는 나무 에셋 (없으면 기본 에셋)
+  if (health !== undefined && maxHealth !== undefined) {
+    const healthPercentage = (health / maxHealth) * 100;
+    if (healthPercentage <= 30) {
+      // 추후 시들어가는 나무 에셋 추가 시 사용
+      // return WITHERING_TREE_IMG;
+    }
+  }
+  
+  // 살아있는 나무의 성장 단계별 에셋
   switch (growthStage) {
     case 'SMALL':
       return SMALL_TREE_IMG;
@@ -40,7 +59,9 @@ type Props = {
   layoutW: number;
   showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
-  selectedCell?: Cell | null; // 선택된 셀 추가
+  selectedCell?: Cell | null;
+  forestInfo?: ForestInfoDto; // 죽은 나무 정보를 위해 추가
+  onDeadTreePress: (treeId: number) => void; // 죽은 나무 클릭 핸들러 추가
 };
 
 export default function Board({
@@ -49,13 +70,26 @@ export default function Board({
   layoutW,
   showHitbox,
   onCellPress,
-  selectedCell, // 선택된 셀 prop 추가
+  selectedCell,
+  forestInfo,
+  onDeadTreePress,
 }: Props) {
   const isWater = (c: Cell) => c.x >= 3 && c.z >= 3 && c.x <= 4 && c.z <= 4;
   
   // 선택된 셀인지 확인하는 함수
   const isSelectedCell = (cell: Cell) => {
     return selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z;
+  };
+
+  // 죽은 나무인지 확인하는 함수
+  const getDeadTreeAt = (x: number, z: number) => {
+    if (!forestInfo?.trees) return null;
+    
+    return forestInfo.trees.find(tree => 
+      tree.x === x && 
+      tree.y === z && 
+      (tree.health === 0 || tree.isDead)
+    );
   };
 
   // 기존 스텝 벡터/중심 추정 로직
@@ -133,24 +167,67 @@ export default function Board({
         );
       })}
 
-      {/* Layer 2: 마커 */}
-      {markers.map((m) => (
-        <Image
-          key={`marker-${m.x}-${m.z}`}
-          source={getTreeAsset(m.growthStage)}
-          style={{
-            position: "absolute",
-            left: m.sx - MARKER_SIZE / 2,
-            top: m.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
-            width: MARKER_SIZE,
-            height: MARKER_SIZE,
-            resizeMode: "contain",
-            zIndex: 2,
-            elevation: 2,
-          }}
-          pointerEvents="none"
-        />
-      ))}
+      {/* Layer 2: 마커 (모든 나무 - 죽은 나무는 다른 에셋으로 표시) */}
+      {markers.map((m) => {
+        // 해당 위치의 나무 정보 찾기
+        const treeInfo = forestInfo?.trees?.find(tree => tree.x === m.x && tree.y === m.z);
+        
+        return (
+          <Image
+            key={`marker-${m.x}-${m.z}`}
+            source={getTreeAsset(
+              m.growthStage, 
+              treeInfo?.isDead, 
+              treeInfo?.health, 
+              treeInfo?.maxHealth
+            )}
+            style={{
+              position: "absolute",
+              left: m.sx - MARKER_SIZE / 2,
+              top: m.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+              width: MARKER_SIZE,
+              height: MARKER_SIZE,
+              resizeMode: "contain",
+              zIndex: 2,
+              elevation: 2,
+            }}
+            pointerEvents="none"
+          />
+        );
+      })}
+
+      {/* Layer 2.5: 죽은 나무에 대한 별도 터치 영역 (에셋이 경고 표시인 경우) */}
+      {forestInfo?.trees
+        ?.filter(tree => tree.health === 0 || tree.isDead)
+        ?.map((tree) => {
+          // 해당 위치의 셀 찾기
+          const cell = cells.find(c => c.x === tree.x && c.z === tree.y);
+          if (!cell) {
+            console.log(`Dead tree at ${tree.x}, ${tree.y} - no matching cell found`);
+            return null;
+          }
+          
+          console.log(`Adding touch area for dead tree at ${tree.x}, ${tree.y}`, tree);
+          
+          return (
+            <TouchableOpacity
+              key={`dead-tree-touch-${tree.treeId}`}
+              style={{
+                position: "absolute",
+                left: cell.sx - MARKER_SIZE / 2,
+                top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+                width: MARKER_SIZE,
+                height: MARKER_SIZE,
+                zIndex: 2.5,
+                elevation: 2.5,
+              }}
+              onPress={() => {
+                console.log('Dead tree pressed:', tree.treeId);
+                onDeadTreePress(tree.treeId);
+              }}
+            />
+          );
+        })}
 
       {/* Layer 3: 히트박스 + 하이라이트 */}
       {layoutW > 0 && (

@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, Modal, Pressable, LayoutChangeEvent } from "react-native";
+import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert } from "react-native";
 import InfoBar from "../components/homescreen/InfoBar";
 import Coco from "../components/homescreen/Coco";
 import Board from "../components/homescreen/Forest";
 import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
-import type { Cell, Marker } from "../types/forest";
-import { fetchForestInfo, fetchPoints, plantTree, waterTree } from "../api/home";
+import type { Cell, Marker, ForestInfoDto } from "../types/forest";
+import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree } from "../api/home";
 
 export default function HomeScreen() {
   // 레이아웃
@@ -52,46 +52,59 @@ export default function HomeScreen() {
     lastWateredDate: string | null;
   }>>([]);
 
+  // 숲 정보 전체 저장 (죽은 나무 표시를 위해)
+  const [forestInfo, setForestInfo] = useState<ForestInfoDto | null>(null);
+
+  // 숲 데이터 로드 함수 (재사용을 위해 분리)
+  const loadForestData = async () => {
+    try {
+      setLoading(true);
+      console.log("📥 숲 데이터 로드 시작...");
+
+      // 병렬로 숲 정보와 포인트 정보 조회
+      const [forestInfoData, pointsData] = await Promise.all([
+        fetchForestInfo(),
+        fetchPoints(),
+      ]);
+
+      console.log("🌳 받아온 숲 정보:", forestInfoData);
+      console.log("🌳 나무 개수:", forestInfoData.trees.length);
+      console.log("🌳 죽은 나무들:", forestInfoData.trees.filter(t => t.isDead || t.health === 0));
+
+      // 숲 정보 전체 저장
+      setForestInfo(forestInfoData);
+
+      const treeMarkers = forestInfoData.trees.map((tree) => ({
+        x: tree.x,
+        z: tree.y,
+        growthStage: tree.growthStage, // 추가
+      }));
+      setOriginalMarkers(treeMarkers);
+      
+      // 나무 상세 정보 저장
+      setTreeData(forestInfoData.trees);
+
+      // 성장률 계산 (살아있는 나무 / 전체 나무 * 100)
+      const growthRate =
+        forestInfoData.trees.length > 0
+          ? Math.round((forestInfoData.aliveTreeCount / forestInfoData.trees.length) * 100)
+          : 0;
+      setGrowth(growthRate);
+
+      // 포인트 데이터 처리 (숫자가 바로 반환됨)
+      setPoints(pointsData.toLocaleString() + " P");
+      
+      console.log("✅ 숲 데이터 로드 완료");
+    } catch (error) {
+      console.error("❌ Failed to load forest data:", error);
+      // 실패시에도 UI는 동작하도록 기본값 유지
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 홈 화면 진입시마다 API 호출 (대시보드처럼)
   useEffect(() => {
-    const loadForestData = async () => {
-      try {
-        setLoading(true);
-
-        // 병렬로 숲 정보와 포인트 정보 조회
-        const [forestInfo, pointsData] = await Promise.all([
-          fetchForestInfo(),
-          fetchPoints(),
-        ]);
-
-       const treeMarkers = forestInfo.trees.map((tree) => ({
-          x: tree.x,
-          z: tree.y,
-          growthStage: tree.growthStage, // 추가
-        }));
-        setOriginalMarkers(treeMarkers);
-        
-        // 나무 상세 정보 저장
-        setTreeData(forestInfo.trees);
-
-        // 성장률 계산 (살아있는 나무 / 전체 나무 * 100)
-        const growthRate =
-          forestInfo.trees.length > 0
-            ? Math.round((forestInfo.aliveTreeCount / forestInfo.trees.length) * 100)
-            : 0;
-        setGrowth(growthRate);
-
-        // 포인트 데이터 처리 (숫자가 바로 반환됨)
-        setPoints(pointsData.toLocaleString() + " P");
-      } catch (error) {
-        console.error("Failed to load forest data:", error);
-        // 실패시에도 UI는 동작하도록 기본값 유지
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // 화면에 들어올 때마다 API 호출
     loadForestData();
   }, []); // 컴포넌트 마운트시마다 실행
 
@@ -118,25 +131,7 @@ export default function HomeScreen() {
       await plantTree(selected.x, selected.z);
       
       // 성공 후 숲 데이터 다시 로드
-      const [forestInfo, pointsData] = await Promise.all([
-        fetchForestInfo(),
-        fetchPoints(),
-      ]);
-      
-      // 데이터 업데이트
-      const treeMarkers = forestInfo.trees.map((tree) => ({
-        x: tree.x,
-        z: tree.y,
-        growthStage: tree.growthStage, // 추가
-      }));
-      setOriginalMarkers(treeMarkers);
-      setTreeData(forestInfo.trees);
-      
-      const growthRate = forestInfo.trees.length > 0
-        ? Math.round((forestInfo.aliveTreeCount / forestInfo.trees.length) * 100)
-        : 0;
-      setGrowth(growthRate);
-      setPoints(pointsData.toLocaleString() + " P");
+      await loadForestData();
       
       // 모달 닫기
       setModalVisible(false);
@@ -161,25 +156,7 @@ export default function HomeScreen() {
       await waterTree(selectedTree.treeId);
       
       // 성공 후 숲 데이터 다시 로드
-      const [forestInfo, pointsData] = await Promise.all([
-        fetchForestInfo(),
-        fetchPoints(),
-      ]);
-      
-      // 데이터 업데이트
-      const treeMarkers = forestInfo.trees.map((tree) => ({
-        x: tree.x,
-        z: tree.y,
-        growthStage: tree.growthStage, // 추가
-      }));
-      setOriginalMarkers(treeMarkers);
-      setTreeData(forestInfo.trees);
-      
-      const growthRate = forestInfo.trees.length > 0
-        ? Math.round((forestInfo.aliveTreeCount / forestInfo.trees.length) * 100)
-        : 0;
-      setGrowth(growthRate);
-      setPoints(pointsData.toLocaleString() + " P");
+      await loadForestData();
       
       // 모달 닫기
       setModalVisible(false);
@@ -192,14 +169,59 @@ export default function HomeScreen() {
     }
   };
 
+   // 죽은 나무 클릭 핸들러
+  const handleDeadTreePress = (treeId: number) => {
+    Alert.alert(
+      "죽은 나무 제거",
+      "이 죽은 나무를 제거하시겠습니까?",
+      [
+        {
+          text: "취소",
+          style: "cancel",
+        },
+        {
+          text: "제거",
+          style: "destructive",
+          onPress: () => handleRemoveDeadTree(treeId),
+        },
+      ]
+    );
+  };
+
+  // 죽은 나무 제거 처리
+  const handleRemoveDeadTree = async (treeId: number) => {
+    try {
+      setActionLoading(true);
+      console.log("🗑️ 죽은 나무 제거 시작:", treeId);
+      
+      await removeDeadTree(treeId);
+      console.log("✅ 죽은 나무 제거 API 성공");
+      
+      // 즉시 숲 정보 새로고침
+      console.log("🔄 숲 정보 새로고침 시작...");
+      await loadForestData();
+      console.log("🔄 숲 정보 새로고침 완료");
+      
+      Alert.alert("성공", "죽은 나무가 제거되었습니다.");
+    } catch (error) {
+      console.error("❌ 죽은 나무 제거 실패:", error);
+      Alert.alert("실패", "죽은 나무 제거에 실패했습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const isMarked = selected
     ? markerSet.has(`${selected.x},${selected.z}`)
     : false;
 
-  // 선택된 셀의 나무 정보 찾기
-  const selectedTree = selected && isMarked 
+  // 선택된 셀의 나무 정보 찾기 (죽은 나무도 포함)
+  const selectedTree = selected 
     ? treeData.find(tree => tree.x === selected.x && tree.y === selected.z)
     : null;
+
+  // 실제로 마커가 있거나 죽은 나무가 있는지 확인
+  const hasTreeData = selected ? Boolean(selectedTree) : false;
 
   // 체력 상태에 따른 색상 (동적 스타일)
   const getHealthColor = (health: number, maxHealth: number) => {
@@ -242,7 +264,9 @@ export default function HomeScreen() {
           layoutW={layout.w}
           showHitbox={showHitbox}
           onCellPress={handleCellPress}
-          selectedCell={selected} 
+          selectedCell={selected}
+          forestInfo={forestInfo} // 죽은 나무 정보를 위해 추가
+          onDeadTreePress={handleDeadTreePress} // 죽은 나무 클릭 핸들러 추가
         />
       </View>
 
@@ -269,7 +293,7 @@ export default function HomeScreen() {
             </Text>
             
             {/* 나무가 있는 경우 상세 정보 표시 */}
-            {selectedTree ? (
+            {hasTreeData ? (
               <View style={s.treeInfoSection}>
                 <Text style={[s.modalHint, s.treeInfoTitle]}>
                   🌳 나무 정보
@@ -279,29 +303,29 @@ export default function HomeScreen() {
                     <Text style={s.treeInfoLabel}>체력: </Text>
                     <Text style={[
                       s.treeHealthText,
-                      { color: getHealthColor(selectedTree.health, selectedTree.maxHealth) }
+                      { color: getHealthColor(selectedTree!.health, selectedTree!.maxHealth) }
                     ]}>
-                      {selectedTree.health}/{selectedTree.maxHealth}
+                      {selectedTree!.health}/{selectedTree!.maxHealth}
                     </Text>
                     <Text style={s.treeInfoSubtext}>
-                      ({Math.round((selectedTree.health / selectedTree.maxHealth) * 100)}%)
+                      ({Math.round((selectedTree!.health / selectedTree!.maxHealth) * 100)}%)
                     </Text>
                   </Text>
                   <Text style={s.treeInfoText}>
                     <Text style={s.treeInfoLabel}>성장 단계: </Text>
-                    <Text style={s.treeStageText}>{selectedTree.growthStage}</Text>
+                    <Text style={s.treeStageText}>{selectedTree!.growthStage}</Text>
                   </Text>
                   <Text style={s.treeInfoText}>
                     <Text style={s.treeInfoLabel}>오늘 물준 횟수: </Text>
-                    <Text style={s.treeWaterText}>{selectedTree.waterCountToday}회</Text>
+                    <Text style={s.treeWaterText}>{selectedTree!.waterCountToday}회</Text>
                   </Text>
-                  {selectedTree.lastWateredDate && (
+                  {selectedTree!.lastWateredDate && (
                     <Text style={s.treeInfoText}>
                       <Text style={s.treeInfoLabel}>마지막 물준 날: </Text>
-                      <Text style={s.treeInfoSubtext}>{selectedTree.lastWateredDate}</Text>
+                      <Text style={s.treeInfoSubtext}>{selectedTree!.lastWateredDate}</Text>
                     </Text>
                   )}
-                  {selectedTree.isDead && (
+                  {selectedTree!.isDead && (
                     <Text style={s.treeDeadText}>
                       💀 나무가 죽었습니다
                     </Text>
@@ -314,7 +338,7 @@ export default function HomeScreen() {
             
             {/* 액션 버튼들 */}
             <View style={s.modalButtonRow}>
-              {!isMarked && (
+              {!hasTreeData && (
                 <Pressable
                   style={getPlantButtonStyle()}
                   onPress={handlePlantTree}
@@ -326,7 +350,7 @@ export default function HomeScreen() {
                 </Pressable>
               )}
               
-              {isMarked && selectedTree && !selectedTree.isDead && (
+              {hasTreeData && selectedTree && !selectedTree.isDead && (
                 <Pressable
                   style={getWaterButtonStyle()}
                   onPress={handleWaterTree}
@@ -334,6 +358,22 @@ export default function HomeScreen() {
                 >
                   <Text style={s.modalBtnText}>
                     {actionLoading ? "물주는중..." : "💧 물주기"}
+                  </Text>
+                </Pressable>
+              )}
+              
+              {/* 죽은 나무 제거 버튼 */}
+              {hasTreeData && selectedTree && selectedTree.isDead && (
+                <Pressable
+                  style={[s.modalBtn, s.modalButtonFlex, { backgroundColor: "#DC2626" }]}
+                  onPress={() => {
+                    setModalVisible(false);
+                    handleDeadTreePress(selectedTree.treeId);
+                  }}
+                  disabled={actionLoading}
+                >
+                  <Text style={s.modalBtnText}>
+                    💀 죽은 나무 제거
                   </Text>
                 </Pressable>
               )}
