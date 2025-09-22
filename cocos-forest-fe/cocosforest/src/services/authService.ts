@@ -32,8 +32,15 @@ export const authService = {
       }
 
       return response.data.result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("로그인 오류:", error);
+
+      // 비밀번호 오류 처리 (400 상태코드)
+      if (error.response?.status === 400) {
+        throw new Error("비밀번호를 잘못 입력하셨습니다.");
+      }
+
+      // 기타 오류는 그대로 전달
       throw error;
     }
   },
