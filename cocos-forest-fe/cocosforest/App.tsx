@@ -1,13 +1,8 @@
-
-import { StyleSheet, Text, View } from 'react-native';
+// App.tsx
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
-
-// Mock 설정 제거 (실제 API 연동 시)
-// import "./src/mocks/setupMocks";
-
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { validateEnv } from "./src/config/env";
 import { queryClient } from "./src/config/queryClient";
@@ -27,12 +22,3 @@ export default function App() {
     </QueryClientProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

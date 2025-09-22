@@ -1,33 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { fetchTodayData, fetchAIAnalysis } from '../../api/dashboard';
+import logger from '../../utils/logger';
 
 export const AIAnalysisCard: React.FC = () => {
+  const [aiAdvice, setAiAdvice] = useState<string>('AI 분석을 준비 중입니다...');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const loadAIAnalysis = async () => {
+      try {
+        setIsLoading(true);
+
+        // 1. 오늘의 데이터 가져오기
+        const todayData = await fetchTodayData();
+        logger.info('오늘 데이터 로드 완료', { carbonTotal: todayData.totals?.carbonTotalKg });
+
+        // 2. AI 분석 요청
+        const analysisResult = await fetchAIAnalysis(todayData);
+        setAiAdvice(analysisResult);
+
+        logger.info('AI 분석 완료');
+      } catch (error) {
+        logger.error('AI 분석 실패', error);
+        setAiAdvice('AI 분석을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAIAnalysis();
+  }, []);
   return (
     <View style={styles.speechBubbleContainer}>
       <View style={styles.speechBubbleOuter}>
         <View style={styles.speechBubble}>
-          <View style={styles.aiResultHeader}>
-            <View style={styles.aiResultIcon}>
-              <Text style={styles.aiResultIconText}>🤖</Text>
-            </View>
-            <View style={styles.aiResultTitleContainer}>
-              <Text style={styles.cardTitle}>AI 분석 결과</Text>
-              <Text style={styles.aiResultSubtitle}>실시간 분석 완료</Text>
-            </View>
-            <View style={styles.aiResultBadge}>
-              <Text style={styles.aiResultBadgeText}>NEW</Text>
-            </View>
-          </View>
-
           <View style={styles.aiResultContent}>
             <Text style={styles.aiResultText}>
-              📊 <Text style={styles.aiResultHighlight}>오늘 소비 패턴 분석:</Text> 교통비 지출이 평소보다 25% 증가했습니다.
-            </Text>
-            <Text style={styles.aiResultText}>
-              🌱 <Text style={styles.aiResultHighlight}>환경 영향:</Text> 대중교통 이용률이 높아 탄소 배출량이 평균 대비 36% 감소했어요.
-            </Text>
-            <Text style={styles.aiResultText}>
-              💡 <Text style={styles.aiResultHighlight}>맞춤 제안:</Text> 내일은 자전거 이용을 추천드립니다. 추가로 5kg CO₂를 절약할 수 있어요.
+              {aiAdvice}
             </Text>
           </View>
         </View>
@@ -157,6 +167,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
     lineHeight: 20,
+    fontWeight: 'bold',
   },
   aiResultHighlight: {
     fontWeight: '600',

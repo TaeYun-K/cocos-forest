@@ -6,9 +6,11 @@ interface EmailVerificationInputProps {
   verificationCode: string;
   onEmailChange: (value: string) => void;
   onVerificationCodeChange: (value: string) => void;
+  onCheckEmailDuplicate: () => void;
   onSendCode: () => void;
   onVerifyCode: () => void;
   isLoading: boolean;
+  isEmailDuplicateChecked: boolean;
   isCodeSent: boolean;
   isEmailVerified: boolean;
   emailError?: string;
@@ -22,9 +24,11 @@ export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
   verificationCode,
   onEmailChange,
   onVerificationCodeChange,
+  onCheckEmailDuplicate,
   onSendCode,
   onVerifyCode,
   isLoading,
+  isEmailDuplicateChecked,
   isCodeSent,
   isEmailVerified,
   emailError,
@@ -55,19 +59,19 @@ export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
         <TouchableOpacity
           style={[
             styles.checkButton,
-            isCodeSent && styles.checkedButton
+            isEmailDuplicateChecked && styles.checkedButton
           ]}
-          onPress={onSendCode}
-          disabled={isLoading || isEmailVerified}
+          onPress={onCheckEmailDuplicate}
+          disabled={isLoading || isEmailDuplicateChecked}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <Text style={[
               styles.checkButtonText,
-              isCodeSent && styles.checkedButtonText
+              isEmailDuplicateChecked && styles.checkedButtonText
             ]}>
-              {isEmailVerified ? '인증완료' : isCodeSent ? '재발송' : '인증'}
+              {isEmailDuplicateChecked ? '확인완료' : '중복확인'}
             </Text>
           )}
         </TouchableOpacity>
@@ -75,17 +79,44 @@ export const EmailVerificationInput: React.FC<EmailVerificationInputProps> = ({
       {emailError && (
         <Text style={styles.errorText}>{emailError}</Text>
       )}
+      {isEmailDuplicateChecked && (
+        <Text style={styles.successText}>사용 가능한 이메일입니다.</Text>
+      )}
+
+      {isEmailDuplicateChecked && (
+        <View style={styles.sendCodeContainer}>
+          <TouchableOpacity
+            style={[
+              styles.sendCodeButton,
+              isCodeSent && styles.checkedButton
+            ]}
+            onPress={onSendCode}
+            disabled={isLoading || isEmailVerified}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={[
+                styles.checkButtonText,
+                isCodeSent && styles.checkedButtonText
+              ]}>
+                {isEmailVerified ? '인증완료' : isCodeSent ? '재발송' : '인증번호 발송'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {isCodeSent && !isEmailVerified && (
         <View style={styles.verificationContainer}>
           <View style={[
             styles.inputWrapper,
-            { flex: 1, marginRight: 8 },
+            styles.verificationInputWrapper,
             codeError && styles.inputWrapperError
           ]}>
             <TextInput
               style={styles.input}
-              placeholder="1234"
+              placeholder="인증번호 6자리를 입력하세요"
               placeholderTextColor="#A0A0A0"
               value={verificationCode}
               onChangeText={onVerificationCodeChange}
@@ -181,6 +212,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  verificationInputWrapper: {
+    flex: 1,
+    marginRight: 8,
+  },
   verifyButton: {
     backgroundColor: '#7CB342',
     paddingHorizontal: 15,
@@ -198,5 +233,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FF6B35',
     fontWeight: '500',
+  },
+  successText: {
+    fontSize: 12,
+    color: '#4CAF50',
+    marginTop: 4,
+  },
+  sendCodeContainer: {
+    marginTop: 10,
+  },
+  sendCodeButton: {
+    backgroundColor: '#7CB342',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
   },
 });
