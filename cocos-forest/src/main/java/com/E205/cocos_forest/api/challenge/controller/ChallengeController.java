@@ -1,11 +1,14 @@
 package com.E205.cocos_forest.api.challenge.controller;
 
-import com.E205.cocos_forest.api.challenge.dto.ChallengeTodayOut;
-import com.E205.cocos_forest.api.challenge.dto.TumblerVerifyOut;
-import com.E205.cocos_forest.api.challenge.service.ChallengeService;
-import com.E205.cocos_forest.api.challenge.service.TumblerVerificationService;
+import com.E205.cocos_forest.api.challenge.dto.out.ChallengeTodayOut;
+import com.E205.cocos_forest.api.challenge.dto.out.TumblerVerifyOut;
+import com.E205.cocos_forest.api.challenge.service.challenge.ChallengeService;
+import com.E205.cocos_forest.api.challenge.service.tumbler.TumblerVerificationService;
 import com.E205.cocos_forest.global.config.security.CustomUserDetails;
 import com.E205.cocos_forest.global.response.BaseResponse;
+import com.E205.cocos_forest.api.challenge.dto.in.StepsUpdateIn;
+import com.E205.cocos_forest.api.challenge.dto.out.StepsUpdateOut;
+import com.E205.cocos_forest.api.challenge.service.step.StepService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ public class ChallengeController {
 
     private final ChallengeService challengeService;
     private final TumblerVerificationService tumblerVerificationService;
+    private final StepService stepService;
 
     @Operation(summary = "오늘의 챌린지 조회 api", description = "사용자의 오늘의 챌린지를 조회합니다")
     @GetMapping("/today")
@@ -51,6 +55,20 @@ public class ChallengeController {
     ) {
         Long userId = principal.getUser().getId();
         TumblerVerifyOut out = tumblerVerificationService.verifyAndAward(userId, file);
+        return new BaseResponse<>(out);
+    }
+
+
+    @Operation(summary = "오늘 걸음수 갱신", description = "프론트에서 전달한 오늘의 총 걸음수로 저장합니다")
+    @PostMapping("/steps")
+    public BaseResponse<StepsUpdateOut> updateTodaySteps(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "오늘의 총 걸음수")
+        @org.springframework.web.bind.annotation.RequestBody StepsUpdateIn in
+    ) {
+        Long userId = principal.getUser().getId();
+        StepsUpdateOut out = stepService.updateTodaySteps(userId, in.getSteps());
+        challengeService.evaluateStepsChallenge(userId);
         return new BaseResponse<>(out);
     }
 }

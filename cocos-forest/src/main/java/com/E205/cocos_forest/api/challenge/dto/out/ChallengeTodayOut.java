@@ -1,4 +1,4 @@
-package com.E205.cocos_forest.api.challenge.dto;
+package com.E205.cocos_forest.api.challenge.dto.out;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

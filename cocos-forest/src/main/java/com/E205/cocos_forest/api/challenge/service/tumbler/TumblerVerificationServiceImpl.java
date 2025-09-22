@@ -1,6 +1,6 @@
-package com.E205.cocos_forest.api.challenge.service;
+package com.E205.cocos_forest.api.challenge.service.tumbler;
 
-import com.E205.cocos_forest.api.challenge.dto.TumblerVerifyOut;
+import com.E205.cocos_forest.api.challenge.dto.out.TumblerVerifyOut;
 import com.E205.cocos_forest.api.forest.service.PointService;
 import com.E205.cocos_forest.domain.challenge.entity.Challenge;
 import com.E205.cocos_forest.domain.challenge.entity.UserChallenge;
@@ -50,16 +50,16 @@ public class TumblerVerificationServiceImpl implements TumblerVerificationServic
             .findByUserIdAndChallengeIdAndChallengeDate(userId, tumbler.getId(), today)
             .orElseGet(() -> createPending(userId, tumbler, today));
 
-        // 이미 보상 지급된 경우 즉시 반환 (멱등)
-        if (uc.getRewardPoints() != null && uc.getRewardPoints() > 0) {
-            return TumblerVerifyOut.builder()
-                .success(true)
-                .reason("이미 인증 및 보상 완료")
-                .awarded(true)
-                .points(uc.getRewardPoints())
-                .userChallengeId(uc.getId())
-                .build();
-        }
+//        // 이미 보상 지급된 경우 즉시 반환 (멱등) (테스팅용 생략)
+//        if (uc.getRewardPoints() != null && uc.getRewardPoints() > 0) {
+//            return TumblerVerifyOut.builder()
+//                .success(true)
+//                .reason("이미 인증 및 보상 완료")
+//                .awarded(true)
+//                .points(uc.getRewardPoints())
+//                .userChallengeId(uc.getId())
+//                .build();
+//        }
 
         try (InputStream is = file.getInputStream()) {
             ClovaOcrClient.OcrResult ocr = clovaOcrClient.recognize(is, file.getContentType());
@@ -77,7 +77,7 @@ public class TumblerVerificationServiceImpl implements TumblerVerificationServic
                     .build();
             }
 
-            // 2) 날짜 추출 및 금일과 일치 여부 확인 (테스팅용 생략)
+//            // 2) 날짜 추출 및 금일과 일치 여부 확인 (테스팅용 생략)
 //            Optional<LocalDate> receiptDate = receiptTextParser.extractReceiptDate(full, ZONE_KST);
 //            if (receiptDate.isEmpty() || !receiptDate.get().isEqual(today)) {
 //                return TumblerVerifyOut.builder()

@@ -1,4 +1,4 @@
-package com.E205.cocos_forest.api.challenge.service;
+package com.E205.cocos_forest.api.challenge.service.tumbler;
 
 import org.springframework.stereotype.Component;
 
