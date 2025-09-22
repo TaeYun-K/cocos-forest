@@ -1,13 +1,16 @@
 package com.E205.cocos_forest.api.challenge.controller;
 
 import com.E205.cocos_forest.api.challenge.dto.ChallengeTodayOut;
+import com.E205.cocos_forest.api.challenge.dto.TumblerVerifyOut;
 import com.E205.cocos_forest.api.challenge.service.ChallengeService;
+import com.E205.cocos_forest.api.challenge.service.TumblerVerificationService;
 import com.E205.cocos_forest.global.config.security.CustomUserDetails;
 import com.E205.cocos_forest.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChallengeController {
 
     private final ChallengeService challengeService;
+    private final TumblerVerificationService tumblerVerificationService;
 
     @Operation(summary = "오늘의 챌린지 조회 api", description = "사용자의 오늘의 챌린지를 조회합니다")
     @GetMapping("/today")
@@ -38,5 +42,15 @@ public class ChallengeController {
         challengeService.claimReward(userId, userChallengeId);
         return new BaseResponse<>("OK");
     }
-}
 
+    @Operation(summary = "텀블러 영수증 OCR 인증", description = "이미지를 디스크에 저장하지 않고 바로 OCR로 전송해 판정")
+    @PostMapping(value = "/tumbler/verify", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public BaseResponse<TumblerVerifyOut> verifyTumbler(
+        @AuthenticationPrincipal CustomUserDetails principal,
+        @RequestParam("file") org.springframework.web.multipart.MultipartFile file
+    ) {
+        Long userId = principal.getUser().getId();
+        TumblerVerifyOut out = tumblerVerificationService.verifyAndAward(userId, file);
+        return new BaseResponse<>(out);
+    }
+}
