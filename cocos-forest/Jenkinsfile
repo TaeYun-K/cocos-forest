@@ -50,14 +50,20 @@ pipeline {
           file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')
         ]) {
           script {
-            sh 'docker stop "$CONTAINER_NAME" || true'
-            sh 'docker rm "$CONTAINER_NAME" || true'
-            // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
             sh '''
-              docker run -d --name "$CONTAINER_NAME" --network=cocos-network \
-                         --env-file "$PROPERTIES_FILE_PATH" \
-                         -e GCP_CREDENTIALS_LOCATION="$GCP_CREDENTIALS_FILE" \
-                         "$IMAGE_NAME"
+            set -e
+
+            docker stop "$CONTAINER_NAME" || true
+            docker rm "$CONTAINER_NAME" || true
+
+            # 컨테이너 내부에서 사용할 고정 경로(읽기전용으로 마운트)
+            GCP_IN_CONTAINER="/run/secrets/gcp-credentials.json"
+
+            docker run -d --name "$CONTAINER_NAME" --network=cocos-network \
+              --mount type=bind,src="$GCP_CREDENTIALS_FILE",dst="$GCP_IN_CONTAINER",ro \
+              --env-file "$PROPERTIES_FILE_PATH" \
+              -e GCP_CREDENTIALS_LOCATION="$GCP_IN_CONTAINER" \
+              "$IMAGE_NAME"
             '''
           }
         }
