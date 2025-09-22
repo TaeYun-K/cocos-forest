@@ -57,8 +57,10 @@ export const useDashboard = () => {
     selectedDay,
     activeTab,
     showDetailCard,
+    aiCardRefreshKey,
     setActiveTab,
     closeDayDetail,
+    refreshAICard,
   } = useDashboardStore();
 
   // Payment 상태 및 액션
@@ -102,6 +104,7 @@ export const useDashboard = () => {
     showDetailCard,
     showSuccessModal,
     isLoading,
+    aiCardRefreshKey,
 
     // 데이터
     todayData,
@@ -117,5 +120,6 @@ export const useDashboard = () => {
     closeDayDetail,
     handlePaymentSuccess,
     handlePaymentModalConfirm,
+    refreshAICard,
   };
 };

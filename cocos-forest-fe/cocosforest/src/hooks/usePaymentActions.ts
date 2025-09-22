@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import usePaymentStore from '../store/paymentStore';
+import useDashboardStore from '../store/dashboardStore';
 import { useDashboardInvalidation } from './useDashboardQueries';
 
 /**
@@ -7,6 +8,7 @@ import { useDashboardInvalidation } from './useDashboardQueries';
  */
 export const usePaymentActions = () => {
   const { showPaymentSuccess, hidePaymentSuccess } = usePaymentStore();
+  const { refreshAICard } = useDashboardStore();
   const { invalidateTodayData, invalidateAllDashboard } = useDashboardInvalidation();
 
   const handlePaymentSuccess = useCallback(() => {
@@ -16,7 +18,10 @@ export const usePaymentActions = () => {
     // 2. 관련 데이터 갱신
     invalidateTodayData();
     invalidateAllDashboard();
-  }, [showPaymentSuccess, invalidateTodayData, invalidateAllDashboard]);
+
+    // 3. AI 카드 새로고침
+    refreshAICard();
+  }, [showPaymentSuccess, invalidateTodayData, invalidateAllDashboard, refreshAICard]);
 
   const handlePaymentModalConfirm = useCallback(() => {
     hidePaymentSuccess();

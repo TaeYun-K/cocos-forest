@@ -22,6 +22,7 @@ const DashboardScreen = memo(() => {
     showDetailCard,
     selectedDay,
     showSuccessModal,
+    aiCardRefreshKey,
 
     // 데이터
     cocoGif,
@@ -48,7 +49,7 @@ const DashboardScreen = memo(() => {
 
         {/* AI 분석 결과 */}
         <View style={[commonStyles.section, { marginBottom: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.AI_ANALYSIS_BOTTOM }]}>
-          <AIAnalysisCard />
+          <AIAnalysisCard key={aiCardRefreshKey} />
         </View>
 
         {/* Coco GIF */}

@@ -9,7 +9,9 @@ import type {
   CategoryMonthlyDetailsResponse,
   PaymentRequest,
   PaymentResponse,
-  PaymentResult
+  PaymentResult,
+  AIAnalysisRequest,
+  AIAnalysisResponse
 } from '../types/dashboard';
 
 /**
@@ -193,6 +195,83 @@ export const addNewPayment = async (
   } catch (error) {
     logger.apiError('addNewPayment', error);
     throw handleApiError(error, '결제 처리');
+  }
+};
+
+/**
+ * AI 분석 API 호출
+ * @param dayData - 오늘의 데이터
+ * @returns AI 분석 결과
+ */
+export const fetchAIAnalysis = async (dayData: DayData): Promise<string> => {
+  try {
+    const requestBody: AIAnalysisRequest = {
+      totals: {
+        carbonTotalKg: dayData.totals?.carbonTotalKg || 0
+      },
+      transactions: dayData.transactions?.map(transaction => ({
+        merchantName: transaction.merchantName || '',
+        amountKrw: transaction.amountKrw || 0,
+        categoryName: transaction.categoryName || '',
+        approvedAt: transaction.approvedAt
+          ? new Date(transaction.approvedAt).toISOString().slice(0, 19) // 타임존 정보 제거
+          : new Date().toISOString().slice(0, 19)
+      })) || []
+    };
+
+    logger.apiStart('fetchAIAnalysis', {
+      carbonTotal: requestBody.totals.carbonTotalKg,
+      transactionCount: requestBody.transactions.length
+    });
+
+    // 요청 내용 상세 로그
+    logger.info('AI 분석 요청 데이터', {
+      endpoint: '/api/ai/carbon/analyze',
+      method: 'POST',
+      requestBody: {
+        totals: requestBody.totals,
+        transactionCount: requestBody.transactions.length,
+        transactions: requestBody.transactions.map(t => ({
+          merchantName: t.merchantName,
+          amountKrw: t.amountKrw,
+          categoryName: t.categoryName,
+          approvedAt: t.approvedAt
+        }))
+      }
+    });
+
+    const response = await apiClient.post('/api/ai/carbon/analyze', requestBody) as { data: AIAnalysisResponse };
+
+    logger.apiSuccess('fetchAIAnalysis');
+
+    // 응답 내용 상세 로그
+    logger.info('AI 분석 응답 데이터', {
+      httpStatus: response.data.httpStatus,
+      isSuccess: response.data.isSuccess,
+      message: response.data.message,
+      code: response.data.code,
+      result: response.data.result ? {
+        analysisId: response.data.result.analysisId,
+        analyzedDate: response.data.result.analyzedDate,
+        totalCarbonEmissions: response.data.result.totalCarbonEmissions,
+        aiAdviceLength: response.data.result.aiAdvice?.length || 0,
+        aiAdvicePreview: response.data.result.aiAdvice?.substring(0, 100) + '...'
+      } : null
+    });
+
+    if (response.data.isSuccess && response.data.result) {
+      return response.data.result.aiAdvice;
+    } else {
+      logger.error('AI 분석 API 실패', {
+        httpStatus: response.data.httpStatus,
+        message: response.data.message,
+        code: response.data.code
+      });
+      throw new Error(response.data.message || 'AI 분석에 실패했습니다.');
+    }
+  } catch (error) {
+    logger.apiError('fetchAIAnalysis', error);
+    throw handleApiError(error, 'AI 분석');
   }
 };
 
