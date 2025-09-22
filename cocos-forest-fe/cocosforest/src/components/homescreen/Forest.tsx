@@ -91,20 +91,19 @@ export default function Board({
   // 확장 가능한 흙 타일인지 확인 (잔디 영역 바로 바깥쪽 1줄)
   const isExpandableArea = (ix: number, iz: number) => {
     // 현재 잔디 영역은 0 ~ forestSize-1
-    // 확장 가능 영역: 잔디 영역에 인접한 바깥쪽 1줄
+    // 확장 가능 영역: 잔디 영역에 인접한 바깥쪽 1줄만
     const isOutsideGrass = ix < 0 || ix >= forestSize || iz < 0 || iz >= forestSize;
     
     if (!isOutsideGrass) return false;
     
-    // 잔디 영역에 인접한지 확인 (거리 1 이내)
-    const minDistanceToGrass = Math.min(
-      Math.abs(ix - 0), // 왼쪽 경계까지의 거리
-      Math.abs(ix - (forestSize - 1)), // 오른쪽 경계까지의 거리
-      Math.abs(iz - 0), // 위쪽 경계까지의 거리
-      Math.abs(iz - (forestSize - 1)) // 아래쪽 경계까지의 거리
-    );
+    // 정확히 잔디 경계에서 1칸 떨어진 영역만 확장 가능
+    const isAdjacentToGrass = 
+      (ix === -1 && iz >= -1 && iz <= forestSize) ||           // 왼쪽 경계
+      (ix === forestSize && iz >= -1 && iz <= forestSize) ||   // 오른쪽 경계  
+      (iz === -1 && ix >= -1 && ix <= forestSize) ||           // 위쪽 경계
+      (iz === forestSize && ix >= -1 && ix <= forestSize);     // 아래쪽 경계
     
-    return minDistanceToGrass <= 1;
+    return isAdjacentToGrass;
   };
   
   // 선택된 셀인지 확인하는 함수
@@ -167,45 +166,55 @@ export default function Board({
           const isExpandable = isExpandableArea(actualX, actualZ);
 
           return (
-            <TouchableOpacity
-              key={`base-${ix}-${iz}`}
-              style={{
-                position: "absolute",
-                left: sx - SPRITE_W / 2,
-                top: sy - FOOT_H / 2 - WALL_H,
-                width: SPRITE_W,
-                height: FOOT_H + WALL_H,
-                zIndex: 0,
-              }}
-              onPress={isExpandable ? onExpandableAreaPress : undefined}
-              disabled={!isExpandable}
-            >
-              <Image
-                source={DIRT_IMG}
+            <View key={`base-container-${ix}-${iz}`}>
+              <TouchableOpacity
                 style={{
+                  position: "absolute",
+                  left: sx - SPRITE_W / 2,
+                  top: sy - FOOT_H / 2 - WALL_H,
                   width: SPRITE_W,
                   height: FOOT_H + WALL_H,
-                  resizeMode: "stretch",
+                  zIndex: isExpandable ? 1 : 0, // 확장 가능 영역만 더 높은 zIndex
                 }}
-                pointerEvents="none"
-              />
+                onPress={isExpandable ? onExpandableAreaPress : undefined}
+                disabled={!isExpandable}
+              >
+                <Image
+                  source={DIRT_IMG}
+                  style={{
+                    width: SPRITE_W,
+                    height: FOOT_H + WALL_H,
+                    resizeMode: "stretch",
+                  }}
+                  pointerEvents="none"
+                />
+              </TouchableOpacity>
               
-              {/* 확장 가능 영역 하이라이트 */}
-              {isExpandable && (
-                <Svg
-                  style={StyleSheet.absoluteFill}
+              {/* 하이라이트를 별도 컨테이너로 분리 */}
+              {/* {isExpandable && (
+                <View
+                  style={{
+                    position: "absolute",
+                    left: sx - SPRITE_W / 2,
+                    top: sy - FOOT_H / 2 - WALL_H / 2 - 16,
+                    width: SPRITE_W,
+                    height: FOOT_H + WALL_H,
+                    zIndex: 0.5, // TouchableOpacity보다 낮은 zIndex
+                  }}
                   pointerEvents="none"
                 >
-                  <Path
-                    d={buildPath(getTopFaceVertices(SPRITE_W / 2, FOOT_H / 2 + WALL_H))}
-                    fill="rgba(255, 193, 7, 0.4)"
-                    stroke="#FFC107"
-                    strokeWidth={2}
-                    strokeOpacity={0.8}
-                  />
-                </Svg>
-              )}
-            </TouchableOpacity>
+                  <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
+                    <Path
+                      d={buildPath(getTopFaceVertices((SPRITE_W / 2), (FOOT_H / 2) + WALL_H + 16))}
+                      fill="rgba(255, 193, 7, 0.4)"
+                      stroke="#FFC107"
+                      strokeWidth={2}
+                      strokeOpacity={0.8}
+                    />
+                  </Svg>
+                </View>
+              )} */}
+            </View>
           );
         })
       )}
