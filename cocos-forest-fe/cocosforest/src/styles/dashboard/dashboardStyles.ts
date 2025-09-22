@@ -5,6 +5,7 @@ export const colors = {
   // 기본 색상
   background: '#fefdf8',
   white: '#ffffff',
+  black: '#000000',
 
   // 텍스트 색상
   textPrimary: '#1f2937',
@@ -278,94 +279,5 @@ export const tabStyles = StyleSheet.create({
 
   activeTabText: {
     color: colors.white,
-  },
-});
-
-// 게이지 관련 스타일
-export const gaugeStyles = StyleSheet.create({
-  gaugeContainer: {
-    marginBottom: 20,
-  },
-
-  gaugeBackground: {
-    height: 24,
-    backgroundColor: colors.gray100,
-    borderRadius: 12,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-
-  gaugeFill: {
-    height: '100%',
-    borderRadius: 12,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-  },
-
-  gaugeLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    position: 'absolute',
-    width: '100%',
-    top: -20,
-  },
-
-  gaugeLabelText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-});
-
-// 통계 관련 스타일
-export const statsStyles = StyleSheet.create({
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 16,
-  },
-
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.gray50,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-
-  statHighlight: {
-    flex: 1,
-    backgroundColor: colors.grayLight,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: colors.secondary,
-  },
-
-  statValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-
-  statMainValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-
-  statMainLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '600',
   },
 });

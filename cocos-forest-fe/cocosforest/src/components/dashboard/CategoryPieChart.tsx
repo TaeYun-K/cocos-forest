@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { PieChart } from 'react-native-gifted-charts';
 import type { CategoryData } from '../../types/dashboard';
 
 interface CategoryPieChartProps {
@@ -12,83 +12,80 @@ export const CategoryPieChart: React.FC<CategoryPieChartProps> = ({
   categories,
   title = "탄소 배출량 비율"
 }) => {
-  const size = 200;
-  const strokeWidth = 40;
-  const radius = (size - strokeWidth) / 2;
-  const center = size / 2;
+  // 데이터 정렬 및 필터링 (배출량 기준 내림차순)
+  const sortedCategories = useMemo(() => {
+    return [...categories]
+      .sort((a, b) => b.carbonTotalKg - a.carbonTotalKg)
+      .filter(cat => cat.carbonTotalKg > 0);
+  }, [categories]);
 
-  // 데이터 정렬 (배출량 기준 내림차순)
-  const sortedCategories = [...categories]
-    .sort((a, b) => b.carbonTotalKg - a.carbonTotalKg)
-    .filter(cat => cat.carbonTotalKg > 0);
+  // 총 배출량 계산
+  const totalEmission = useMemo(() => {
+    return sortedCategories.reduce((sum, cat) => sum + cat.carbonTotalKg, 0);
+  }, [sortedCategories]);
 
-  // 각도 계산
-  const totalEmission = sortedCategories.reduce((sum, cat) => sum + cat.carbonTotalKg, 0);
-  let currentAngle = -90; // 12시 방향부터 시작
+  // Gifted Charts용 데이터 변환
+  const pieData = useMemo(() => {
+    const mainCategories = sortedCategories.slice(0, 5);
+    const otherCategories = sortedCategories.slice(5);
 
-  const createPath = (startAngle: number, endAngle: number, outerRadius: number) => {
-    const start = polarToCartesian(center, center, outerRadius, endAngle);
-    const end = polarToCartesian(center, center, outerRadius, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    const chartData = mainCategories.map((category, index) => ({
+      value: category.carbonTotalKg,
+      color: category.color,
+      text: `${category.categoryName}\n${category.carbonTotalKg.toFixed(1)}kg`,
+      focused: index === 0, // 첫 번째 항목을 약간 분리
+    }));
 
-    return [
-      "M", start.x, start.y,
-      "A", outerRadius, outerRadius, 0, largeArcFlag, 0, end.x, end.y,
-      "L", center, center,
-      "Z"
-    ].join(" ");
-  };
+    // 기타 카테고리가 있으면 추가
+    if (otherCategories.length > 0) {
+      const otherTotal = otherCategories.reduce((sum, cat) => sum + cat.carbonTotalKg, 0);
+      chartData.push({
+        value: otherTotal,
+        color: '#d1d5db',
+        text: `기타 ${otherCategories.length}개\n${otherTotal.toFixed(1)}kg`,
+        focused: false,
+      });
+    }
 
-  const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
-    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
-    return {
-      x: centerX + (radius * Math.cos(angleInRadians)),
-      y: centerY + (radius * Math.sin(angleInRadians))
-    };
-  };
+    return chartData;
+  }, [sortedCategories]);
+
+  if (totalEmission === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{title}</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>데이터가 없습니다</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
 
       <View style={styles.chartContainer}>
-        <Svg height={size} width={size} style={styles.chart}>
-          {sortedCategories.map((category) => {
-            const percentage = category.carbonTotalKg / totalEmission;
-            const angle = percentage * 360;
-            const endAngle = currentAngle + angle;
-
-            const path = createPath(currentAngle, endAngle, radius + strokeWidth / 2);
-
-            currentAngle = endAngle;
-
-            return (
-              <Path
-                key={category.categoryId}
-                d={path}
-                fill={category.color}
-                opacity={0.9}
-              />
-            );
-          })}
-
-          {/* 중앙 원 */}
-          <Circle
-            cx={center}
-            cy={center}
-            r={radius - strokeWidth / 2}
-            fill="#ffffff"
-            stroke="#f3f4f6"
-            strokeWidth={2}
-          />
-
-        </Svg>
-
-        {/* 중앙 텍스트 (절대 위치) */}
-        <View style={styles.centerText}>
-          <Text style={styles.centerTitle}>총 배출량</Text>
-          <Text style={styles.centerValue}>{totalEmission.toFixed(1)}kg</Text>
-        </View>
+        <PieChart
+          data={pieData}
+          radius={90}
+          innerRadius={50}
+          centerLabelComponent={() => (
+            <View style={styles.centerLabel}>
+              <Text style={styles.centerTitle}>총 배출량</Text>
+              <Text style={styles.centerValue}>{totalEmission.toFixed(1)}kg</Text>
+            </View>
+          )}
+          focusOnPress
+          isAnimated
+          animationDuration={800}
+          strokeColor="#ffffff"
+          strokeWidth={2}
+          showTooltip
+          textColor="#ffffff"
+          textSize={10}
+          showText={false} // 차트 내부 텍스트는 숨김 (범례 사용)
+        />
 
         {/* 범례 */}
         <View style={styles.legend}>
@@ -138,15 +135,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  chart: {
-    marginBottom: 16,
-  },
-  centerText: {
-    position: 'absolute',
-    top: 84, // (200 / 2) - 16
-    left: 0,
-    right: 0,
+  centerLabel: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   centerTitle: {
     fontSize: 14,
@@ -161,6 +152,7 @@ const styles = StyleSheet.create({
   legend: {
     width: '100%',
     gap: 8,
+    marginTop: 20,
   },
   legendItem: {
     flexDirection: 'row',
@@ -185,5 +177,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     marginTop: 2,
+  },
+  emptyContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6b7280',
   },
 });

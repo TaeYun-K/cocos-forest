@@ -9,7 +9,7 @@ export const DayDetailCard: React.FC = () => {
     selectedYear,
     selectedMonth,
     selectedDay,
-    handleCloseDetailCard
+    closeDayDetail
   } = useDashboardStore();
 
   const { data: currentDayData, isLoading, error } = useDayDetails(
@@ -36,7 +36,7 @@ export const DayDetailCard: React.FC = () => {
                 {selectedYear}년 {monthNames[selectedMonth]} {selectedDay}일
               </Text>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={handleCloseDetailCard}>
+            <TouchableOpacity style={styles.closeButton} onPress={closeDayDetail}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -57,7 +57,7 @@ export const DayDetailCard: React.FC = () => {
                 {selectedYear}년 {monthNames[selectedMonth]} {selectedDay}일
               </Text>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={handleCloseDetailCard}>
+            <TouchableOpacity style={styles.closeButton} onPress={closeDayDetail}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -84,7 +84,7 @@ export const DayDetailCard: React.FC = () => {
               <Text style={styles.syncText}>실시간 동기화 완료</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.closeButton} onPress={handleCloseDetailCard}>
+          <TouchableOpacity style={styles.closeButton} onPress={closeDayDetail}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
         </View>
