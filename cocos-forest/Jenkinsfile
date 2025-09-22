@@ -45,7 +45,10 @@ pipeline {
     stage('Deploy') {
       steps {
         // credentialsId는 env.CREDENTIALS_ID를 직접 전달 (Groovy 보간 아님)
-        withCredentials([file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH')]) {
+        withCredentials([
+          file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
+          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')
+        ]) {
           script {
             sh 'docker stop "$CONTAINER_NAME" || true'
             sh 'docker rm "$CONTAINER_NAME" || true'
@@ -53,6 +56,7 @@ pipeline {
             sh '''
               docker run -d --name "$CONTAINER_NAME" --network=cocos-network \
                          --env-file "$PROPERTIES_FILE_PATH" \
+                         -e GCP_CREDENTIALS_LOCATION="$GCP_CREDENTIALS_FILE" \
                          "$IMAGE_NAME"
             '''
           }
