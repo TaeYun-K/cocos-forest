@@ -8,6 +8,8 @@ import com.E205.cocos_forest.domain.challenge.repository.ChallengeRepository;
 import com.E205.cocos_forest.domain.challenge.repository.UserChallengeRepository;
 import com.E205.cocos_forest.domain.finance.card.transaction.CardTransaction;
 import com.E205.cocos_forest.domain.finance.card.transaction.CardTransactionRepository;
+import com.E205.cocos_forest.domain.finance.merchant.Merchant;
+import com.E205.cocos_forest.domain.finance.merchant.MerchantRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final UserChallengeRepository userChallengeRepository;
     private final CardTransactionRepository cardTransactionRepository;
     private final PointService pointService;
+    private final MerchantRepository merchantRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,7 +75,7 @@ public class ChallengeServiceImpl implements ChallengeService {
             if (ch.getMetricType() == null || ch.getComparator() == null) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("warning", "challenge_misconfigured");
-                eval = new Evaluation(false, 0.0, m);
+                eval = new Evaluation(false, m);
             } else {
                 eval = evaluate(userId, ch, today);
                 applyEvaluation(uc, ch, eval);
@@ -104,18 +107,14 @@ public class ChallengeServiceImpl implements ChallengeService {
         return userChallengeRepository.save(uc);
     }
 
-    private record Evaluation(boolean achieved, double progress, Map<String, Object> metrics) {}
+    private record Evaluation(boolean achieved, Map<String, Object> metrics) {}
 
     /**
      * 챌린지의 Metric, Comparator, Threshold 조건을 바탕으로 금일 지표를 평가
      * Amount : 카드 승인 거래 합계
      * Emission : 배출량 집계 연동 예정
      * Attendence, Steps: 추후 구현 예정
-     * 
-     * 진행도 계산
-     * LTE : 목표 이하일 때 달성
-     * GTE : 목표 이상일 때 달성
-     * - GTE/LTE 공통으로 value/threshold 비율 기반(0~1)
+     *
      * - threshold 가 0일 때의 특수 처리 포함
      */
     private Evaluation evaluate(Long userId, Challenge ch, LocalDate date) {
@@ -130,25 +129,14 @@ public class ChallengeServiceImpl implements ChallengeService {
 
         BigDecimal threshold = ch.getThresholdValue() == null ? BigDecimal.ZERO : ch.getThresholdValue();
         boolean achieved;
-        double progress;
 
         if (ch.getComparator() == Challenge.ComparatorType.LTE) {
             achieved = value.compareTo(threshold) <= 0;
-            if (threshold.compareTo(BigDecimal.ZERO) == 0) {
-                progress = value.compareTo(BigDecimal.ZERO) == 0 ? 1.0 : 0.0;
-            } else {
-                progress = clamp(value.doubleValue() / threshold.doubleValue());
-            }
         } else { // GTE
             achieved = value.compareTo(threshold) >= 0;
-            if (threshold.compareTo(BigDecimal.ZERO) == 0) {
-                progress = 1.0; // any value >= 0 meets 0, but treat as completed if value>0; simplified
-            } else {
-                progress = clamp(value.doubleValue() / threshold.doubleValue());
-            }
         }
 
-        return new Evaluation(achieved, progress, metrics);
+        return new Evaluation(achieved, metrics);
     }
 
 
@@ -157,21 +145,9 @@ public class ChallengeServiceImpl implements ChallengeService {
      * - 최초 달성 시 DONE, achievedAt 기록
      */
     private void applyEvaluation(UserChallenge uc, Challenge ch, Evaluation eval) {
-        boolean newlyDone = false;
         if (eval.achieved() && uc.getStatus() != UserChallenge.Status.DONE) {
             uc.setStatus(UserChallenge.Status.DONE);
             uc.setAchievedAt(LocalDateTime.now(ZONE_KST));
-            newlyDone = true;
-        }
-
-        // auto award if needed
-        if (eval.achieved() && ch.getRewardType() == Challenge.RewardType.AUTO && (uc.getRewardPoints() == null || uc.getRewardPoints() == 0)) {
-            try {
-                pointService.earnPoints(uc.getUserId(), ch.getRewardPoints(), "CHALLENGE_REWARD", uc.getId(), ch.getTitle());
-                uc.setRewardPoints(ch.getRewardPoints());
-            } catch (Exception e) {
-                log.warn("Failed to award challenge points: userId={}, ucId={}, reason={}", uc.getUserId(), uc.getId(), e.getMessage());
-            }
         }
 
         // persist changes
@@ -200,6 +176,8 @@ public class ChallengeServiceImpl implements ChallengeService {
         String rule = buildRule(ch);
         String message = buildMessage(ch, eval, statusStr);
 
+        boolean claimable = (uc.getStatus() == UserChallenge.Status.DONE) && !awarded;
+
         return ChallengeTodayOut.Item.builder()
             .instanceId(instanceId)
             .challengeId(challengeId)
@@ -207,7 +185,7 @@ public class ChallengeServiceImpl implements ChallengeService {
             .rule(rule)
             .rewardPoints(ch.getRewardPoints())
             .status(statusStr)
-            .progress(eval.progress())
+            .claimable(claimable)
             .metrics(eval.metrics())
             .awarded(awarded)
             .awardedAt(awardedAt)
@@ -273,12 +251,41 @@ public class ChallengeServiceImpl implements ChallengeService {
             .filter(t -> t.getStatus() == CardTransaction.Status.APPROVED)
             .toList();
 
-        Set<String> include = parseStringSet(ch.getExtraConditions(), "includeCategories");
-        Set<String> exclude = parseStringSet(ch.getExtraConditions(), "excludeCategories");
+        Set<String> includeCategories = parseStringSet(ch.getExtraConditions(), "includeCategories");
+        Set<String> excludeCategories = parseStringSet(ch.getExtraConditions(), "excludeCategories");
 
-        long amount = approved.stream()
-            .filter(t -> include.isEmpty() || include.contains(t.getCategoryId()))
-            .filter(t -> exclude.isEmpty() || !exclude.contains(t.getCategoryId()))
+        // Merchant name filters (supports keys: include_merchants, merchant_whitelist, exclude_merchants)
+        Set<String> includeMerchants = new HashSet<>();
+        includeMerchants.addAll(parseStringSet(ch.getExtraConditions(), "include_merchants"));
+        includeMerchants.addAll(parseStringSet(ch.getExtraConditions(), "merchant_whitelist"));
+        Set<String> excludeMerchants = parseStringSet(ch.getExtraConditions(), "exclude_merchants");
+
+        Map<Long, String> merchantNameById;
+        if (!includeMerchants.isEmpty() || !excludeMerchants.isEmpty()) {
+            Set<Long> ids = approved.stream()
+                .map(CardTransaction::getMerchantId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+            if (!ids.isEmpty()) {
+                merchantNameById = merchantRepository.findByIdIn(ids).stream()
+                    .collect(Collectors.toMap(Merchant::getId, Merchant::getName));
+            } else {
+              merchantNameById = Collections.emptyMap();
+            }
+        } else {
+          merchantNameById = Collections.emptyMap();
+        }
+
+      long amount = approved.stream()
+            .filter(t -> includeCategories.isEmpty() || includeCategories.contains(t.getCategoryId()))
+            .filter(t -> excludeCategories.isEmpty() || !excludeCategories.contains(t.getCategoryId()))
+            .filter(t -> {
+                if (includeMerchants.isEmpty() && excludeMerchants.isEmpty()) return true;
+                String name = merchantNameById.getOrDefault(t.getMerchantId(), null);
+                if (name == null) return false;
+                if (!includeMerchants.isEmpty() && !includeMerchants.contains(name)) return false;
+                return excludeMerchants.isEmpty() || !excludeMerchants.contains(name);
+            })
             .mapToLong(CardTransaction::getAmountKrw)
             .sum();
 
@@ -288,6 +295,34 @@ public class ChallengeServiceImpl implements ChallengeService {
 
         return BigDecimal.valueOf(amount);
     }
+
+
+    /**
+     * 포인트 수동 지급
+     * userChallenges 에 status 가 Done 인데 rewardPoints 가 0이라면 포인트 지급
+     */
+    @Transactional
+    public void claimReward(Long userId, Long userChallengeId) {
+        UserChallenge uc = userChallengeRepository.findById(userChallengeId)
+            .orElseThrow(() -> new IllegalArgumentException("UserChallenge not found"));
+        if (!Objects.equals(uc.getUserId(), userId)) {
+            throw new IllegalStateException("Forbidden: not your challenge");
+        }
+        if (uc.getStatus() != UserChallenge.Status.DONE) {
+            throw new IllegalStateException("Challenge not achieved yet");
+        }
+        if (uc.getRewardPoints() != null && uc.getRewardPoints() > 0) {
+            // already claimed
+            return;
+        }
+        Challenge ch = challengeRepository.findById(uc.getChallengeId())
+            .orElseThrow(() -> new IllegalStateException("Challenge not found"));
+
+        pointService.earnPoints(userId, ch.getRewardPoints(), "CHALLENGE_REWARD", uc.getId(), ch.getTitle());
+        uc.setRewardPoints(ch.getRewardPoints());
+        userChallengeRepository.save(uc);
+    }
+
 
     /**
      * 금일 탄소 배출량 평가
@@ -317,14 +352,6 @@ public class ChallengeServiceImpl implements ChallengeService {
             log.warn("Invalid extra_conditions JSON: {}", e.getMessage());
             return Collections.emptySet();
         }
-    }
-
-    /**
-     * 진행도를 0.0~1.0 범위로 안전하게 보정
-     */
-    private double clamp(double v) {
-        if (Double.isNaN(v) || Double.isInfinite(v)) return 0.0;
-        return Math.max(0.0, Math.min(1.0, v));
     }
 }
 

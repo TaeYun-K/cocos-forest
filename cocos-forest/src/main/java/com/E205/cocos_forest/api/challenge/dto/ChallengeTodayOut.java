@@ -30,7 +30,7 @@ public class ChallengeTodayOut {
         private String rule;
         private int rewardPoints;
         private String status;             // PENDING | SUCCESS | FAIL
-        private double progress;           // 0.0 ~ 1.0
+        private boolean claimable;         // true if user can claim now
         private Map<String, Object> metrics; // nested maps as needed
         private boolean awarded;
         private String awardedAt;          // ISO string or null

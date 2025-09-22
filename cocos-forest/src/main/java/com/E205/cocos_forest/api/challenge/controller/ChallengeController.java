@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,6 +28,15 @@ public class ChallengeController {
     public BaseResponse<ChallengeTodayOut> getToday(@AuthenticationPrincipal CustomUserDetails principal) {
         Long userId = principal.getUser().getId();
         return new BaseResponse<>(challengeService.getTodayChallenges(userId));
+    }
+
+    @Operation(summary = "챌린지 보상 수령", description = "해당 유저 챌린지 인스턴스의 보상을 수동 수령")
+    @PostMapping("/{userChallengeId}/claim")
+    public BaseResponse<String> claim(@AuthenticationPrincipal CustomUserDetails principal,
+                                      @PathVariable Long userChallengeId) {
+        Long userId = principal.getUser().getId();
+        challengeService.claimReward(userId, userChallengeId);
+        return new BaseResponse<>("OK");
     }
 }
 
