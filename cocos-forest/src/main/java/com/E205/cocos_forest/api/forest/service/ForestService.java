@@ -158,21 +158,25 @@ public class ForestService {
     }
 
     /**
-     * 죽은 나무 제거 (하이라이트 제거)
+     * 죽은 나무 제거 (완전 삭제)
      */
     @Transactional
     public void removeDeadTree(Long userId, Long treeId) {
         // 나무 조회 및 권한 확인
         Tree tree = treeRepository.findById(treeId)
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.TREE_NOT_FOUND));
+                        .orElseThrow(() -> new BaseException(BaseResponseStatus.TREE_NOT_FOUND));
 
         validateTreeOwnership(tree, userId);
 
-        // 죽은 나무 하이라이트 제거
-        tree.removeDead();
-        treeRepository.save(tree);
+        // 죽은 나무인지 확인 (getter 메서드 사용)
+        if (!tree.getIsDead() && tree.getHealth() > 0) {
+            throw new BaseException(BaseResponseStatus.TREE_NOT_DEAD);
+        }
 
-        log.info("사용자 {}가 죽은 나무 {} 하이라이트를 제거했습니다.", userId, treeId);
+        // 나무 완전 삭제
+        treeRepository.delete(tree);
+
+        log.info("사용자 {}가 죽은 나무 {}를 완전 삭제했습니다.", userId, treeId);
     }
 
     /**
