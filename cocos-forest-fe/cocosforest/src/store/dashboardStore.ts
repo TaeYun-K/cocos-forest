@@ -11,6 +11,9 @@ interface DashboardState {
   activeTab: number;
   showDetailCard: boolean;
 
+  // AI 카드 새로고침 키
+  aiCardRefreshKey: number;
+
   // 카테고리 상세 모달 상태
   showCategoryModal: boolean;
   categoryModalData: CategoryMonthlyDetails | null;
@@ -27,6 +30,9 @@ interface DashboardActions {
   setActiveTab: (tab: number) => void;
   setShowDetailCard: (show: boolean) => void;
 
+  // AI 카드 새로고침 액션
+  refreshAICard: () => void;
+
   // 카테고리 모달 액션
   setShowCategoryModal: (show: boolean) => void;
   setCategoryModalData: (data: CategoryMonthlyDetails | null) => void;
@@ -37,11 +43,10 @@ interface DashboardActions {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
 
-  // 복합 액션
-  handleDayPress: (day: number) => void;
-  handleCloseDetailCard: () => void;
-  handlePreviousMonth: () => void;
-  handleNextMonth: () => void;
+  // 단순화된 액션들
+  openDayDetail: (day: number) => void;
+  closeDayDetail: () => void;
+  changeMonth: (direction: 'prev' | 'next') => void;
 }
 
 type DashboardStore = DashboardState & DashboardActions;
@@ -54,6 +59,9 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   activeTab: 0,
   showDetailCard: false,
 
+  // AI 카드 새로고침 키 초기값
+  aiCardRefreshKey: 0,
+
   // 카테고리 모달 초기 상태
   showCategoryModal: false,
   categoryModalData: null,
@@ -65,6 +73,9 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   setSelectedDay: (day: number | null) => set({ selectedDay: day }),
   setActiveTab: (tab: number) => set({ activeTab: tab }),
   setShowDetailCard: (show: boolean) => set({ showDetailCard: show }),
+
+  // AI 카드 새로고침 액션
+  refreshAICard: () => set((state) => ({ aiCardRefreshKey: state.aiCardRefreshKey + 1 })),
 
   // 카테고리 모달 액션들
   setShowCategoryModal: (show: boolean) => set({ showCategoryModal: show }),
@@ -95,30 +106,27 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
   },
 
-  // 복합 액션들
-  handleDayPress: (day: number) => {
-    console.log(`📅 Day pressed: ${day}`);
+  // 단순화된 액션들
+  openDayDetail: (day: number) => {
     set({ selectedDay: day, showDetailCard: true });
-    console.log(`📍 Selected day set to: ${day}, showDetailCard: true`);
   },
 
-  handleCloseDetailCard: () => {
+  closeDayDetail: () => {
     set({ showDetailCard: false, selectedDay: null });
   },
 
-  handlePreviousMonth: () => {
-    const { goToPreviousMonth, handleCloseDetailCard, showDetailCard } = get();
-    goToPreviousMonth();
-    if (showDetailCard) {
-      handleCloseDetailCard();
-    }
-  },
+  changeMonth: (direction: 'prev' | 'next') => {
+    const { goToPreviousMonth, goToNextMonth, showDetailCard } = get();
 
-  handleNextMonth: () => {
-    const { goToNextMonth, handleCloseDetailCard, showDetailCard } = get();
-    goToNextMonth();
+    if (direction === 'prev') {
+      goToPreviousMonth();
+    } else {
+      goToNextMonth();
+    }
+
+    // 월 변경 시 열린 상세 카드 닫기
     if (showDetailCard) {
-      handleCloseDetailCard();
+      set({ showDetailCard: false, selectedDay: null });
     }
   },
 }));

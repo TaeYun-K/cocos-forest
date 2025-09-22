@@ -34,6 +34,7 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
 
   const [isLoading, setIsLoading] = useState(false);
   const [isNicknameChecked, setIsNicknameChecked] = useState(false);
+  const [isEmailDuplicateChecked, setIsEmailDuplicateChecked] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [errors, setErrors] = useState<Partial<SignupStep1Form>>({}); // 추가: 에러 상태
@@ -107,6 +108,7 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
       setIsNicknameChecked(false);
     }
     if (field === 'email') {
+      setIsEmailDuplicateChecked(false);
       setIsEmailVerified(false);
       setIsCodeSent(false);
       clearTimer(); // 이메일 변경 시 타이머 리셋
@@ -142,7 +144,7 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
     }
   };
 
-  const sendVerificationCode = async () => {
+  const checkEmailDuplicate = async () => {
     if (!form.email.trim()) {
       Alert.alert('오류', '이메일을 입력해주세요.');
       return;
@@ -157,12 +159,29 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
     try {
       setIsLoading(true);
       const isDuplicate = await authService.checkEmailDuplicate(form.email);
-      
-      if (isDuplicate) {
-        Alert.alert('오류', '이미 사용 중인 이메일입니다.');
-        return;
-      }
 
+      if (isDuplicate) {
+        Alert.alert('중복확인', '이미 사용 중인 이메일입니다.');
+        setIsEmailDuplicateChecked(false);
+      } else {
+        Alert.alert('중복확인', '사용 가능한 이메일입니다.');
+        setIsEmailDuplicateChecked(true);
+      }
+    } catch (error) {
+      Alert.alert('오류', '이메일 중복확인에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendVerificationCode = async () => {
+    if (!isEmailDuplicateChecked) {
+      Alert.alert('오류', '이메일 중복확인을 먼저 완료해주세요.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
       await authService.sendVerificationCode(form.email);
       setIsCodeSent(true);
       startTimer(); // 인증번호 발송 후 타이머 시작
@@ -232,6 +251,11 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
       return;
     }
 
+    if (!isEmailDuplicateChecked) {
+      Alert.alert('오류', '이메일 중복확인을 완료해주세요.');
+      return;
+    }
+
     if (!isEmailVerified) {
       Alert.alert('오류', '이메일 인증을 완료해주세요.');
       return;
@@ -283,9 +307,11 @@ export const SignupStep1Screen: React.FC<SignupStep1ScreenProps> = ({ navigation
             verificationCode={form.verificationCode}
             onEmailChange={(value) => handleInputChange('email', value)}
             onVerificationCodeChange={(value) => handleInputChange('verificationCode', value)}
+            onCheckEmailDuplicate={checkEmailDuplicate}
             onSendCode={sendVerificationCode}
             onVerifyCode={verifyCode}
             isLoading={isLoading}
+            isEmailDuplicateChecked={isEmailDuplicateChecked}
             isCodeSent={isCodeSent}
             isEmailVerified={isEmailVerified}
             emailError={errors.email}

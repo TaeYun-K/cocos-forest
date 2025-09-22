@@ -8,6 +8,7 @@ import {
   SignupRequestDto,
   SignupResponseDto,
   EmailSendRequest,
+  NicknameCheckRequest,
   EmailVerifyRequest,
   LogoutRequest,
   ReissueRequest,
@@ -31,8 +32,15 @@ export const authService = {
       }
 
       return response.data.result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("로그인 오류:", error);
+
+      // 비밀번호 오류 처리 (400 상태코드)
+      if (error.response?.status === 400) {
+        throw new Error("비밀번호를 잘못 입력하셨습니다.");
+      }
+
+      // 기타 오류는 그대로 전달
       throw error;
     }
   },
@@ -66,18 +74,52 @@ export const authService = {
     }
   },
 
-  // 이메일 중복 체크 (별도 API 엔드포인트가 필요하면 추가)
+  // 이메일 중복 체크
   checkEmailDuplicate: async (email: string): Promise<boolean> => {
-    // 백엔드에 이메일 중복 체크 API가 있다면 사용
-    // 현재는 임시로 false 반환 (중복 없음으로 가정)
-    return false;
+    try {
+      const requestData: EmailSendRequest = { email };
+      const response = await apiClient.post<BaseResponse<void>>(
+        "/api/email/check-email-duplicate",
+        requestData
+      );
+
+      // 성공 응답이면 중복이 아님 (false 반환)
+      return false;
+    } catch (error: any) {
+      console.error("이메일 중복 확인 오류:", error);
+
+      // 409 상태코드면 이메일 중복
+      if (error.response?.status === 409) {
+        return true;
+      }
+
+      // 기타 네트워크 오류 등은 다시 던지기
+      throw error;
+    }
   },
 
-  // 닉네임 중복 체크 (별도 API 엔드포인트가 필요하면 추가)
+  // 닉네임 중복 체크
   checkNicknameDuplicate: async (nickname: string): Promise<boolean> => {
-    // 백엔드에 닉네임 중복 체크 API가 있다면 사용
-    // 현재는 임시로 false 반환 (중복 없음으로 가정)
-    return false;
+    try {
+      const requestData: NicknameCheckRequest = { nickname };
+      const response = await apiClient.post<BaseResponse<void>>(
+        "/api/user/check-nickname-duplicate",
+        requestData
+      );
+
+      // 성공 응답이면 중복이 아님 (false 반환)
+      return false;
+    } catch (error: any) {
+      console.error("닉네임 중복 확인 오류:", error);
+
+      // 409 상태코드면 닉네임 중복
+      if (error.response?.status === 409) {
+        return true;
+      }
+
+      // 기타 네트워크 오류 등은 다시 던지기
+      throw error;
+    }
   },
 
   // 인증번호 발송

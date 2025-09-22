@@ -6,13 +6,13 @@ import { Card } from '../common';
 export const TodayEmissionStatus: React.FC = () => {
   const { data: todayData, isLoading, error } = useTodayData();
 
-  const todayEmission = todayData?.totals?.carbonTotalKg ?? 0.5;
-  const averageEmission = 0.8;
+  const todayEmission = todayData?.totals?.carbonTotalKg ?? 13.01;
+  const averageEmission = 26.02;
   const emissionDifference = averageEmission - todayEmission;
 
   // 배출량에 따른 색상 결정
   const getEmissionColor = () => {
-    if (todayEmission < 0.4) {
+    if (todayEmission < 13.01) {
       return '#15803d'; // 녹색 - 좋음
     } else if (todayEmission > averageEmission) {
       return '#ef4444'; // 빨간색 - 나쁨
