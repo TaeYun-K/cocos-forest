@@ -49,6 +49,11 @@ dependencies {
 
 	// Redis 의존성 추가
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+	// GCP Vertex AI
+	implementation platform('com.google.cloud:libraries-bom:26.43.0')
+	implementation 'com.google.cloud:google-cloud-vertexai'
+	implementation 'com.google.cloud:google-cloud-storage'
 }
 
 tasks.named('test') {
