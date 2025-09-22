@@ -1,5 +1,4 @@
-export const GRID = 8;
-
+// iso.ts
 export const SPRITE_W = 64;
 export const FOOT_H = 32;
 export const WALL_H = 32;
@@ -35,11 +34,11 @@ export function buildPath(verts: ReadonlyArray<Readonly<[number, number]>>) {
   return `M${verts[0][0]} ${verts[0][1]} L${verts[1][0]} ${verts[1][1]} L${verts[2][0]} ${verts[2][1]} L${verts[3][0]} ${verts[3][1]} Z`;
 }
 
-export function computeBoardHeight() {
-  return (GRID - 1 + GRID - 1) * (FOOT_H / 2) + FOOT_H + WALL_H;
+export function computeBoardHeight(forestSize: number = 8) {
+  return (forestSize - 1 + forestSize - 1) * (FOOT_H / 2) + FOOT_H + WALL_H;
 }
 
-export function computeTopMargin(containerH: number) {
-  const boardHeight = computeBoardHeight();
+export function computeTopMargin(containerH: number, forestSize: number = 8) {
+  const boardHeight = computeBoardHeight(forestSize);
   return Math.max(12, (containerH - boardHeight) / 2);
 }

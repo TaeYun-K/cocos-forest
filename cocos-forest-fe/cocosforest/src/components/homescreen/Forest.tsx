@@ -1,3 +1,4 @@
+//Forest.tsx
 import React from "react";
 import { View, Image, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import Svg, { Path } from "react-native-svg";
@@ -8,6 +9,8 @@ import {
   WALL_H,
   TOP_FACE_H,
   MARKER_SIZE,
+  getTopFaceVertices,
+  buildPath,
 } from "../../utils/iso";
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
@@ -60,8 +63,9 @@ type Props = {
   showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
-  forestInfo?: ForestInfoDto; // 죽은 나무 정보를 위해 추가
-  onDeadTreePress: (treeId: number) => void; // 죽은 나무 클릭 핸들러 추가
+  forestInfo?: ForestInfoDto;
+  onDeadTreePress: (treeId: number) => void;
+  onExpandableAreaPress: () => void; // 확장 가능 영역 클릭 핸들러 추가
 };
 
 export default function Board({
@@ -73,8 +77,35 @@ export default function Board({
   selectedCell,
   forestInfo,
   onDeadTreePress,
+  onExpandableAreaPress,
 }: Props) {
-  const isWater = (c: Cell) => c.x >= 3 && c.z >= 3 && c.x <= 4 && c.z <= 4;
+  const forestSize = forestInfo?.size || 8;
+  const pondX = forestInfo?.pondX || 3;
+  const pondY = forestInfo?.pondY || 3;
+  
+  // 물 타일인지 확인 (pondX, pondY 기준으로 2x2 영역)
+  const isWater = (c: Cell) => 
+    c.x >= pondX && c.z >= pondY && 
+    c.x <= pondX + 1 && c.z <= pondY + 1;
+  
+  // 확장 가능한 흙 타일인지 확인 (잔디 영역 바로 바깥쪽 1줄)
+  const isExpandableArea = (ix: number, iz: number) => {
+    // 현재 잔디 영역은 0 ~ forestSize-1
+    // 확장 가능 영역: 잔디 영역에 인접한 바깥쪽 1줄
+    const isOutsideGrass = ix < 0 || ix >= forestSize || iz < 0 || iz >= forestSize;
+    
+    if (!isOutsideGrass) return false;
+    
+    // 잔디 영역에 인접한지 확인 (거리 1 이내)
+    const minDistanceToGrass = Math.min(
+      Math.abs(ix - 0), // 왼쪽 경계까지의 거리
+      Math.abs(ix - (forestSize - 1)), // 오른쪽 경계까지의 거리
+      Math.abs(iz - 0), // 위쪽 경계까지의 거리
+      Math.abs(iz - (forestSize - 1)) // 아래쪽 경계까지의 거리
+    );
+    
+    return minDistanceToGrass <= 1;
+  };
   
   // 선택된 셀인지 확인하는 함수
   const isSelectedCell = (cell: Cell) => {
@@ -115,38 +146,71 @@ export default function Board({
     return { sx: sum.sx / n, sy: sum.sy / n };
   })();
 
-  const RANGE16 = Array.from({ length: 16 }, (_, i) => i);
+  // 동적 흙 타일 범위 (잔디 크기의 2배)
+  const dirtSize = forestSize * 2;
+  const dirtRange = Array.from({ length: dirtSize }, (_, i) => i);
 
   return (
     <View style={s.board} pointerEvents="box-none">
-      {/* Layer 0: 바닥층 dirt (16×16) */}
-      {RANGE16.map((ix) =>
-        RANGE16.map((iz) => {
-          const rx = ix - 7.5;
-          const rz = iz - 7.5;
+      {/* Layer 0: 바닥층 dirt (동적 크기) */}
+      {dirtRange.map((ix) =>
+        dirtRange.map((iz) => {
+          const rx = ix - (dirtSize / 2 - 0.5);
+          const rz = iz - (dirtSize / 2 - 0.5);
           const sx = center.sx + rx * stepX.dx + rz * stepZ.dx;
           const sy = center.sy + rx * stepX.dy + rz * stepZ.dy;
 
+          // 실제 좌표계로 변환 (중심을 0,0으로)
+          const actualX = ix - dirtSize / 2 + forestSize / 2;
+          const actualZ = iz - dirtSize / 2 + forestSize / 2;
+          
+          const isExpandable = isExpandableArea(actualX, actualZ);
+
           return (
-            <Image
-              key={`base16-${ix}-${iz}`}
-              source={DIRT_IMG}
+            <TouchableOpacity
+              key={`base-${ix}-${iz}`}
               style={{
                 position: "absolute",
                 left: sx - SPRITE_W / 2,
                 top: sy - FOOT_H / 2 - WALL_H,
                 width: SPRITE_W,
                 height: FOOT_H + WALL_H,
-                resizeMode: "stretch",
                 zIndex: 0,
               }}
-              pointerEvents="none"
-            />
+              onPress={isExpandable ? onExpandableAreaPress : undefined}
+              disabled={!isExpandable}
+            >
+              <Image
+                source={DIRT_IMG}
+                style={{
+                  width: SPRITE_W,
+                  height: FOOT_H + WALL_H,
+                  resizeMode: "stretch",
+                }}
+                pointerEvents="none"
+              />
+              
+              {/* 확장 가능 영역 하이라이트 */}
+              {isExpandable && (
+                <Svg
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                >
+                  <Path
+                    d={buildPath(getTopFaceVertices(SPRITE_W / 2, FOOT_H / 2 + WALL_H))}
+                    fill="rgba(255, 193, 7, 0.4)"
+                    stroke="#FFC107"
+                    strokeWidth={2}
+                    strokeOpacity={0.8}
+                  />
+                </Svg>
+              )}
+            </TouchableOpacity>
           );
         })
       )}
 
-      {/* Layer 1: 기존 8×8 상층(잔디/물) */}
+      {/* Layer 1: 잔디/물 타일 (동적 크기) */}
       {cells.map((c) => {
         const tileSource = isWater(c) ? WATER_IMG : GRASS_IMG;
         return (
@@ -196,18 +260,12 @@ export default function Board({
         );
       })}
 
-      {/* Layer 2.5: 죽은 나무에 대한 별도 터치 영역 (에셋이 경고 표시인 경우) */}
+      {/* Layer 2.5: 죽은 나무에 대한 별도 터치 영역 */}
       {forestInfo?.trees
         ?.filter(tree => tree.health === 0 || tree.isDead)
         ?.map((tree) => {
-          // 해당 위치의 셀 찾기
           const cell = cells.find(c => c.x === tree.x && c.z === tree.y);
-          if (!cell) {
-            console.log(`Dead tree at ${tree.x}, ${tree.y} - no matching cell found`);
-            return null;
-          }
-          
-          console.log(`Adding touch area for dead tree at ${tree.x}, ${tree.y}`, tree);
+          if (!cell) return null;
           
           return (
             <TouchableOpacity
@@ -221,15 +279,12 @@ export default function Board({
                 zIndex: 2.5,
                 elevation: 2.5,
               }}
-              onPress={() => {
-                console.log('Dead tree pressed:', tree.treeId);
-                onDeadTreePress(tree.treeId);
-              }}
+              onPress={() => onDeadTreePress(tree.treeId)}
             />
           );
         })}
 
-      {/* Layer 3: 히트박스 + 하이라이트 */}
+      {/* Layer 3: 히트박스 + 하이라이트 (잔디 영역만) */}
       {layoutW > 0 && (
         <Svg
           style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
@@ -244,33 +299,33 @@ export default function Board({
                 d={c.path}
                 fill={
                   isSelected 
-                    ? "rgba(255, 215, 0, 0.6)"  // 선택된 셀: 골드 색상
+                    ? "rgba(255, 215, 0, 0.6)"
                     : showHitbox 
                       ? "rgba(0,255,0,0.3)" 
                       : "#00FF00"
                 }
                 fillOpacity={
                   isSelected 
-                    ? 0.6  // 선택된 셀: 더 진한 투명도
+                    ? 0.6
                     : showHitbox 
                       ? 0.3 
                       : 0
                 }
                 stroke={
                   isSelected 
-                    ? "#FFD700"  // 선택된 셀: 골드 테두리
+                    ? "#FFD700"
                     : showHitbox 
                       ? "blue" 
                       : "#000"
                 }
                 strokeOpacity={
                   isSelected 
-                    ? 1  // 선택된 셀: 완전 불투명 테두리
+                    ? 1
                     : showHitbox 
                       ? 1 
                       : 0
                 }
-                strokeWidth={isSelected ? 3 : 1}  // 선택된 셀: 더 굵은 테두리
+                strokeWidth={isSelected ? 3 : 1}
                 onPress={() => onCellPress(c)}
               />
             );

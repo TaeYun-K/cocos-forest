@@ -1,13 +1,13 @@
+// hooks/useForestData.ts
 import { useMemo } from "react";
 import { Cell, Marker, MarkerCoord } from "../types/forest";
 import { toScreen, getTopFaceVertices, buildPath } from "../utils/iso";
-import { GRID } from "../utils/iso";
 
-export function useCells(centerX: number, topMargin: number) {
+export function useCells(centerX: number, topMargin: number, forestSize: number = 8) {
   return useMemo<Cell[]>(() => {
     const arr: Cell[] = [];
-    for (let z = 0; z < GRID; z++) {
-      for (let x = 0; x < GRID; x++) {
+    for (let z = 0; z < forestSize; z++) {
+      for (let x = 0; x < forestSize; x++) {
         const { sx, sy } = toScreen(x, z, centerX, topMargin);
         const path = buildPath(getTopFaceVertices(sx, sy));
         arr.push({ x, z, sx, sy, path });
@@ -15,7 +15,7 @@ export function useCells(centerX: number, topMargin: number) {
     }
     arr.sort((a, b) => a.x + a.z - (b.x + b.z));
     return arr;
-  }, [centerX, topMargin]);
+  }, [centerX, topMargin, forestSize]);
 }
 
 export function projectMarkers(
