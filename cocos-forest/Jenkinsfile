@@ -57,12 +57,25 @@ pipeline {
 
             // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
             sh '''
-              docker run -d --name "$CONTAINER_NAME" --network=cocos-network \
-                         --env-file "$PROPERTIES_FILE_PATH" \
-                         -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
-                         -e GOOGLE_APPLICATION_CREDENTIALS="/run/secrets/gcp.json" \
-                         "$IMAGE_NAME"
+              docker create \
+                --name "$CONTAINER_NAME" \
+                --network=cocos-network \
+                --env-file "$PROPERTIES_FILE_PATH" \
+                -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
+                -e GOOGLE_APPLICATION_CREDENTIALS="/run/secrets/gcp.json" \
+                "$IMAGE_NAME"
+
+              # 3) 컨테이너 내부에 디렉터리 생성
+              docker start "$CONTAINER_NAME"
+              docker exec "$CONTAINER_NAME" sh -c 'mkdir -p /run/secrets && chmod 700 /run/secrets'
+              docker stop "$CONTAINER_NAME"
+
+              # 4) gcp.json 복사
               docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
+
+              # 5) 권한 강화 (선택)
+              docker start "$CONTAINER_NAME"
+              docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
             '''
           }
         }
