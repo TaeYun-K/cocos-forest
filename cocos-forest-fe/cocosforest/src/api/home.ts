@@ -81,3 +81,19 @@ export async function waterTree(treeId: number): Promise<void> {
     throw error;
   }
 }
+
+/* 죽은 나무 제거 */
+export async function removeDeadTree(treeId: number): Promise<void> {
+  try {
+    const response = await apiClient.delete<BaseResponse<any>>(`/api/forest/trees/${treeId}/dead`);
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "죽은 나무 제거에 실패했습니다.");
+    }
+    
+    console.log("죽은 나무 제거 성공:", { treeId });
+  } catch (error) {
+    console.error("removeDeadTree error:", error);
+    throw error;
+  }
+}
