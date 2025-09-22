@@ -30,14 +30,13 @@ public class MyProfileService {
             User user = userRepository.findById(userId)
                             .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
 
-            // 2. 연결된 계좌 정보 조회
-            List<MyProfileResponseDto.ConnectedAccountDto> connectedAccounts = getConnectedAccounts(userId);
+            // 2. 연결된 계좌 정보 조회 - 분리된 api가 이미 연결되었으므로 주석처리
+            // List<MyProfileResponseDto.ConnectedAccountDto> connectedAccounts = getConnectedAccounts(userId);
 
             // 3. 응답 DTO 생성
             return MyProfileResponseDto.builder()
                             .nickname(user.getNickname())
                             .currentBalance(user.getCurrentBalance())
-                            .connectedAccounts(connectedAccounts)
                             .build();
 
         } catch (BaseException e) {
@@ -49,22 +48,22 @@ public class MyProfileService {
         }
     }
 
-    private List<MyProfileResponseDto.ConnectedAccountDto> getConnectedAccounts(Long userId) {
-        try {
-            // AccountService의 getUserAccounts 메서드 사용
-            List<UserAccountOut> userAccounts = accountService.getUserAccounts(userId);
-
-            return userAccounts.stream()
-                            .map(account -> MyProfileResponseDto.ConnectedAccountDto.builder()
-                                            .accountNo(account.getAccountNo())
-                                            .bankCode(account.getBankCode())
-                                            .bankName(account.getBankName()) // 은행명 필드 추가
-                                            .build())
-                            .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            log.warn("계좌 정보 조회 실패 - userId: {}, error: {}", userId, e.getMessage());
-            throw new BaseException(BaseResponseStatus.ACCOUNT_FETCH_FAILED);
-        }
-    }
+//    private List<MyProfileResponseDto.ConnectedAccountDto> getConnectedAccounts(Long userId) {
+//        try {
+//            // AccountService의 getUserAccounts 메서드 사용
+//            List<UserAccountOut> userAccounts = accountService.getUserAccounts(userId);
+//
+//            return userAccounts.stream()
+//                            .map(account -> MyProfileResponseDto.ConnectedAccountDto.builder()
+//                                            .accountNo(account.getAccountNo())
+//                                            .bankCode(account.getBankCode())
+//                                            .bankName(account.getBankName()) // 은행명 필드 추가
+//                                            .build())
+//                            .collect(Collectors.toList());
+//
+//        } catch (Exception e) {
+//            log.warn("계좌 정보 조회 실패 - userId: {}, error: {}", userId, e.getMessage());
+//            throw new BaseException(BaseResponseStatus.ACCOUNT_FETCH_FAILED);
+//        }
+//    }
 }
