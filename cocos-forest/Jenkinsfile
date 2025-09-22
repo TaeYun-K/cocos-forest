@@ -61,8 +61,8 @@ pipeline {
                          --env-file "$PROPERTIES_FILE_PATH" \
                          -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
                          -e GOOGLE_APPLICATION_CREDENTIALS="/run/secrets/gcp.json" \
-                         --mount type=bind,src="$GCP_CREDENTIALS_FILE",target=/run/secrets/gcp.json,ro \
                          "$IMAGE_NAME"
+              docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
             '''
           }
         }
