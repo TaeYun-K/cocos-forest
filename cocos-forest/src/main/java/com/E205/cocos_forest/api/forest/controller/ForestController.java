@@ -108,17 +108,17 @@ public class ForestController {
     }
 
     /**
-     * 죽은 나무 제거 (하이라이트 제거)
+     * 죽은 나무 제거 (완전 삭제)
      */
     @DeleteMapping("/trees/{treeId}/dead")
-    @Operation(summary = "죽은 나무 제거", description = "죽은 나무의 하이라이트를 제거하여 빈 땅으로 만듭니다.")
+    @Operation(summary = "죽은 나무 제거", description = "죽은 나무를 완전히 삭제하여 빈 땅으로 만듭니다.")
     public ResponseEntity<BaseResponse<Void>> removeDeadTree(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "나무 ID") @PathVariable Long treeId) {
-        
+                    @AuthenticationPrincipal CustomUserDetails userDetails,
+                    @Parameter(description = "나무 ID") @PathVariable Long treeId) {
+
         Long userId = userDetails.getUser().getId();
         forestService.removeDeadTree(userId, treeId);
-        
+
         return ResponseEntity.ok(new BaseResponse<>());
     }
 

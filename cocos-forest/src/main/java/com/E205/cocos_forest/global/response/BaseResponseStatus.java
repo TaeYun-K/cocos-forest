@@ -83,6 +83,7 @@ public enum BaseResponseStatus {
   POND_AREA_RESTRICTION(HttpStatus.BAD_REQUEST, false, 4024, "연못 영역에는 나무를 심을 수 없습니다."),
   OUT_OF_FOREST_BOUNDS(HttpStatus.BAD_REQUEST, false, 4025, "숲 범위를 벗어난 위치입니다."),
   DEAD_TREE_ACTION(HttpStatus.BAD_REQUEST, false, 4026, "죽은 나무에는 해당 행동을 할 수 없습니다."),
+  TREE_NOT_DEAD(HttpStatus.BAD_REQUEST,false,4027, "살아있는 나무는 제거할 수 없습니다."),
 
   // 4041~4060: 물주기 관련
   WATER_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, false, 4041, "하루 물주기 제한을 초과했습니다. (하루 3회 제한)"),
