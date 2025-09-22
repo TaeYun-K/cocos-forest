@@ -46,4 +46,16 @@ interface ApiService {
     suspend fun getUserCards(
         @Header("Authorization") authorization: String
     ): Response<BaseResponse<List<UserCardResponse>>>
+
+    // 로그인
+    @POST("api/user/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): Response<BaseResponse<TokenInfo>>
+
+    // 토큰 재발급
+    @POST("api/user/reissue")
+    suspend fun reissue(
+        @Body request: ReissueRequest
+    ): Response<BaseResponse<TokenInfo>>
 }

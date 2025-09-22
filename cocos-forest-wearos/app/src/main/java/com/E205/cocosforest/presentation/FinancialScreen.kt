@@ -16,7 +16,9 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun FinancialScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onLogout: () -> Unit = {},
+    onNavigateToDebug: () -> Unit = {}
 ) {
     var monthlySpending by remember { mutableStateOf(0L) }
     var carbonEmission by remember { mutableStateOf(0.0) }
@@ -201,6 +203,26 @@ fun FinancialScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("← 뒤로가기")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 디버그 버튼
+            OutlinedButton(
+                onClick = onNavigateToDebug,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🐛 디버그")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 로그아웃 버튼
+            OutlinedButton(
+                onClick = onLogout,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("🚪 로그아웃")
             }
         }
     }

@@ -234,6 +234,33 @@ data class UserCardResponse(
     val isDefault: Boolean
 )
 
+// 로그인 요청 데이터
+data class LoginRequest(
+    @SerializedName("email")
+    val email: String,
+
+    @SerializedName("password")
+    val password: String
+)
+
+// 토큰 정보 응답 데이터
+data class TokenInfo(
+    @SerializedName("grantType")
+    val grantType: String,
+
+    @SerializedName("accessToken")
+    val accessToken: String,
+
+    @SerializedName("refreshToken")
+    val refreshToken: String
+)
+
+// 토큰 재발급 요청 데이터
+data class ReissueRequest(
+    @SerializedName("refreshToken")
+    val refreshToken: String
+)
+
 // wearOS에서 사용할 간단한 데이터 클래스
 data class DailyData(
     val dailyCarbonEmission: Float,

@@ -3,6 +3,7 @@ package com.E205.cocosforest.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.E205.cocosforest.data.model.DailyData
+import com.E205.cocosforest.data.repository.DailyDataRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,8 +19,38 @@ class DailyDataViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    init {
-        loadMockData()
+    private var repository: DailyDataRepository? = null
+
+    fun initialize(repository: DailyDataRepository) {
+        this.repository = repository
+        loadTodayData()
+    }
+
+    private fun loadTodayData() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                repository?.getTodayData()?.collect { result ->
+                    _isLoading.value = false
+                    result.fold(
+                        onSuccess = { data ->
+                            _dailyData.value = data
+                        },
+                        onFailure = { exception ->
+                            _error.value = exception.message
+                            // API 실패 시 Mock 데이터 사용
+                            loadMockData()
+                        }
+                    )
+                } ?: loadMockData()
+            } catch (e: Exception) {
+                _isLoading.value = false
+                _error.value = e.message
+                loadMockData()
+            }
+        }
     }
 
     private fun loadMockData() {
@@ -31,11 +62,11 @@ class DailyDataViewModel : ViewModel() {
     }
 
     fun refresh() {
-        loadMockData()
+        loadTodayData()
     }
 
     fun setAuthToken(token: String) {
-        // 나중에 실제 API 연동 시 사용
-        loadMockData()
+        repository?.setAuthToken(token)
+        loadTodayData()
     }
 }
