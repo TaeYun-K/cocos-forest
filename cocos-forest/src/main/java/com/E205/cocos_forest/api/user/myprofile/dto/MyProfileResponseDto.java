@@ -4,8 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.List;
-
 @Getter
 @Builder
 @Schema(description = "마이페이지 응답 DTO")
@@ -16,22 +14,4 @@ public class MyProfileResponseDto {
 
     @Schema(description = "현재 보유 포인트", example = "1250")
     private Long currentBalance;
-
-    @Schema(description = "연결된 계좌 목록")
-    private List<ConnectedAccountDto> connectedAccounts;
-
-    @Getter
-    @Builder
-    @Schema(description = "연결된 계좌 정보")
-    public static class ConnectedAccountDto {
-
-        @Schema(description = "계좌번호", example = "0016362784354239")
-        private String accountNo;
-
-        @Schema(description = "은행코드", example = "001")
-        private String bankCode;
-
-        @Schema(description = "은행명", example = "하나은행")
-        private String bankName;
-    }
 }
