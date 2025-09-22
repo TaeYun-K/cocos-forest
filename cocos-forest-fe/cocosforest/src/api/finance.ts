@@ -86,6 +86,28 @@ export interface ApiResponse<T> {
   result: T;
 }
 
+// 사용자 정보 조회 API 추가
+export interface UserProfile {
+  id: number;
+  email: string;
+  nickname: string;
+  phoneNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const fetchUserProfile = async (userId: number): Promise<UserProfile> => {
+  try {
+    console.log(`🔍 사용자 정보 조회 시작 (userId: ${userId})`);
+    const response = await apiClient.get(`/api/user/myprofile`);
+    console.log('✅ 사용자 정보 조회 성공:', response.data);
+    return response.data.result;
+  } catch (error) {
+    console.error('❌ 사용자 정보 조회 실패:', error);
+    throw error;
+  }
+};
+
 /**
  * 백엔드 서버 헬스체크
  */

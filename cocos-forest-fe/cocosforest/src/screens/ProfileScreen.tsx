@@ -20,6 +20,7 @@ import {
   fetchUserAccounts, 
   fetchCardProducts, 
   fetchUserCards,
+  fetchUserProfile,
   connectUserCard,
   createDemandDepositAccount,
   healthCheck,
@@ -197,12 +198,14 @@ const ProfileScreen = () => {
   // 프로필 수정 모달 상태
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
   const [profileData, setProfileData] = React.useState({
-    name: '김지민',
-    phone: '010-1234-5678',
-    nickname: '친환경지민',
-    email: 'jimin@example.com',
-    verificationCode: ''
-  });
+  name: '',
+  phone: '',
+  nickname: '',
+  email: '',
+  verificationCode: ''
+});
+  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
   const [nicknameError, setNicknameError] = React.useState('');
   const [nicknameChecked, setNicknameChecked] = React.useState(false);
   const [nicknameAvailable, setNicknameAvailable] = React.useState(false);
@@ -242,6 +245,31 @@ const ProfileScreen = () => {
       setUserCards([]);
     }
   };
+
+  const loadUserProfile = async () => {
+  try {
+    setIsLoadingProfile(true);
+    console.log('👤 사용자 정보 로드 시작...');
+    const profile = await fetchUserProfile(userId);
+    setUserProfile(profile);
+    
+    // 프로필 데이터 업데이트
+    setProfileData({
+      name: profile.nickname, // 실제 이름 필드가 없으므로 닉네임 사용
+      phone: profile.phoneNumber || '',
+      nickname: profile.nickname,
+      email: profile.email,
+      verificationCode: ''
+    });
+    
+    console.log('✅ 사용자 정보 로드 완료');
+  } catch (error) {
+    console.error('❌ 사용자 정보 로드 실패:', error);
+    Alert.alert('알림', '사용자 정보를 불러오는데 실패했습니다.');
+  } finally {
+    setIsLoadingProfile(false);
+  }
+};
 
   React.useEffect(() => {
     loadUserCards();
@@ -502,18 +530,22 @@ const ProfileScreen = () => {
   };
 
   // 컴포넌트 마운트 시 데이터 로드
-  React.useEffect(() => {
-    console.log('📱 ProfileScreen 마운트됨 - 초기 데이터 로드 시작');
-    
-    const initializeData = async () => {
-      const isConnected = await checkBackendConnection();
-      if (isConnected) {
-        loadUserAccounts();
-      }
-    };
-    
-    initializeData();
-  }, []);
+ React.useEffect(() => {
+  console.log('📱 ProfileScreen 마운트됨 - 초기 데이터 로드 시작');
+  
+  const initializeData = async () => {
+    const isConnected = await checkBackendConnection();
+    if (isConnected) {
+      // 사용자 정보와 계좌 정보를 병렬로 로드
+      await Promise.all([
+        loadUserProfile(),
+        loadUserAccounts()
+      ]);
+    }
+  };
+  
+  initializeData();
+}, []);
 
   // 은행 선택 모달 핸들러들
   const handleAddAccount = async () => {
@@ -871,7 +903,7 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Profile Card */}
+      {/* Profile Card - 실제 사용자 데이터 표시 */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <Image 
@@ -881,12 +913,22 @@ const ProfileScreen = () => {
             />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>김환경</Text>
-            <Text style={styles.userTitle}>에코 워리어</Text>
-            <View style={styles.levelContainer}>
-              <Text style={styles.levelText}>레벨 12</Text>
-              <Text style={styles.pointsText}>3,500P</Text>
-            </View>
+            {isLoadingProfile ? (
+              <ActivityIndicator size="small" color="#6366F1" />
+            ) : (
+              <>
+                <Text style={styles.userName}>
+                  {userProfile?.nickname || '사용자'}
+                </Text>
+                <Text style={styles.userTitle}>에코 워리어</Text>
+                <View style={styles.levelContainer}>
+                  <Text style={styles.levelText}>레벨 12</Text>
+                  <Text style={styles.pointsText}>
+                  {userProfile?.currentBalance || '0'} P
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
