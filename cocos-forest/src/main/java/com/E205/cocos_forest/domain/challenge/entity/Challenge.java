@@ -61,9 +61,6 @@ public class Challenge {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "reward_type", nullable = false, length = 10)
-    private RewardType rewardType = RewardType.AUTO;
 
     public enum Difficulty { EASY, NORMAL, HARD }
 
@@ -72,7 +69,5 @@ public class Challenge {
     public enum ComparatorType { LTE, GTE }
 
     public enum PeriodType { DAILY }
-
-    public enum RewardType { AUTO, MANUAL }
 }
 
