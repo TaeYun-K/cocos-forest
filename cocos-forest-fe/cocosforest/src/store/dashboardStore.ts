@@ -11,6 +11,9 @@ interface DashboardState {
   activeTab: number;
   showDetailCard: boolean;
 
+  // AI 카드 새로고침 키
+  aiCardRefreshKey: number;
+
   // 카테고리 상세 모달 상태
   showCategoryModal: boolean;
   categoryModalData: CategoryMonthlyDetails | null;
@@ -26,6 +29,9 @@ interface DashboardActions {
   // UI 액션
   setActiveTab: (tab: number) => void;
   setShowDetailCard: (show: boolean) => void;
+
+  // AI 카드 새로고침 액션
+  refreshAICard: () => void;
 
   // 카테고리 모달 액션
   setShowCategoryModal: (show: boolean) => void;
@@ -53,6 +59,9 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   activeTab: 0,
   showDetailCard: false,
 
+  // AI 카드 새로고침 키 초기값
+  aiCardRefreshKey: 0,
+
   // 카테고리 모달 초기 상태
   showCategoryModal: false,
   categoryModalData: null,
@@ -64,6 +73,9 @@ const useDashboardStore = create<DashboardStore>((set, get) => ({
   setSelectedDay: (day: number | null) => set({ selectedDay: day }),
   setActiveTab: (tab: number) => set({ activeTab: tab }),
   setShowDetailCard: (show: boolean) => set({ showDetailCard: show }),
+
+  // AI 카드 새로고침 액션
+  refreshAICard: () => set((state) => ({ aiCardRefreshKey: state.aiCardRefreshKey + 1 })),
 
   // 카테고리 모달 액션들
   setShowCategoryModal: (show: boolean) => set({ showCategoryModal: show }),

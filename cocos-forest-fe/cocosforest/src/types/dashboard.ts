@@ -127,3 +127,33 @@ export interface PaymentResponse {
   result: PaymentResult;
 }
 
+// AI 분석 요청 데이터 타입
+export interface AIAnalysisRequest {
+  totals: {
+    carbonTotalKg: number;
+  };
+  transactions: Array<{
+    merchantName: string;
+    amountKrw: number;
+    categoryName: string;
+    approvedAt: string;
+  }>;
+}
+
+// AI 분석 결과 타입
+export interface AIAnalysisResult {
+  analysisId: number;
+  analyzedDate: string;
+  totalCarbonEmissions: number;
+  aiAdvice: string;
+}
+
+// AI 분석 API 응답 타입
+export interface AIAnalysisResponse {
+  httpStatus: string;
+  isSuccess: boolean;
+  message: string;
+  code: number;
+  result: AIAnalysisResult;
+}
+

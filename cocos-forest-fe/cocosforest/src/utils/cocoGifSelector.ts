@@ -10,7 +10,7 @@ const COCO_GIFS = {
 // 탄소배출량 임계값 설정
 const EMISSION_THRESHOLDS = {
   LOW: 0.4,
-  AVERAGE: 0.8,
+  AVERAGE: 26.02,
 } as const;
 
 /**
@@ -23,7 +23,7 @@ const EMISSION_THRESHOLDS = {
  * - 평균 초과: 슬픈 코코 (SAD) - 높은 배출량
  *
  * @param carbonEmission - 일일 탄소배출량 (kg), 기본값 0.5
- * @param averageEmission - 평균 탄소배출량 (kg), 기본값 0.8
+ * @param averageEmission - 평균 탄소배출량 (kg), 기본값 26.02
  * @returns 선택된 GIF 리소스 (require()로 로드된 이미지)
  *
  * @example
@@ -32,10 +32,10 @@ const EMISSION_THRESHOLDS = {
  * const happyGif = selectCocoGif(0.3);
  *
  * // 높은 배출량 - 슬픈 코코
- * const sadGif = selectCocoGif(1.2, 0.8);
+ * const sadGif = selectCocoGif(30.0, 26.02);
  *
  * // 보통 배출량 - 기본 코코
- * const normalGif = selectCocoGif(0.6, 0.8);
+ * const normalGif = selectCocoGif(20.0, 26.02);
  * ```
  */
 export const selectCocoGif = (
