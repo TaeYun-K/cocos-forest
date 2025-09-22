@@ -47,20 +47,21 @@ pipeline {
         // credentialsId는 env.CREDENTIALS_ID를 직접 전달 (Groovy 보간 아님)
         withCredentials([
           file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
-          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_KEY_FILE_ON_HOST')
+          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')
         ]) {
           script {
             sh 'docker stop "$CONTAINER_NAME" || true'
             sh 'docker rm "$CONTAINER_NAME" || true'
 
-            echo "Starting container ${CONTAINER_NAME}..."
+            def GCP_JSON_IN_CONTAINER = "/run/secrets/gcp.json"
 
             // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
             sh '''
               docker run -d --name "$CONTAINER_NAME" --network=cocos-network \
                          --env-file "$PROPERTIES_FILE_PATH" \
-                         -v "$GCP_KEY_FILE_ON_HOST":/gcp-key.json:ro \
-                         -e "GCP_CREDENTIALS_LOCATION=/gcp-key.json" \
+                         -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
+                         -e GOOGLE_APPLICATION_CREDENTIALS="/run/secrets/gcp.json" \
+                         --mount type=bind,src="$GCP_CREDENTIALS_FILE",target=/run/secrets/gcp.json,ro \
                          "$IMAGE_NAME"
             '''
           }
