@@ -97,3 +97,20 @@ export async function removeDeadTree(treeId: number): Promise<void> {
     throw error;
   }
 }
+
+/* 숲 확장 (1000 포인트 소모) */
+export async function expandForest(): Promise<ForestInfoDto> {
+  try {
+    const response = await apiClient.post<BaseResponse<ForestInfoDto>>("/api/forest/expand");
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "숲 확장에 실패했습니다.");
+    }
+    
+    console.log("숲 확장 성공:", response.data.result);
+    return response.data.result;
+  } catch (error) {
+    console.error("expandForest error:", error);
+    throw error;
+  }
+}
