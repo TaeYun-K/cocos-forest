@@ -31,6 +31,7 @@ import {
   type UserCard,
   type ConnectCardRequest
 } from '../api/finance';
+import { useAuthStore } from '../store/authStore';
 
 // 계좌 선택 모달 컴포넌트
 const AccountSelectionModal = ({ 
@@ -193,6 +194,9 @@ const AccountSelectionModal = ({
 };
 
 const ProfileScreen = () => {
+  // authStore 훅
+  const { logout } = useAuthStore();
+
   // 프로필 수정 모달 상태
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
   const [profileData, setProfileData] = React.useState({
@@ -383,20 +387,16 @@ const ProfileScreen = () => {
         {
           text: '로그아웃',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
               // 모달 닫기
               setIsLogoutModalVisible(false);
-              
+
               // 로그아웃 처리
               console.log('로그아웃 처리 시작...');
-              
-              // 실제 로그아웃 로직을 여기에 구현
-              // 1. 로컬 스토리지 클리어
-              // AsyncStorage.clear();
-              
-              // 2. 전역 상태 초기화
-              // dispatch(logout());
+
+              // authStore의 logout 함수 호출
+              await logout();
               
               // 3. 앱 종료 또는 초기 화면으로 이동
               // 현재는 앱 종료로 처리
