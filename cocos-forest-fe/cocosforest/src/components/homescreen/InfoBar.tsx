@@ -5,6 +5,7 @@ import { homeStyles as s } from "../../styles/homeStyles";
 type Props = { points: string; growth: string };
 
 
+
 export default function InfoBar({ points, growth }: Props) {
   return (
     <View style={s.infoBar}>
