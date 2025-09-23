@@ -47,13 +47,15 @@ pipeline {
         // credentialsId는 env.CREDENTIALS_ID를 직접 전달 (Groovy 보간 아님)
         withCredentials([
           file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
-          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')
+          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE'),
+          file(credentialsId: 'firebase-service-account-json', variable: 'FIREBASE_CREDENTIALS_FILE')
         ]) {
           script {
             sh 'docker stop "$CONTAINER_NAME" || true'
             sh 'docker rm "$CONTAINER_NAME" || true'
 
             def GCP_JSON_IN_CONTAINER = "/run/secrets/gcp.json"
+            def FIREBASE_JSON_IN_CONTAINER = "/run/secrets/firebase.json"
 
             // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
             sh '''
@@ -63,6 +65,7 @@ pipeline {
                 --env-file "$PROPERTIES_FILE_PATH" \
                 -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
                 -e GOOGLE_APPLICATION_CREDENTIALS="/run/secrets/gcp.json" \
+                -e FIREBASE_CREDENTIALS_PATH="/run/secrets/firebase.json" \
                 "$IMAGE_NAME"
 
               # 3) 컨테이너 내부에 디렉터리 생성
@@ -72,10 +75,12 @@ pipeline {
 
               # 4) gcp.json 복사
               docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
+              docker cp "$FIREBASE_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/firebase.json
 
               # 5) 권한 강화 (선택)
               docker start "$CONTAINER_NAME"
               docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
+              docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/firebase.json'
             '''
           }
         }
