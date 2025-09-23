@@ -173,7 +173,8 @@ export const createDemandDepositAccount = async (
 export const fetchUserCards = async (userId: number): Promise<UserCard[]> => {
   // 백엔드에 해당 API가 없으므로 빈 배열 반환
   console.log('사용자 카드 목록 조회 API 미구현 - 빈 배열 반환');
-  return [];
+  const response = await apiClient.get<ApiResponse<UserCard[]>>(`/api/finance/user-cards`);
+  return response.data.result;
 };
 
 /**

@@ -275,6 +275,18 @@ const ProfileScreen = () => {
     loadUserCards();
   }, []);
 
+  // 연결된 카드 목록 조회 (백엔드 실제 API 호출)
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const cards = await fetchUserCards(userId);
+        setUserCards(cards);
+      } catch (e) {
+        setUserCards([]);
+      }
+    })();
+  }, []);
+
   const connectedAccounts: Array<{
     id: number;
     bankName: string;
