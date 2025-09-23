@@ -538,6 +538,7 @@ const ProfileScreen = () => {
     if (isConnected) {
       // 사용자 정보와 계좌 정보를 병렬로 로드
       await Promise.all([
+        loadBanks(),
         loadUserProfile(),
         loadUserAccounts()
       ]);
