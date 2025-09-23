@@ -58,7 +58,6 @@ public class ChallengeController {
         return new BaseResponse<>(out);
     }
 
-
     @Operation(summary = "오늘 걸음수 갱신", description = "프론트에서 전달한 오늘의 총 걸음수로 저장합니다")
     @PostMapping("/steps")
     public BaseResponse<StepsUpdateOut> updateTodaySteps(
