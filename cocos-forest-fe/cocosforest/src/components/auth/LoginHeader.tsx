@@ -1,16 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
 export const LoginHeader: React.FC = () => {
   return (
     <View style={styles.header}>
-      <Text style={styles.logo}>logo</Text>
+      <Text style={styles.logo}>코코의 숲</Text>
       <Text style={styles.subtitle}>코코와 함께하는</Text>
       <Text style={styles.subtitle}>탄소 절약 챌린지</Text>
 
       <View style={styles.characterContainer}>
-        <Ionicons name="leaf" size={50} color="#7CB342" />
+        <Image
+          source={require('../../../assets/coconut_character.png')}
+          style={styles.characterImage}
+          resizeMode="contain"
+        />
       </View>
     </View>
   );
@@ -49,5 +52,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  characterImage: {
+    width: 120,
+    height: 120,
   },
 });

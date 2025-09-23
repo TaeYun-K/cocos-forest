@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
+    color: '#333333',
   },
   eyeButton: {
     paddingHorizontal: 15,
