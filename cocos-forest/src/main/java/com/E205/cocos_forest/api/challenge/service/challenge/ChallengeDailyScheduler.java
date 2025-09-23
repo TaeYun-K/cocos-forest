@@ -1,4 +1,4 @@
-package com.E205.cocos_forest.api.challenge.service;
+package com.E205.cocos_forest.api.challenge.service.challenge;
 
 import com.E205.cocos_forest.domain.challenge.entity.Challenge;
 import com.E205.cocos_forest.domain.challenge.entity.UserChallenge;
