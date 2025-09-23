@@ -2,7 +2,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- WearOS 필수 특성 -->
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <!-- 생체정보 및 피트니스 권한 -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
+
+    <!-- 네트워크 및 데이터 동기화 권한 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- WearOS 데이터 레이어 -->
+    <uses-permission android:name="com.google.android.permission.PROVIDE_BACKGROUND" />
+
     <application
+        android:name=".CocosForestApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -10,18 +27,31 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.CocosForest">
+        android:theme="@android:style/Theme.DeviceDefault">
+
+        <!-- WearOS 앱임을 명시 -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.CocosForest">
+            android:theme="@android:style/Theme.DeviceDefault"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Health Services -->
+        <service
+            android:name="androidx.health.services.client.impl.ServiceBackedHealthServicesClient"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>
