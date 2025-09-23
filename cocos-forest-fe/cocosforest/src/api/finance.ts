@@ -96,14 +96,11 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-export const fetchUserProfile = async (userId: number): Promise<UserProfile> => {
+export const fetchUserProfile = async (): Promise<UserProfile> => {
   try {
-    console.log(`🔍 사용자 정보 조회 시작 (userId: ${userId})`);
     const response = await apiClient.get(`/api/user/myprofile`);
-    console.log('✅ 사용자 정보 조회 성공:', response.data);
     return response.data.result;
   } catch (error) {
-    console.error('❌ 사용자 정보 조회 실패:', error);
     throw error;
   }
 };
@@ -140,7 +137,7 @@ export const fetchAccountProducts = async (bankCode: string): Promise<AccountPro
 /**
  * 사용자 계좌 목록 조회
  */
-export const fetchUserAccounts = async (userId: number): Promise<UserAccount[]> => {
+export const fetchUserAccounts = async (): Promise<UserAccount[]> => {
   const response = await apiClient.get<ApiResponse<UserAccount[]>>(`/api/finance/accounts/user`);
   return response.data.result;
 };
@@ -157,11 +154,10 @@ export const fetchCardProducts = async (): Promise<CardProduct[]> => {
  * 수시입출금 계좌 생성
  */
 export const createDemandDepositAccount = async (
-  userId: number, 
   accountData: CreateAccountRequest
 ): Promise<CreateAccountResponse> => {
   const response = await apiClient.post<ApiResponse<CreateAccountResponse>>(
-    `/api/finance/accounts/demand-deposit?userId=${userId}`,
+    `/api/finance/accounts/demand-deposit`,
     accountData
   );
   return response.data.result;
@@ -170,8 +166,7 @@ export const createDemandDepositAccount = async (
 /**
  * 사용자 연결된 카드 목록 조회 (백엔드 API 없음)
  */
-export const fetchUserCards = async (userId: number): Promise<UserCard[]> => {
-  // 백엔드에 해당 API가 없으므로 빈 배열 반환
+export const fetchUserCards = async (): Promise<UserCard[]> => {
   console.log('사용자 카드 목록 조회 API 미구현 - 빈 배열 반환');
   const response = await apiClient.get<ApiResponse<UserCard[]>>(`/api/finance/user-cards`);
   return response.data.result;

@@ -38,14 +38,12 @@ const AccountSelectionModal = ({
   onClose, 
   selectedCard, 
   onAccountSelect,
-  userId,
   banks 
 }: {
   visible: boolean;
   onClose: () => void;
   selectedCard: CardProduct | null;
   onAccountSelect: (account: UserAccount) => void;
-  userId: number;
   banks: Bank[];
 }) => {
   const [accounts, setAccounts] = React.useState<UserAccount[]>([]);
@@ -61,7 +59,7 @@ const AccountSelectionModal = ({
     try {
       setLoading(true);
       console.log('🔄 모달 내에서 계좌 데이터 로드 시작...');
-      const accountsData = await fetchUserAccounts(userId);
+      const accountsData = await fetchUserAccounts();
       console.log('📊 모달에서 로드한 계좌:', accountsData.length, '개');
       setAccounts(accountsData);
     } catch (error) {
@@ -230,27 +228,22 @@ const ProfileScreen = () => {
   const [isAccountSelectionModalVisible, setIsAccountSelectionModalVisible] = React.useState(false);
   const [selectedCardForConnection, setSelectedCardForConnection] = React.useState<CardProduct | null>(null);
   
-  // 임시 사용자 ID (실제로는 인증 상태에서 가져와야 함)
-  const userId = 1;
 
   // 사용자 카드 목록 로드 (백엔드 API 없음)
   const loadUserCards = async () => {
-    try {
-      console.log('💳 사용자 카드 목록 초기화 (백엔드 API 없음)');
-      // 백엔드에 사용자 카드 목록 조회 API가 없으므로 빈 배열로 초기화
-      setUserCards([]);
-      console.log('✅ 사용자 카드 목록 초기화 완료');
-    } catch (error) {
-      console.error('❌ 사용자 카드 목록 초기화 실패:', error);
-      setUserCards([]);
-    }
-  };
+  try {
+    const cards = await fetchUserCards();
+    setUserCards(cards);
+  } catch (error) {
+    setUserCards([]);
+  }
+};
 
   const loadUserProfile = async () => {
   try {
     setIsLoadingProfile(true);
     console.log('👤 사용자 정보 로드 시작...');
-    const profile = await fetchUserProfile(userId);
+    const profile = await fetchUserProfile();
     setUserProfile(profile);
     
     // 프로필 데이터 업데이트
@@ -271,21 +264,13 @@ const ProfileScreen = () => {
   }
 };
 
+  // 초기 로드: 백엔드에서 카드 목록 조회
   React.useEffect(() => {
     loadUserCards();
   }, []);
 
   // 연결된 카드 목록 조회 (백엔드 실제 API 호출)
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const cards = await fetchUserCards(userId);
-        setUserCards(cards);
-      } catch (e) {
-        setUserCards([]);
-      }
-    })();
-  }, []);
+  
 
   const connectedAccounts: Array<{
     id: number;
@@ -491,8 +476,8 @@ const ProfileScreen = () => {
   const loadUserAccounts = async () => {
     try {
       setIsLoading(true);
-      console.log('👤 사용자 계좌 목록 로드 시작... (userId:', userId, ')');
-      const accountsData = await fetchUserAccounts(userId);
+      console.log('👤 사용자 계좌 목록 로드 시작... ');
+      const accountsData = await fetchUserAccounts();
       setUserAccounts(accountsData);
       console.log('✅ 사용자 계좌 목록 로드 완료:', accountsData.length, '개');
     } catch (error) {
@@ -500,7 +485,7 @@ const ProfileScreen = () => {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       Alert.alert(
         '백엔드 연결 오류', 
-        `계좌 목록을 불러올 수 없습니다.\n\n백엔드 서버 상태를 확인해주세요:\n• API: GET /api/finance/accounts/user/${userId}\n• 에러: ${errorMessage}`
+        `계좌 목록을 불러올 수 없습니다.\n\n백엔드 서버 상태를 확인해주세요:\n• 에러: ${errorMessage}`
       );
     } finally {
       setIsLoading(false);
@@ -618,12 +603,11 @@ const ProfileScreen = () => {
     try {
       setIsLoading(true);
       console.log('🏦 계좌 생성 시작...', {
-        userId,
         accountTypeUniqueNo: product.accountTypeUniqueNo,
         productName: product.accountName
       });
       
-      const result = await createDemandDepositAccount(userId, {
+      const result = await createDemandDepositAccount( {
         accountTypeUniqueNo: product.accountTypeUniqueNo
       });
       
@@ -694,7 +678,7 @@ const ProfileScreen = () => {
     if (!selectedCardForConnection) return;
 
     try {
-      const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
+      const currentDate = "5"; // SSAFY constraint: withdrawalDate must be 1~7; use fixed day '5'
 
       setIsLoading(true);
       console.log('💳 카드 연결 시작:', selectedCardForConnection.name);
@@ -708,7 +692,7 @@ const ProfileScreen = () => {
         productId: selectedCardForConnection.productId,
         withdrawalAccountNo: account.accountNo,
         withdrawalDate: currentDate,
-        apiUrl: `/api/finance/user-cards` // userId 쿼리 파라미터 제거
+        apiUrl: `/api/finance/user-cards` 
       });
       
       const cardData: ConnectCardRequest = {
@@ -722,7 +706,7 @@ const ProfileScreen = () => {
       console.log('✅ 카드 연결 완료:', newUserCard);
       
       // 사용자 카드 목록 새로고침 (실제 API에서 최신 데이터 가져오기)
-      await loadUserCards();
+      try { const updated = await fetchUserCards(); setUserCards(updated); } catch (e) { console.warn('사용자 카드 목록 새로고침 실패:', e); }
       
       Alert.alert('카드 연결 완료', `${selectedCardForConnection.name} 카드가 성공적으로 연결되었습니다!`);
       setIsAccountSelectionModalVisible(false);
@@ -1552,7 +1536,6 @@ const ProfileScreen = () => {
         }}
         selectedCard={selectedCardForConnection}
         onAccountSelect={handleAccountSelectionForCard}
-        userId={userId}
         banks={banks}
       />
     </SafeAreaView>
