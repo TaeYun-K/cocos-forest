@@ -54,6 +54,10 @@ dependencies {
 	implementation platform('com.google.cloud:libraries-bom:26.43.0')
 	implementation 'com.google.cloud:google-cloud-vertexai'
 	implementation 'com.google.cloud:google-cloud-storage'
+
+	// Firebase Cloud Message
+	implementation 'com.google.firebase:firebase-admin:9.1.1'
+	implementation 'com.squareup.okhttp3:okhttp:4.11.0'
 }
 
 tasks.named('test') {
