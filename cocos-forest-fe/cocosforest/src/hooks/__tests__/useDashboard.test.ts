@@ -24,19 +24,6 @@ jest.mock('../../store/dashboardStore', () => ({
   }),
 }));
 
-jest.mock('../../store/paymentStore', () => ({
-  __esModule: true,
-  default: () => ({
-    showSuccessModal: false,
-  }),
-}));
-
-jest.mock('../usePaymentActions', () => ({
-  usePaymentActions: () => ({
-    handlePaymentSuccess: jest.fn(),
-    handlePaymentModalConfirm: jest.fn(),
-  }),
-}));
 
 describe('useDashboard', () => {
   let queryClient: QueryClient;
@@ -60,7 +47,6 @@ describe('useDashboard', () => {
     expect(result.current.selectedDay).toBe(null);
     expect(result.current.activeTab).toBe(0);
     expect(result.current.showDetailCard).toBe(false);
-    expect(result.current.showSuccessModal).toBe(false);
     expect(result.current.isLoading).toBe(true); // 초기 로딩 상태
   });
 
@@ -109,7 +95,7 @@ describe('useDashboard', () => {
     const { fetchTodayData } = require('../../api/dashboard');
     fetchTodayData.mockResolvedValue(mockTodayData);
 
-    const { result, waitForNextUpdate } = renderHook(() => useDashboard(), { wrapper });
+    const { result } = renderHook(() => useDashboard(), { wrapper });
 
     // 데이터 로딩 완료까지 대기
     await act(async () => {
@@ -119,12 +105,6 @@ describe('useDashboard', () => {
     expect(result.current.cocoGif).toBeDefined();
   });
 
-  it('should provide payment action handlers', () => {
-    const { result } = renderHook(() => useDashboard(), { wrapper });
-
-    expect(typeof result.current.handlePaymentSuccess).toBe('function');
-    expect(typeof result.current.handlePaymentModalConfirm).toBe('function');
-  });
 
   it('should prefetch adjacent months on tab change', () => {
     const mockPrefetchAdjacentMonths = jest.fn();

@@ -5,6 +5,7 @@ export interface MonthlyReportData {
   userCardId: string;
   yearMonth: string; // API 응답에 포함됨
   currency: string;
+  message?: string; // 에러 응답 시 message 필드
   totals: {
     amountTotal: number;
     carbonTotalKg: number;
@@ -38,6 +39,7 @@ export interface DayData {
   userCardId: string;
   date: string;
   currency: string;
+  message?: string; // 에러 응답 시 message 필드
   meta: {
     durationMs: number;
     error: any;
@@ -98,34 +100,6 @@ export interface CategoryMonthlyDetailsResponse {
   result: CategoryMonthlyDetails;
 }
 
-// 결제 요청 데이터 타입
-export interface PaymentRequest {
-  merchantId: number;
-  paymentBalance: number;
-}
-
-// 결제 응답 데이터 타입 (API 명세 기준)
-export interface PaymentResult {
-  transactionUniqueNo: string;
-  categoryId: string;
-  categoryName: string;
-  merchantId: number;
-  merchantName: string;
-  transactionDate: string;
-  transactionTime: string;
-  paymentBalance: number;
-  savedTransactionId: number;
-  status: string;
-}
-
-// 결제 API 응답 타입
-export interface PaymentResponse {
-  httpStatus: string;
-  isSuccess: boolean;
-  message: string;
-  code: number;
-  result: PaymentResult;
-}
 
 // AI 분석 요청 데이터 타입
 export interface AIAnalysisRequest {
