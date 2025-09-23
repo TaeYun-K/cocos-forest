@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { validateEnv } from "./src/config/env";
 import { queryClient } from "./src/config/queryClient";
+import firebaseService from './src/config/firebaseConfig';
 
 export default function App() {
   useEffect(() => {
