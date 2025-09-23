@@ -30,19 +30,7 @@ class FirebaseService {
 
   // 알림 권한 요청
   requestUserPermission = async () => {
-    if (Platform.OS === 'ios') {
-      // iOS 권한 요청
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
-        console.log('iOS 알림 권한 승인됨');
-      } else {
-        console.log('iOS 알림 권한 거부됨');
-      }
-    } else if (Platform.OS === 'android') {
+    if (Platform.OS === 'android') {
       // Android 권한 요청 (Android 13+)
       if (Platform.Version >= 33) {
         const granted = await PermissionsAndroid.request(
@@ -64,7 +52,7 @@ class FirebaseService {
       const token = await messaging().getToken();
       
       // 토큰을 백엔드 서버로 전송 (사용자 등록/로그인 시)
-      // await this.sendTokenToServer(token);
+      await this.sendTokenToServer(token);
       
       return token;
     } catch (error) {
