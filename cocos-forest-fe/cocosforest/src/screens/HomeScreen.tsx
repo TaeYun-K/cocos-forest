@@ -36,6 +36,14 @@ export default function HomeScreen() {
   const [showHitbox, setShowHitbox] = useState(true);
   const [showCocoTip, setShowCocoTip] = useState(false);
 
+  // Zoom state (+ / - controls)
+  const [zoom, setZoom] = useState(1);
+  const MIN_ZOOM = 0.3;
+  const MAX_ZOOM = 2.0;
+  const ZOOM_STEP = 0.1;
+  const incZoom = () => setZoom((z) => Math.min(MAX_ZOOM, parseFloat((z + ZOOM_STEP).toFixed(2))));
+  const decZoom = () => setZoom((z) => Math.max(MIN_ZOOM, parseFloat((z - ZOOM_STEP).toFixed(2))));
+
   // 포인트/성장률 (API)
   const [points, setPoints] = useState("0");
   const [pointsNumber, setPointsNumber] = useState(0); // 숫자 형태로도 저장
@@ -295,6 +303,8 @@ export default function HomeScreen() {
           cells={cells}
           markers={markers}
           layoutW={layout.w}
+          layoutH={layout.h}
+          zoom={zoom}
           showHitbox={showHitbox}
           onCellPress={handleCellPress}
           selectedCell={selected}
@@ -302,6 +312,43 @@ export default function HomeScreen() {
           onDeadTreePress={handleDeadTreePress}
           onExpandableAreaPress={handleExpandableAreaPress}
         />
+      </View>
+
+      {/* Zoom controls (+ / -) */}
+      <View
+        style={{
+          position: "absolute",
+          right: 16,
+          bottom: 72,
+          gap: 8,
+        }}
+      >
+        <Pressable
+          onPress={incZoom}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: "#374151",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>+</Text>
+        </Pressable>
+        <Pressable
+          onPress={decZoom}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: "#6B7280",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>-</Text>
+        </Pressable>
       </View>
 
       <Pressable

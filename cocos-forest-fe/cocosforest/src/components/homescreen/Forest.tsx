@@ -60,6 +60,8 @@ type Props = {
   cells: Cell[];
   markers: Marker[];
   layoutW: number;
+  layoutH?: number;
+  zoom?: number;
   showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
@@ -72,6 +74,8 @@ export default function Board({
   cells,
   markers,
   layoutW,
+  layoutH,
+  zoom = 1,
   showHitbox,
   onCellPress,
   selectedCell,
@@ -145,12 +149,53 @@ export default function Board({
     return { sx: sum.sx / n, sy: sum.sy / n };
   })();
 
+  // Pivot: 정확한 교차점 기반 피벗 계산
+  const pivot = (() => {
+    if (!cells?.length) return { px: center.sx, py: center.sy };
+    const mid = forestSize / 2;
+    // 짝수 그리드: 네 히트박스가 만나는 교차점 = (mid-1,mid-1) 타일의 right vertex
+    if (Number.isInteger(mid)) {
+      const a = cells.find((c) => c.x === mid - 1 && c.z === mid - 1);
+      if (a) {
+        const verts = getTopFaceVertices(a.sx, a.sy);
+        const right = verts[1];
+        return { px: right[0], py: right[1] };
+      }
+    }
+    // 홀수 그리드: 중앙 타일의 탑페이스 중심
+    const ci = Math.floor(mid);
+    const cc = cells.find((c) => c.x === ci && c.z === ci);
+    if (cc) {
+      const verts = getTopFaceVertices(cc.sx, cc.sy);
+      const top = verts[0];
+      const bottom = verts[2];
+      return { px: cc.sx, py: (top[1] + bottom[1]) / 2 };
+    }
+    return { px: center.sx, py: center.sy };
+  })();
+
   // 동적 흙 타일 범위 (잔디 크기의 2배)
   const dirtSize = forestSize * 2;
   const dirtRange = Array.from({ length: dirtSize }, (_, i) => i);
 
+  const containerCenterX = layoutW > 0 ? layoutW / 2 : center.sx;
+  const containerCenterY = layoutH && layoutH > 0 ? layoutH / 2 : center.sy;
+
   return (
     <View style={s.board} pointerEvents="box-none">
+      <View
+        style={{
+          flex: 1,
+          transform: [
+            // Place pivot at container center, then scale around origin
+            { translateX: containerCenterX },
+            { translateY: containerCenterY },
+            { scale: zoom },
+            { translateX: -pivot.px },
+            { translateY: -pivot.py },
+          ],
+        }}
+      >
       {/* Layer 0: 바닥층 dirt (동적 크기) */}
       {dirtRange.map((ix) =>
         dirtRange.map((iz) => {
@@ -345,6 +390,7 @@ export default function Board({
           })}
         </Svg>
       )}
+      </View>
     </View>
   );
 }
