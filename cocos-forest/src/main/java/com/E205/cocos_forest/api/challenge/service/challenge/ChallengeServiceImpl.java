@@ -1,6 +1,6 @@
-package com.E205.cocos_forest.api.challenge.service;
+package com.E205.cocos_forest.api.challenge.service.challenge;
 
-import com.E205.cocos_forest.api.challenge.dto.ChallengeTodayOut;
+import com.E205.cocos_forest.api.challenge.dto.out.ChallengeTodayOut;
 import com.E205.cocos_forest.api.forest.service.PointService;
 import com.E205.cocos_forest.domain.challenge.entity.Challenge;
 import com.E205.cocos_forest.domain.challenge.entity.UserChallenge;
@@ -12,6 +12,7 @@ import com.E205.cocos_forest.domain.finance.merchant.Merchant;
 import com.E205.cocos_forest.domain.finance.merchant.MerchantRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.E205.cocos_forest.domain.health.repository.DailyStepsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final CardTransactionRepository cardTransactionRepository;
     private final PointService pointService;
     private final MerchantRepository merchantRepository;
+    private final DailyStepsRepository dailyStepsRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -77,7 +79,21 @@ public class ChallengeServiceImpl implements ChallengeService {
                 m.put("warning", "challenge_misconfigured");
                 eval = new Evaluation(false, m);
             } else {
-                eval = evaluate(userId, ch, today);
+                if (ch.getMetricType() == Challenge.MetricType.ATTENDANCE) {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("attended", true);
+                    eval = new Evaluation(true, m);
+                } else if (ch.getMetricType() == Challenge.MetricType.STEPS) {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    BigDecimal val = evaluateSteps(userId, ch, today, m);
+                    BigDecimal threshold = ch.getThresholdValue() == null ? BigDecimal.ZERO : ch.getThresholdValue();
+                    boolean achieved = (ch.getComparator() == Challenge.ComparatorType.LTE)
+                        ? (val.compareTo(threshold) <= 0)
+                        : (val.compareTo(threshold) >= 0);
+                    eval = new Evaluation(achieved, m);
+                } else {
+                    eval = evaluate(userId, ch, today);
+                }
                 applyEvaluation(uc, ch, eval);
             }
 
@@ -217,7 +233,7 @@ public class ChallengeServiceImpl implements ChallengeService {
      */
     private String buildMessage(Challenge ch, Evaluation eval, String statusStr) {
         if ("SUCCESS".equals(statusStr)) {
-            return "오늘 목표 달성 중!";
+            return "오늘 목표 달성!";
         }
         // simple guidance message from progress
         if (ch.getComparator() == Challenge.ComparatorType.LTE && ch.getMetricType() == Challenge.MetricType.AMOUNT) {
@@ -323,6 +339,45 @@ public class ChallengeServiceImpl implements ChallengeService {
         userChallengeRepository.save(uc);
     }
 
+    /**
+     * 걸음수 기반 챌린지 평가 및 보상 처리
+     * - 활성화된 STEPS 챌린지를 가져와 오늘의 걸음수(DailySteps)와 비교하여 완료/보상 처리
+     */
+    @Transactional
+    public void evaluateStepsChallenge(Long userId) {
+        LocalDate today = LocalDate.now(ZONE_KST);
+
+        int steps = dailyStepsRepository.findByUserIdAndTargetDate(userId, today)
+            .map(ds -> ds.getSteps() == null ? 0 : ds.getSteps())
+            .orElse(0);
+
+        // challenge_id=5만 평가
+        Challenge ch = challengeRepository.findById(5L).orElse(null);
+        if (ch == null) return;
+        if (ch.getMetricType() != Challenge.MetricType.STEPS || !Boolean.TRUE.equals(ch.getIsActive())) return;
+
+        BigDecimal value = BigDecimal.valueOf(steps);
+        BigDecimal threshold = ch.getThresholdValue() == null ? BigDecimal.ZERO : ch.getThresholdValue();
+        boolean achieved = (ch.getComparator() == Challenge.ComparatorType.LTE)
+            ? (value.compareTo(threshold) <= 0)
+            : (value.compareTo(threshold) >= 0);
+
+        if (!achieved) return;
+
+        UserChallenge uc = userChallengeRepository
+            .findByUserIdAndChallengeIdAndChallengeDate(userId, ch.getId(), today)
+            .orElseGet(() -> createPending(userId, ch, today));
+
+        boolean dirty = false;
+        if (uc.getStatus() != UserChallenge.Status.DONE) {
+            uc.setStatus(UserChallenge.Status.DONE);
+            uc.setAchievedAt(LocalDateTime.now(ZONE_KST));
+            dirty = true;
+        }
+
+        if (dirty) userChallengeRepository.save(uc);
+    }
+
 
     /**
      * 금일 탄소 배출량 평가
@@ -334,6 +389,17 @@ public class ChallengeServiceImpl implements ChallengeService {
         carbon.put("kg", BigDecimal.ZERO);
         metricsOut.put("carbon", carbon);
         return BigDecimal.ZERO;
+    }
+
+    /**
+     * 금일 걸음수 평가: DailySteps에 저장된 걸음수를 metrics에 담고 비교값으로 반환
+     */
+    private BigDecimal evaluateSteps(Long userId, Challenge ch, LocalDate date, Map<String, Object> metricsOut) {
+        int steps = dailyStepsRepository.findByUserIdAndTargetDate(userId, date)
+            .map(ds -> ds.getSteps() == null ? 0 : ds.getSteps())
+            .orElse(0);
+        metricsOut.put("steps", steps);
+        return BigDecimal.valueOf(steps);
     }
 
     /**
