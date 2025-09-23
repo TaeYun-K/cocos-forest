@@ -1,4 +1,4 @@
-// src/mocks/setupMocks.ts - 완전 비활성화
+// src/mocks/setupMocks.ts - Mock 비활성화, 실제 API만 사용
 // import { mock } from '../api/axios';
 // import { generateMonthlyReportData, generateDayData } from './mockData';
 
@@ -310,6 +310,54 @@ if (false) {
         createdAt: new Date().toISOString()
       }
     }];
+  });
+
+  // 사용자 연결된 카드 목록 조회 API
+  mock.onGet('/api/finance/user-cards').reply(200, {
+    httpStatus: 'OK',
+    isSuccess: true,
+    message: 'Success',
+    code: 'SUCCESS',
+    result: [
+      {
+        userCardId: 1,
+        userId: 1,
+        productId: 1,
+        cardUniqueNo: '1001-c3640f796f6f4ec',
+        issuerCode: '1001',
+        issuerName: '코코뱅크',
+        cardName: '코코 에코 라이프',
+        cardMasked: '1234-56**-****-7890',
+        last4: '7890',
+        expiryMM: '12/28',
+        withdrawalAccountNo: '123-456-789012',
+        withdrawalDay: '15',
+        baselinePerformance: 600000,
+        maxBenefitLimit: 120000,
+        cardDescription: '생활 20% 할인, 교통 10% 할인, 대형마트 5% 할인',
+        status: 'ACTIVE',
+        createdAt: '2025-01-15T09:30:00+09:00'
+      },
+      {
+        userCardId: 2,
+        userId: 1,
+        productId: 2,
+        cardUniqueNo: '1001-98b9cf4ea92440d',
+        issuerCode: '1001',
+        issuerName: '코코뱅크',
+        cardName: '코코 에코 교통',
+        cardMasked: '9876-54**-****-3210',
+        last4: '3210',
+        expiryMM: '06/27',
+        withdrawalAccountNo: '987-654-321098',
+        withdrawalDay: '25',
+        baselinePerformance: 500000,
+        maxBenefitLimit: 100000,
+        cardDescription: '교통 15% 할인, 생활 5% 할인',
+        status: 'ACTIVE',
+        createdAt: '2025-02-20T14:15:00+09:00'
+      }
+    ]
   });
 
   console.log('✅ axios-mock-adapter setup complete');

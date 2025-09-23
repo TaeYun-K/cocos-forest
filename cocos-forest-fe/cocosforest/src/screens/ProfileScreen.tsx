@@ -14,13 +14,13 @@ import {
   ActivityIndicator,
   FlatList
 } from 'react-native';
+import { commonStyles, colors } from '../styles/commonStyles';
 import { 
   fetchBanks, 
   fetchAccountProducts, 
   fetchUserAccounts, 
   fetchCardProducts, 
   fetchUserCards,
-  fetchUserProfile,
   connectUserCard,
   createDemandDepositAccount,
   healthCheck,
@@ -39,12 +39,14 @@ const AccountSelectionModal = ({
   onClose, 
   selectedCard, 
   onAccountSelect,
+  userId,
   banks 
 }: {
   visible: boolean;
   onClose: () => void;
   selectedCard: CardProduct | null;
   onAccountSelect: (account: UserAccount) => void;
+  userId: number;
   banks: Bank[];
 }) => {
   const [accounts, setAccounts] = React.useState<UserAccount[]>([]);
@@ -60,8 +62,8 @@ const AccountSelectionModal = ({
     try {
       setLoading(true);
       console.log('🔄 모달 내에서 계좌 데이터 로드 시작...');
-      const accountsData = await fetchUserAccounts();
-      console.log('📊 모달에서 로드한 계좌:', accountsData.length, '개');
+      const accountsData = await fetchUserAccounts(userId);
+      console.log('모달에서 로드한 계좌:', accountsData.length, '개');
       setAccounts(accountsData);
     } catch (error) {
       console.error('❌ 계좌 로드 실패:', error);
@@ -80,12 +82,19 @@ const AccountSelectionModal = ({
     return colorMap[bankCode] || '#6B7280';
   };
 
-  const getBankIcon = (bankCode: string, bankName: string): string => {
-    const iconMap: { [key: string]: string } = {
-      '004': '🏛️', '088': '🏦', '081': '🌟', '020': '💎',
-      '090': '🍌', '999': '🎓', '011': '🌾', '023': '⭐', '027': '🏙️'
+  const getBankIcon = (bankCode: string, bankName: string) => {
+    const iconMap: { [key: string]: any } = {
+      '004': require('../../assets/bank-logos/kb.png'), // 국민은행
+      '088': require('../../assets/bank-logos/shinhan.png'), // 신한은행
+      '081': require('../../assets/bank-logos/hana.png'), // KEB하나은행
+      '020': require('../../assets/bank-logos/woori.png'), // 우리은행
+      '090': require('../../assets/bank-logos/kakao.png'), // 카카오뱅크
+      '999': require('../../assets/bank-logos/ssafy-bank.png'), // 싸피은행
+      '011': require('../../assets/bank-logos/nh.png'), // 농협은행
+      '023': require('../../assets/bank-logos/sc.png'), // SC제일은행
+      '027': require('../../assets/bank-logos/citi.png') // 시티은행
     };
-    return iconMap[bankCode] || bankName.charAt(0);
+    return iconMap[bankCode] || null;
   };
 
   return (
@@ -110,7 +119,6 @@ const AccountSelectionModal = ({
             <View style={styles.selectedCardInfo}>
               <Text style={styles.selectedCardTitle}>선택된 카드</Text>
               <View style={styles.selectedCardContainer}>
-                <Text style={styles.selectedCardIcon}>💳</Text>
                 <View style={styles.selectedCardDetails}>
                   <Text style={styles.selectedCardName}>{selectedCard.name}</Text>
                   <Text style={styles.selectedCardDescription}>{selectedCard.description}</Text>
@@ -152,9 +160,17 @@ const AccountSelectionModal = ({
                   >
                     <View style={styles.accountSelectionInfo}>
                       <View style={[styles.accountIcon, { backgroundColor: getBankColor(account.bankCode) }]}>
-                        <Text style={styles.accountIconText}>
-                          {getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행')}
-                        </Text>
+                        {getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행') ? (
+                          <Image 
+                            source={getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행')} 
+                            style={styles.bankLogoImage}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={styles.accountIconText}>
+                            {banks.find(b => b.bankCode === account.bankCode)?.bankName?.charAt(0) || '?'}
+                          </Text>
+                        )}
                       </View>
                       <View style={styles.accountDetails}>
                         <Text style={styles.accountName}>
@@ -179,7 +195,6 @@ const AccountSelectionModal = ({
               </View>
             ) : (
               <View style={styles.noAccountContainer}>
-                <Text style={styles.noAccountIcon}>🏦</Text>
                 <Text style={styles.noAccountTitle}>발급받은 계좌가 없습니다</Text>
                 <Text style={styles.noAccountText}>
                   카드 연결을 위해서는{'\n'}먼저 계좌를 발급받아야 합니다.
@@ -194,20 +209,15 @@ const AccountSelectionModal = ({
 };
 
 const ProfileScreen = () => {
-  // authStore 훅
-  const { logout } = useAuthStore();
-
   // 프로필 수정 모달 상태
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
   const [profileData, setProfileData] = React.useState({
-  name: '',
-  phone: '',
-  nickname: '',
-  email: '',
-  verificationCode: ''
-});
-  const [userProfile, setUserProfile] = React.useState<UserProfile | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
+    name: '김지민',
+    phone: '010-1234-5678',
+    nickname: '친환경지민',
+    email: 'jimin@example.com',
+    verificationCode: ''
+  });
   const [nicknameError, setNicknameError] = React.useState('');
   const [nicknameChecked, setNicknameChecked] = React.useState(false);
   const [nicknameAvailable, setNicknameAvailable] = React.useState(false);
@@ -232,49 +242,18 @@ const ProfileScreen = () => {
   const [isAccountSelectionModalVisible, setIsAccountSelectionModalVisible] = React.useState(false);
   const [selectedCardForConnection, setSelectedCardForConnection] = React.useState<CardProduct | null>(null);
   
+  // 인증된 사용자 정보 가져오기
+  const { user, isAuthenticated } = useAuthStore();
+  
+  // 사용자 ID 동적 할당 (로그인하지 않은 경우 기본값 사용)
+  // 임시: linkage 데이터가 있는 사용자 ID를 찾기 위해 다른 값들 시도
+  const [testUserId, setTestUserId] = React.useState(1);
+  const userId = Number(user?.id) || testUserId; // 인증된 사용자 ID 또는 테스트 ID
 
-  // 사용자 카드 목록 로드 (백엔드 API 없음)
-  const loadUserCards = async () => {
-  try {
-    const cards = await fetchUserCards();
-    setUserCards(cards);
-  } catch (error) {
-    setUserCards([]);
-  }
-};
 
-  const loadUserProfile = async () => {
-  try {
-    setIsLoadingProfile(true);
-    console.log('👤 사용자 정보 로드 시작...');
-    const profile = await fetchUserProfile();
-    setUserProfile(profile);
-    
-    // 프로필 데이터 업데이트
-    setProfileData({
-      name: profile.nickname, // 실제 이름 필드가 없으므로 닉네임 사용
-      phone: profile.phoneNumber || '',
-      nickname: profile.nickname,
-      email: profile.email,
-      verificationCode: ''
-    });
-    
-    console.log('✅ 사용자 정보 로드 완료');
-  } catch (error) {
-    console.error('❌ 사용자 정보 로드 실패:', error);
-    Alert.alert('알림', '사용자 정보를 불러오는데 실패했습니다.');
-  } finally {
-    setIsLoadingProfile(false);
-  }
-};
-
-  // 초기 로드: 백엔드에서 카드 목록 조회
   React.useEffect(() => {
     loadUserCards();
   }, []);
-
-  // 연결된 카드 목록 조회 (백엔드 실제 API 호출)
-  
 
   const connectedAccounts: Array<{
     id: number;
@@ -387,16 +366,20 @@ const ProfileScreen = () => {
         {
           text: '로그아웃',
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
             try {
               // 모달 닫기
               setIsLogoutModalVisible(false);
-
+              
               // 로그아웃 처리
               console.log('로그아웃 처리 시작...');
-
-              // authStore의 logout 함수 호출
-              await logout();
+              
+              // 실제 로그아웃 로직을 여기에 구현
+              // 1. 로컬 스토리지 클리어
+              // AsyncStorage.clear();
+              
+              // 2. 전역 상태 초기화
+              // dispatch(logout());
               
               // 3. 앱 종료 또는 초기 화면으로 이동
               // 현재는 앱 종료로 처리
@@ -430,7 +413,7 @@ const ProfileScreen = () => {
   const loadBanks = async () => {
     try {
       setIsLoading(true);
-      console.log('🏦 은행 목록 로드 시작...');
+      console.log('은행 목록 로드 시작...');
       const banksData = await fetchBanks();
       
       // 싸피은행을 제일 위로 정렬
@@ -458,7 +441,7 @@ const ProfileScreen = () => {
   const loadCardProducts = async () => {
     try {
       setIsLoading(true);
-      console.log('💳 카드 상품 목록 로드 시작...');
+      console.log('카드 상품 목록 로드 시작...');
       const cardData = await fetchCardProducts();
       setCardProducts(cardData);
       console.log('✅ 카드 상품 목록 로드 완료:', cardData.length, '개');
@@ -470,22 +453,50 @@ const ProfileScreen = () => {
     }
   };
 
-  // 사용자 카드 API가 백엔드에 없으므로 제거
-  // const loadUserCards = async () => { ... };
+  const loadUserCards = async () => {
+    try {
+      setIsLoading(true);
+      console.log('사용자 연결된 카드 목록 로드 시작...');
+      const cardsData = await fetchUserCards();
+      setUserCards(cardsData);
+      console.log('✅ 사용자 연결된 카드 목록 로드 완료:', cardsData.length, '개');
+    } catch (error) {
+      console.error('❌ 사용자 연결된 카드 목록 로드 실패:', error);
+      Alert.alert('알림', '연결된 카드 목록을 불러오는데 실패했습니다.\n잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadUserAccounts = async () => {
     try {
       setIsLoading(true);
-      console.log('👤 사용자 계좌 목록 로드 시작... ');
-      const accountsData = await fetchUserAccounts();
+      console.log('👤 사용자 계좌 목록 로드 시작...');
+      console.log('🔐 사용자 인증 상태:', { 
+        isAuthenticated, 
+        userId, 
+        userEmail: user?.email || '미인증',
+        source: user?.id ? '인증된 사용자' : '기본값 사용',
+        note: 'API가 파라미터 없이 변경됨 - 백엔드에서 하드코딩된 사용자 사용'
+      });
+      
+      // API 변경: userId 파라미터 제거됨 (백엔드에서 하드코딩 사용)
+      const accountsData = await fetchUserAccounts(0); // userId는 사용되지 않음
       setUserAccounts(accountsData);
       console.log('✅ 사용자 계좌 목록 로드 완료:', accountsData.length, '개');
+      console.log('📋 계좌 상세 정보:', accountsData.map(acc => ({
+        id: acc.accountId,
+        accountNo: acc.accountNo,
+        bankCode: acc.bankCode,
+        status: acc.status,
+        createdAt: acc.createdAt
+      })));
     } catch (error) {
       console.error('❌ 사용자 계좌 목록 로드 실패:', error);
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       Alert.alert(
         '백엔드 연결 오류', 
-        `계좌 목록을 불러올 수 없습니다.\n\n백엔드 서버 상태를 확인해주세요:\n• 에러: ${errorMessage}`
+        `계좌 목록을 불러올 수 없습니다.\n\n백엔드 서버 상태를 확인해주세요:\n• API: GET /api/finance/accounts/user (파라미터 없음)\n• 백엔드에서 하드코딩된 사용자 사용\n• 에러: ${errorMessage}`
       );
     } finally {
       setIsLoading(false);
@@ -527,23 +538,19 @@ const ProfileScreen = () => {
   };
 
   // 컴포넌트 마운트 시 데이터 로드
- React.useEffect(() => {
-  console.log('📱 ProfileScreen 마운트됨 - 초기 데이터 로드 시작');
-  
-  const initializeData = async () => {
-    const isConnected = await checkBackendConnection();
-    if (isConnected) {
-      // 사용자 정보와 계좌 정보를 병렬로 로드
-      await Promise.all([
-        loadBanks(),
-        loadUserProfile(),
-        loadUserAccounts()
-      ]);
-    }
-  };
-  
-  initializeData();
-}, []);
+  React.useEffect(() => {
+    console.log('📱 ProfileScreen 마운트됨 - 초기 데이터 로드 시작');
+    
+    const initializeData = async () => {
+      const isConnected = await checkBackendConnection();
+      if (isConnected) {
+        loadUserAccounts();
+        loadUserCards();
+      }
+    };
+    
+    initializeData();
+  }, []);
 
   // 은행 선택 모달 핸들러들
   const handleAddAccount = async () => {
@@ -562,7 +569,7 @@ const ProfileScreen = () => {
     }
     
     // 카드 상품은 항상 최신 데이터로 로드
-    console.log('💳 카드 상품 강제 로드 시작 (Mock 비활성화로 실제 API 사용)');
+    console.log('카드 상품 강제 로드 시작 (Mock 비활성화로 실제 API 사용)');
     loadPromises.push(loadCardProducts());
     
     if (loadPromises.length > 0) {
@@ -602,12 +609,24 @@ const ProfileScreen = () => {
   const handleAccountProductSelect = async (product: AccountProduct) => {
     try {
       setIsLoading(true);
-      console.log('🏦 계좌 생성 시작...', {
+      console.log('계좌 생성 시작...');
+      console.log('🔐 사용자 인증 정보:', {
+        isAuthenticated,
+        userId,
+        userEmail: user?.email || '미인증',
+        source: user?.id ? '인증된 사용자' : '기본값 사용'
+      });
+      console.log('📋 계좌 상품 정보:', {
+        productId: product.productId,
         accountTypeUniqueNo: product.accountTypeUniqueNo,
+        bankCode: product.bankCode,
+        bankName: product.bankName,
         productName: product.accountName
       });
+      console.log('🌐 API 호출:', `POST /api/finance/accounts/demand-deposit?userId=${userId}`);
+      console.log('요청 데이터:', { accountTypeUniqueNo: product.accountTypeUniqueNo });
       
-      const result = await createDemandDepositAccount( {
+      const result = await createDemandDepositAccount(userId, {
         accountTypeUniqueNo: product.accountTypeUniqueNo
       });
       
@@ -620,9 +639,43 @@ const ProfileScreen = () => {
           loadUserAccounts(); // 계좌 목록 새로고침
         }}
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ 계좌 생성 실패:', error);
-      Alert.alert('알림', '계좌 생성에 실패했습니다.\n잠시 후 다시 시도해주세요.');
+      console.error('❌ 에러 상세:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        method: error.config?.method,
+        requestData: error.config?.data
+      });
+      
+      let errorMessage = '계좌 생성에 실패했습니다.';
+      let errorDetails = '';
+      
+      if (error.response?.status === 500) {
+        errorMessage = '서버 내부 오류가 발생했습니다.';
+        errorDetails = '\n\n🔍 실제 원인 (백엔드 코드 분석 결과):\n' +
+                      '• 백엔드에서 userId=1로 하드코딩되어 있음\n' +
+                      '• userId=1에 대한 linkage 데이터가 DB에 없음\n' +
+                      '• 프론트에서 다른 userId 보내도 백엔드는 무시함\n\n' +
+                      '⚠️ 백엔드 수정 필요:\n' +
+                      '• AccountServiceImpl.java 34줄\n' +
+                      '• userId = 1L → 실제 요청 파라미터 사용\n\n' +
+                      '📋 요청 정보:\n' +
+                      `• 사용자 ID: ${userId}\n` +
+                      `• 계좌 상품: ${product.accountName}\n` +
+                      `• 은행: ${product.bankName}\n` +
+                      `• 상품 코드: ${product.accountTypeUniqueNo}`;
+      } else if (error.response?.status === 400) {
+        errorMessage = '잘못된 요청 데이터입니다.';
+        errorDetails = '\n• 계좌 상품 정보를 확인해주세요';
+      } else if (error.response?.status === 404) {
+        errorMessage = '계좌 상품을 찾을 수 없습니다.';
+        errorDetails = '\n• 선택한 계좌 상품이 유효한지 확인해주세요';
+      }
+      
+      Alert.alert('계좌 생성 실패', errorMessage + errorDetails);
     } finally {
       setIsLoading(false);
     }
@@ -662,7 +715,7 @@ const ProfileScreen = () => {
 
   const handleCardApplication = (card: CardProduct) => {
     // 이미 연결된 카드인지 확인
-    const isAlreadyConnected = userCards.some(uc => uc.productId === card.productId);
+    const isAlreadyConnected = userCards.some(uc => uc.productId === Number(card.productId));
     if (isAlreadyConnected) {
       Alert.alert('알림', '이미 연결된 카드입니다.');
       return;
@@ -675,38 +728,42 @@ const ProfileScreen = () => {
   };
 
   const handleAccountSelectionForCard = async (account: UserAccount) => {
-    if (!selectedCardForConnection) return;
+    if (!selectedCardForConnection) {
+      console.error('❌ 선택된 카드가 없습니다');
+      return;
+    }
 
     try {
-      const currentDate = "5"; // SSAFY constraint: withdrawalDate must be 1~7; use fixed day '5'
-
       setIsLoading(true);
-      console.log('💳 카드 연결 시작:', selectedCardForConnection.name);
+      console.log('카드 연결 시작:', selectedCardForConnection.name);
+      console.log('🔐 사용자 인증 정보:', {
+        isAuthenticated,
+        userId,
+        userEmail: user?.email || '미인증',
+        source: user?.id ? '인증된 사용자' : '기본값 사용'
+      });
       console.log('📋 선택된 계좌:', {
         accountId: account.accountId,
         accountNo: account.accountNo,
         bankCode: account.bankCode,
         status: account.status
       });
-      console.log('📋 카드 연결 요청 데이터:', {
-        productId: selectedCardForConnection.productId,
-        withdrawalAccountNo: account.accountNo,
-        withdrawalDate: currentDate,
-        apiUrl: `/api/finance/user-cards` 
-      });
-      
+
+      // 백엔드 요구사항에 맞는 데이터 형식
       const cardData: ConnectCardRequest = {
-        productId: selectedCardForConnection.productId,
+        productId: Number(selectedCardForConnection.productId),
         withdrawalAccountNo: account.accountNo,
-        withdrawalDate: currentDate
+        withdrawalDate: "4" // 백엔드에서 출금일을 문자열로 받음 (예: "4"일)
       };
+
+      console.log('📋 카드 연결 요청 데이터:', cardData);
+      console.log('🌐 API 호출 시작:', `/api/finance/user-cards?userId=${userId}`);
       
-      console.log('🌐 API 호출 시작 (올바른 명세서 따름)...');
-      const newUserCard = await connectUserCard(cardData);
+      const newUserCard = await connectUserCard(cardData, userId);
       console.log('✅ 카드 연결 완료:', newUserCard);
       
       // 사용자 카드 목록 새로고침 (실제 API에서 최신 데이터 가져오기)
-      try { const updated = await fetchUserCards(); setUserCards(updated); } catch (e) { console.warn('사용자 카드 목록 새로고침 실패:', e); }
+      await loadUserCards();
       
       Alert.alert('카드 연결 완료', `${selectedCardForConnection.name} 카드가 성공적으로 연결되었습니다!`);
       setIsAccountSelectionModalVisible(false);
@@ -726,21 +783,30 @@ const ProfileScreen = () => {
       let errorMessage = '카드 연결 중 오류가 발생했습니다.';
       let errorDetails = '';
       
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (error.response?.status === 500) {
+        errorMessage = '서버 내부 오류가 발생했습니다.';
+        
+        // 가능한 원인들 제시
+        errorDetails = '\n\n🔍 가능한 원인:\n' +
+                      '• 사용자 연동 정보(linkage)가 없음 ⚠️\n' +
+                      '• 선택한 카드 상품이 존재하지 않음\n' +
+                      '• SSAFY API 호출 실패\n' +
+                      '• 계좌번호 형식 오류\n\n' +
+                      '📋 요청 데이터:\n' +
+                      `• 카드 ID: ${selectedCardForConnection.productId}\n` +
+                      `• 계좌번호: ${account.accountNo}\n` +
+                      `• 출금일: "4"\n` +
+                      `• 사용자 ID: ${userId}\n\n` +
+                      '💡 해결 방법:\n' +
+                      '• DB에 userId=1에 대한 linkage 데이터 생성 필요\n' +
+                      '• 또는 백엔드 하드코딩 제거 (권장)\n' +
+                      '• UserCardServiceImpl.java도 동일한 문제 있음';
       } else if (error.response?.status === 400) {
-        errorMessage = '잘못된 요청입니다.';
-        errorDetails = '\n• 카드 정보를 확인해주세요\n• 계좌번호가 올바른지 확인해주세요';
+        errorMessage = '잘못된 요청 데이터입니다.';
+        errorDetails = '\n• 필수 데이터가 누락되었거나 형식이 올바르지 않습니다';
       } else if (error.response?.status === 404) {
-        errorMessage = '카드 상품을 찾을 수 없습니다.';
-        errorDetails = '\n• 선택한 카드가 유효한지 확인해주세요';
-      } else if (error.response?.status === 500) {
-        errorMessage = '백엔드 서버 오류가 발생했습니다.';
-        errorDetails = '\n\n📋 요청 정보:\n• 카드: ' + selectedCardForConnection.name + 
-                      '\n• 계좌: ' + account.accountNo + 
-                      '\n• 날짜: ' + currentDate +
-                      '\n\n⚠️ 백엔드 개발자에게 문의가 필요한 상황입니다.\n' +
-                      '현재는 카드 연결 기능이 일시적으로 사용할 수 없습니다.';
+        errorMessage = '요청한 리소스를 찾을 수 없습니다.';
+        errorDetails = '\n• 카드 상품 또는 계좌 정보를 확인해주세요';
       } else if (error.code === 'NETWORK_ERROR') {
         errorMessage = '네트워크 연결 오류입니다.';
         errorDetails = '\n• 인터넷 연결을 확인해주세요';
@@ -811,28 +877,28 @@ const ProfileScreen = () => {
     return colorMap[bankCode] || '#6B7280';
   };
 
-  const getBankIcon = (bankCode: string, bankName: string): string => {
-    const iconMap: { [key: string]: string } = {
-      '001': '🏛️', // 한국은행
-      '002': '🏭', // 산업은행
-      '003': '🏢', // 기업은행
-      '004': '🌟', // 국민은행
-      '011': '🌾', // 농협은행
-      '020': '🌊', // 우리은행
-      '023': '🌐', // SC제일은행
-      '027': '🏙️', // 시티은행
-      '032': '🏔️', // 대구은행
-      '034': '🌸', // 광주은행
-      '035': '🏝️', // 제주은행
-      '037': '🌿', // 전북은행
-      '039': '🏔️', // 경남은행
-      '045': '🏘️', // 새마을금고
-      '081': '🌺', // KEB하나은행
-      '088': '⭐', // 신한은행
-      '090': '💛', // 카카오뱅크
-      '999': '🎓'  // 싸피은행
+  const getBankIcon = (bankCode: string, bankName: string) => {
+    const iconMap: { [key: string]: any } = {
+      '001': require('../../assets/bank-logos/bok.png'), // 한국은행
+      '002': require('../../assets/bank-logos/kdb.png'), // 산업은행
+      '003': require('../../assets/bank-logos/ibk.png'), // 기업은행
+      '004': require('../../assets/bank-logos/kb.png'), // 국민은행
+      '011': require('../../assets/bank-logos/nh.png'), // 농협은행
+      '020': require('../../assets/bank-logos/woori.png'), // 우리은행
+      '023': require('../../assets/bank-logos/sc.png'), // SC제일은행
+      '027': require('../../assets/bank-logos/citi.png'), // 시티은행
+      '032': require('../../assets/bank-logos/dgb.png'), // 대구은행
+      '034': require('../../assets/bank-logos/kjb.png'), // 광주은행
+      '035': require('../../assets/bank-logos/jb.png'), // 제주은행
+      '037': require('../../assets/bank-logos/jbbank.png'), // 전북은행
+      '039': require('../../assets/bank-logos/knb.png'), // 경남은행
+      '045': require('../../assets/bank-logos/kfcc.png'), // 새마을금고
+      '081': require('../../assets/bank-logos/hana.png'), // KEB하나은행
+      '088': require('../../assets/bank-logos/shinhan.png'), // 신한은행
+      '090': require('../../assets/bank-logos/kakao.png'), // 카카오뱅크
+      '999': require('../../assets/bank-logos/ssafy-bank.png') // 싸피은행
     };
-    return iconMap[bankCode] || bankName.charAt(0);
+    return iconMap[bankCode] || null;
   };
 
   const getCardColor = (index: number): string => {
@@ -890,17 +956,31 @@ const ProfileScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={commonStyles.container}>
+      <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>프로필</Text>
-          <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
-            <Text style={styles.settingsIconText}>⚙️</Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            {/* 디버깅용 새로고침 버튼 (인증되지 않은 경우만) */}
+            {!isAuthenticated && (
+              <TouchableOpacity 
+                style={styles.debugButton} 
+                onPress={() => {
+                  Alert.alert('디버깅', 'API가 변경되어 파라미터 없이 호출됩니다.\n계좌 목록을 새로고침합니다.');
+                  loadUserAccounts();
+                }}
+              >
+                <Text style={styles.debugButtonText}>새로고침</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
+              <Text style={styles.settingsIconText}>⚙️</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-      {/* Profile Card - 실제 사용자 데이터 표시 */}
+        {/* Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <Image 
@@ -910,22 +990,16 @@ const ProfileScreen = () => {
             />
           </View>
           <View style={styles.profileInfo}>
-            {isLoadingProfile ? (
-              <ActivityIndicator size="small" color="#6366F1" />
-            ) : (
-              <>
-                <Text style={styles.userName}>
-                  {userProfile?.nickname || '사용자'}
-                </Text>
-                <Text style={styles.userTitle}>에코 워리어</Text>
-                <View style={styles.levelContainer}>
-                  <Text style={styles.levelText}>레벨 12</Text>
-                  <Text style={styles.pointsText}>
-                  {userProfile?.currentBalance || '0'} P
-                  </Text>
-                </View>
-              </>
-            )}
+            <Text style={styles.userName}>
+              {user?.nickname || '게스트 사용자'}
+            </Text>
+            <Text style={styles.userTitle}>
+              {isAuthenticated ? '에코 워리어' : '미인증 사용자'}
+            </Text>
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelText}>레벨 12</Text>
+              <Text style={styles.pointsText}>3,500P</Text>
+            </View>
           </View>
         </View>
 
@@ -950,9 +1024,9 @@ const ProfileScreen = () => {
                 계좌를 연결하여 탄소 발자국을 추적해보세요.
               </Text>
               <View style={styles.emptyAccountsIcons}>
-                <Text style={styles.emptyAccountsIcon}>🏦</Text>
-                <Text style={styles.emptyAccountsIcon}>💳</Text>
-                <Text style={styles.emptyAccountsIcon}>📊</Text>
+                <Text style={styles.emptyAccountsIcon}>계좌</Text>
+                <Text style={styles.emptyAccountsIcon}>카드</Text>
+                <Text style={styles.emptyAccountsIcon}>통계</Text>
               </View>
             </View>
           ) : (
@@ -960,9 +1034,17 @@ const ProfileScreen = () => {
               <View key={account.accountId} style={styles.accountCard}>
                 <View style={styles.accountInfo}>
                   <View style={[styles.accountIcon, { backgroundColor: getBankColor(account.bankCode) }]}>
-                    <Text style={styles.accountIconText}>
-                      {getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행')}
-                    </Text>
+                    {getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행') ? (
+                      <Image 
+                        source={getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행')} 
+                        style={styles.bankLogoImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={styles.accountIconText}>
+                        {banks.find(b => b.bankCode === account.bankCode)?.bankName?.charAt(0) || '?'}
+                      </Text>
+                    )}
                   </View>
                   <View style={styles.accountDetails}>
                     <Text style={styles.accountName}>
@@ -1026,7 +1108,6 @@ const ProfileScreen = () => {
                 >
                   <View style={[styles.cardContainer, { backgroundColor: getCardColor(index) }]}>
                     <View style={styles.cardHeader}>
-                      <Text style={styles.cardIcon}>💳</Text>
                       <Text style={styles.cardTitle}>COCO</Text>
                       <TouchableOpacity 
                         style={styles.cardMenuButton}
@@ -1038,7 +1119,7 @@ const ProfileScreen = () => {
                     </View>
                     <View style={styles.cardBody}>
                       <Text style={styles.cardName}>{card.cardName}</Text>
-                      <Text style={styles.cardNickname}>{card.cardNickName || '에코 카드'}</Text>
+                      <Text style={styles.cardNickname}>{card.cardDescription || '에코 카드'}</Text>
                     </View>
                     <View style={styles.cardFooter}>
                       <View style={styles.cardChip}>
@@ -1359,7 +1440,15 @@ const ProfileScreen = () => {
                         onPress={() => handleBankSelect(bank)}
                       >
                         <View style={[styles.bankLogoContainer, { backgroundColor: getBankColor(bank.bankCode) }]}>
-                          <Text style={styles.bankIconText}>{getBankIcon(bank.bankCode, bank.bankName)}</Text>
+                          {getBankIcon(bank.bankCode, bank.bankName) ? (
+                            <Image 
+                              source={getBankIcon(bank.bankCode, bank.bankName)} 
+                              style={styles.bankLogoImage}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <Text style={styles.bankIconText}>{bank.bankName.charAt(0)}</Text>
+                          )}
                         </View>
                         <Text style={styles.bankName}>{bank.bankName}</Text>
                       </TouchableOpacity>
@@ -1386,7 +1475,6 @@ const ProfileScreen = () => {
                       >
                         <View style={[styles.cardContainer, { backgroundColor: getCardColor(index) }]}>
                           <View style={styles.cardHeader}>
-                            <Text style={styles.cardIcon}>💳</Text>
                             <Text style={styles.cardTitle}>COCO</Text>
                           </View>
                           <View style={styles.cardBody}>
@@ -1536,6 +1624,7 @@ const ProfileScreen = () => {
         }}
         selectedCard={selectedCardForConnection}
         onAccountSelect={handleAccountSelectionForCard}
+        userId={userId}
         banks={banks}
       />
     </SafeAreaView>
@@ -1543,13 +1632,6 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1569,20 +1651,43 @@ const styles = StyleSheet.create({
   settingsIconText: {
     fontSize: 20,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  debugButton: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 60,
+  },
+  debugButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
   profileCard: {
     flexDirection: 'row',
-    backgroundColor: '#2c2c2c',
+    backgroundColor: '#fff',
     marginHorizontal: 20,
     marginVertical: 16,
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   avatarContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#555',
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -1597,12 +1702,12 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
     marginBottom: 4,
   },
   userTitle: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#666',
     marginBottom: 8,
   },
   levelContainer: {
@@ -1611,12 +1716,12 @@ const styles = StyleSheet.create({
   },
   levelText: {
     fontSize: 14,
-    color: '#fff',
+    color: '#000',
     marginRight: 12,
   },
   pointsText: {
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#007AFF',
     fontWeight: 'bold',
   },
   section: {
@@ -1637,6 +1742,7 @@ const styles = StyleSheet.create({
   addLink: {
     fontSize: 14,
     color: '#007AFF',
+    fontWeight: '500',
   },
   accountCard: {
     flexDirection: 'row',
@@ -1681,6 +1787,11 @@ const styles = StyleSheet.create({
   accountNumber: {
     fontSize: 13,
     color: '#666',
+    marginBottom: 2,
+  },
+  accountCurrency: {
+    fontSize: 12,
+    color: '#888',
     marginBottom: 2,
   },
   
@@ -1833,6 +1944,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
     maxHeight: '85%',
+    flex: 1,
+  },
+  modalContent: {
     flex: 1,
   },
   modalScrollView: {
