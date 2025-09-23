@@ -9,14 +9,17 @@ import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FcmService {
 
     // 비밀키 경로 환경 변수 ( 필수 )
@@ -32,17 +35,30 @@ public class FcmService {
     private String projectId;
 
 
-    // 의존성 주입이 이루어진 후 초기화를 수행한다.
     @PostConstruct
-    public void initialize() throws IOException {
-        //Firebase 프로젝트 정보를 FireBaseOptions에 입력해준다.
-        FirebaseOptions options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.fromStream(new ClassPathResource(serviceAccountFilePath).getInputStream()))
-                        .setProjectId(projectId)
-                        .build();
+    public void initialize() {
+        try {
+            // FirebaseApp이 이미 초기화되어 있는지 확인
+            if (FirebaseApp.getApps().isEmpty()) {
+                // 아직 초기화되지 않은 경우에만 초기화
+                ClassPathResource resource = new ClassPathResource(serviceAccountFilePath);
+                FileInputStream serviceAccount = new FileInputStream(resource.getFile());
 
-        //입력한 정보를 이용하여 initialze 해준다.
-        FirebaseApp.initializeApp(options);
+                FirebaseOptions options = FirebaseOptions.builder()
+                                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                                .setProjectId(projectId)
+                                .build();
+
+                FirebaseApp.initializeApp(options);
+                log.info("Firebase 초기화 완료");
+            } else {
+                log.info("Firebase 이미 초기화됨");
+            }
+
+        } catch (IOException e) {
+            log.error("Firebase 초기화 실패", e);
+            throw new RuntimeException("Firebase 초기화 실패", e);
+        }
     }
 
     // 해당 지정된 topic에 fcm를 보내는 메서드
