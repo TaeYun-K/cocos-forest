@@ -42,6 +42,12 @@ public class UserCardServiceImpl implements UserCardService {
         CardProduct product = productRepository.findById(in.getProductId())
             .orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_NOTICE)); // reuse NOT_FOUND code; adjust if needed
 
+        // Prevent duplicate link for the same user and card (by cardUniqueNo / product)
+        userCardRepository.findByUserIdAndCardUniqueNo(userId, product.getCardUniqueNo())
+            .ifPresent(existing -> {
+                throw new BaseException(BaseResponseStatus.DATABASE_CONSTRAINT_VIOLATION, "이미 연결된 카드입니다.");
+            });
+
         // Call SSAFY credit card create API
         CreditCardCreateResult res = ssafyGateway.createCreditCard(
             linkage.getUserKey(),
@@ -108,7 +114,12 @@ public class UserCardServiceImpl implements UserCardService {
     @Transactional(readOnly = true)
     public List<UserCardOut> getUserCards(Long userId) {
         List<UserCard> cards = userCardRepository.findByUserId(userId);
-        return cards.stream().map(this::toOut).toList();
+        // Deduplicate by productId to avoid showing duplicates of the same card product
+        java.util.Set<Long> seenProductIds = new java.util.HashSet<>();
+        return cards.stream()
+                .filter(uc -> uc.getProduct() != null && seenProductIds.add(uc.getProduct().getProductId()))
+                .map(this::toOut)
+                .toList();
     }
 
     /**
