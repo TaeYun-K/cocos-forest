@@ -23,7 +23,7 @@ import java.io.IOException;
 public class FcmService {
 
     // 비밀키 경로 환경 변수 ( 필수 )
-    @Value("${fcm.service-account-file}")
+    @Value("${fcm.service-account-file.location}")
     private String serviceAccountFilePath;
 
     // topic 이름 환경 변수
