@@ -66,6 +66,7 @@ pipeline {
                 -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
                 -e GOOGLE_APPLICATION_CREDENTIALS="/run/secrets/gcp.json" \
                 -e FIREBASE_CREDENTIALS_PATH="/run/secrets/firebase.json" \
+                -e FCM_SERVICE_ACCOUNT_FILE_LOCATION="/run/secrets/firebase.json"
                 "$IMAGE_NAME"
 
               # 3) 컨테이너 내부에 디렉터리 생성
