@@ -4,7 +4,6 @@ import {
   fetchTodayData,
   fetchMonthlyReport,
   fetchDayDetails,
-  processPayment,
 } from '../dashboard';
 import { createMockTodayData, createMockDashboardData } from '../../tests/test-utils';
 
@@ -188,95 +187,6 @@ describe('Dashboard API', () => {
     });
   });
 
-  describe('processPayment', () => {
-    it('should process payment successfully', async () => {
-      const paymentRequest = {
-        merchantId: 123,
-        paymentBalance: 25000,
-      };
-
-      const mockPaymentResult = {
-        transactionUniqueNo: 'tx-123456',
-        categoryId: 'food',
-        categoryName: '음식점',
-        merchantId: 123,
-        merchantName: '스타벅스',
-        transactionDate: '2024-01-15',
-        transactionTime: '10:30:00',
-        paymentBalance: 25000,
-        savedTransactionId: 789,
-        status: 'SUCCESS',
-      };
-
-      const mockResponse = {
-        httpStatus: 'OK',
-        isSuccess: true,
-        message: 'Payment processed successfully',
-        code: 200,
-        result: mockPaymentResult,
-      };
-
-      mockAxios.onPost('/payment/pay').reply(200, mockResponse);
-
-      const result = await processPayment(paymentRequest);
-
-      expect(result).toEqual(mockPaymentResult);
-    });
-
-    it('should send correct payment request body', async () => {
-      const paymentRequest = {
-        merchantId: 456,
-        paymentBalance: 15000,
-      };
-
-      mockAxios.onPost('/payment/pay').reply((config) => {
-        const requestData = JSON.parse(config.data);
-        expect(requestData).toEqual(paymentRequest);
-        return [200, { result: {} }];
-      });
-
-      await processPayment(paymentRequest);
-    });
-
-    it('should handle payment failure', async () => {
-      const paymentRequest = {
-        merchantId: 123,
-        paymentBalance: 25000,
-      };
-
-      const errorResponse = {
-        httpStatus: 'BAD_REQUEST',
-        isSuccess: false,
-        message: 'Insufficient balance',
-        code: 400,
-        result: null,
-      };
-
-      mockAxios.onPost('/payment/pay').reply(400, errorResponse);
-
-      await expect(processPayment(paymentRequest)).rejects.toThrow('Insufficient balance');
-    });
-
-    it('should handle payment timeout', async () => {
-      const paymentRequest = {
-        merchantId: 123,
-        paymentBalance: 25000,
-      };
-
-      mockAxios.onPost('/payment/pay').timeout();
-
-      await expect(processPayment(paymentRequest)).rejects.toThrow('timeout');
-    });
-
-    it('should validate payment request', async () => {
-      const invalidRequest = {
-        merchantId: 0, // Invalid merchant ID
-        paymentBalance: -1000, // Invalid amount
-      };
-
-      await expect(processPayment(invalidRequest)).rejects.toThrow();
-    });
-  });
 
   describe('Error Handling', () => {
     it('should handle 500 server error', async () => {

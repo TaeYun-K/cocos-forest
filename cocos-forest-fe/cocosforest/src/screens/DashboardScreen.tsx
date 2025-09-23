@@ -9,9 +9,7 @@ import {
   TodayEmissionStatus,
   MonthlyCalendar,
   CategoryReport,
-  DayDetailCard,
-  PaymentButton,
-  PaymentSuccessModal
+  DayDetailCard
 } from '../components/dashboard';
 import { ErrorBoundary } from '../components/common';
 
@@ -21,7 +19,6 @@ const DashboardScreen = memo(() => {
     activeTab,
     showDetailCard,
     selectedDay,
-    showSuccessModal,
     aiCardRefreshKey,
 
     // 데이터
@@ -29,8 +26,6 @@ const DashboardScreen = memo(() => {
 
     // 액션
     handleTabChange,
-    handlePaymentSuccess,
-    handlePaymentModalConfirm,
   } = useDashboard();
 
 
@@ -42,10 +37,6 @@ const DashboardScreen = memo(() => {
       <SafeAreaView style={commonStyles.container}>
         <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
 
-        {/* 결제하기 버튼 */}
-        <View style={commonStyles.section}>
-          <PaymentButton onPaymentSuccess={handlePaymentSuccess} />
-        </View>
 
         {/* AI 분석 결과 */}
         <View style={[commonStyles.section, { marginBottom: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.AI_ANALYSIS_BOTTOM }]}>
@@ -112,11 +103,6 @@ const DashboardScreen = memo(() => {
 
         </ScrollView>
 
-        {/* 결제 성공 모달 */}
-        <PaymentSuccessModal
-          visible={showSuccessModal}
-          onConfirm={handlePaymentModalConfirm}
-        />
       </SafeAreaView>
     </ErrorBoundary>
   );

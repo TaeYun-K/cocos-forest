@@ -7,9 +7,6 @@ import type {
   MonthlyReportData,
   CategoryMonthlyDetails,
   CategoryMonthlyDetailsResponse,
-  PaymentRequest,
-  PaymentResponse,
-  PaymentResult,
   AIAnalysisRequest,
   AIAnalysisResponse
 } from '../types/dashboard';
@@ -61,11 +58,22 @@ export const fetchDayDetails = async (
 
     logger.apiSuccess(`fetchDayDetails: ${date}`);
 
+    // 에러 응답인 경우 message를 result와 같은 레벨로 노출
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || '일별 상세 데이터 조회에 실패했습니다.');
+    }
+
     // 탄소배출량 로그 출력
     const carbonValue = response.data?.result?.totals?.carbonTotalKg;
     logger.carbonData(`일일 탄소배출량 (${date})`, carbonValue || 0);
 
-    return response.data.result;
+    // API 응답을 컴포넌트가 기대하는 형태로 변환 (message를 result와 같은 레벨로 추가)
+    const transformedData = {
+      ...response.data.result,
+      message: response.data.message // message를 result와 같은 레벨로 추가
+    };
+
+    return transformedData;
   } catch (error) {
     logger.apiError(`fetchDayDetails: ${date}`, error);
     throw handleApiError(error, '일별 상세 데이터 조회');
@@ -93,6 +101,11 @@ export const fetchMonthlyReport = async (
 
     logger.apiSuccess(`fetchMonthlyReport: ${yearMonth}`);
 
+    // 에러 응답인 경우 message를 result와 같은 레벨로 노출
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || '월별 리포트 조회에 실패했습니다.');
+    }
+
     // 월별 탄소배출량 로그 출력
     const monthlyCarbon = response.data?.result?.totals?.carbonTotalKg;
     const activeDays = response.data?.result?.totals?.daysActive;
@@ -101,6 +114,7 @@ export const fetchMonthlyReport = async (
     // API 응답을 컴포넌트가 기대하는 형태로 변환
     const transformedData = {
       ...response.data.result,
+      message: response.data.message, // message를 result와 같은 레벨로 추가
       byCategory: response.data.result.byCategory?.map((category: any, index: number) => ({
         ...category,
         color: category.color || getCategoryColor(index) // color 필드가 없으면 기본 색상 사용
@@ -163,40 +177,6 @@ export const fetchTodayData = async (): Promise<DayData> => {
   return result;
 };
 
-/**
- * 새로운 결제 추가
- * @param userId - 사용자 ID
- * @param userCardId - 사용자 카드 ID
- * @param paymentData - 결제 요청 데이터
- * @returns 결제 결과
- */
-export const addNewPayment = async (
-  userId: number,
-  userCardId: number,
-  paymentData?: PaymentRequest
-): Promise<PaymentResult> => {
-  try {
-    const requestBody: PaymentRequest = paymentData || {
-      merchantId: 14261,
-      paymentBalance: 50000
-    };
-
-    logger.apiStart('addNewPayment', { userId, userCardId, paymentData: requestBody });
-
-    const response = await apiClient.post(`/api/finance/user-cards/transactions/pay`, requestBody) as { data: PaymentResponse };
-
-    logger.apiSuccess('addNewPayment');
-
-    if (response.data.isSuccess && response.data.result) {
-      return response.data.result;
-    } else {
-      throw new Error(response.data.message || '결제 처리에 실패했습니다.');
-    }
-  } catch (error) {
-    logger.apiError('addNewPayment', error);
-    throw handleApiError(error, '결제 처리');
-  }
-};
 
 /**
  * AI 분석 API 호출
