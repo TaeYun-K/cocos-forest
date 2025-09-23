@@ -28,12 +28,6 @@ export const LoginButtons: React.FC<LoginButtonsProps> = ({
         )}
       </TouchableOpacity>
 
-      <Text style={styles.orText}>또는</Text>
-
-      <TouchableOpacity style={styles.googleButton} onPress={onGoogleLogin}>
-        <Text style={styles.googleButtonText}>G  구글로 로그인</Text>
-      </TouchableOpacity>
-
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>계정이 없으신가요? </Text>
         <TouchableOpacity onPress={onSignup}>
@@ -67,20 +61,6 @@ const styles = StyleSheet.create({
     color: '#A0A0A0',
     textAlign: 'center',
     marginBottom: 15,
-  },
-  googleButton: {
-    borderWidth: 1,
-    borderColor: '#7CB342',
-    borderRadius: 25,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginBottom: 20,
-    minHeight: 52,
-  },
-  googleButtonText: {
-    color: '#7CB342',
-    fontSize: 16,
-    fontWeight: '600',
   },
   signupContainer: {
     flexDirection: 'row',
