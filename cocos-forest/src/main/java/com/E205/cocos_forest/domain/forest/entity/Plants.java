@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 숲에 심어진 나무 정보를 담는 엔티티
  */
 @Entity
-@Table(name = "trees")
+@Table(name = "plants")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Tree {
