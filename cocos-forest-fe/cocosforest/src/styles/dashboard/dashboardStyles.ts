@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 // 공통 색상 팔레트
 export const colors = {
   // 기본 색상
-  background: '#fefdf8',
+  background: '#F8FAFC',
   white: '#ffffff',
   black: '#000000',
 
@@ -63,22 +63,26 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 16,
     padding: 24,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 8,
   },
 
   cardSmall: {
     backgroundColor: colors.white,
     borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 4,
   },
 
   // 텍스트 스타일

@@ -29,14 +29,15 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ],
     "extra": {
       "eas": {
-        "projectId": "29348cb4-c570-4cda-a867-c1e2523699cf"
+        "projectId": "d27ed203-5255-485b-9c31-a1984d1476e7"
       }
     },
-    "owner": "kwonin",
-    "plugins": [
-      "expo-asset"
-    ]
+    "owner": "minju_kim"
   }
 }
