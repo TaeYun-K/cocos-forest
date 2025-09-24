@@ -287,7 +287,7 @@ public class CardTransactionQueryServiceImpl implements CardTransactionQueryServ
 
       return userCardRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
             .map(uc -> String.valueOf(uc.getUserCardId()))
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "No linked card"));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_CARD_NOT_LINKED));
     }
 
     // 거래에 등장한 categoryId 목록으로 카테고리 엔티티 로딩

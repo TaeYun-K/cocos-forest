@@ -15,7 +15,9 @@ import {
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
 
-const DIRT_IMG = require("../../../assets/tiles/dirt.png");
+const DIRT_IMG2 = require("../../../assets/tiles/grassdark.png");
+const DIRT_IMG = require("../../../assets/tiles/grassweeds.png");
+const DIRT_PLAIN_IMG = require("../../../assets/tiles/dirt.png");
 const GRASS_IMG = require("../../../assets/tiles/grass.png");
 const WATER_IMG = require("../../../assets/tiles/water.png");
 const MARKER_IMG = require("../../../assets/models/medium_tree.png");
@@ -64,7 +66,6 @@ type Props = {
   zoom?: number;
   panX?: number;
   panY?: number;
-  showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
   forestInfo?: ForestInfoDto;
@@ -80,7 +81,6 @@ export default function Board({
   zoom = 1,
   panX = 0,
   panY = 0,
-  showHitbox,
   onCellPress,
   selectedCell,
   forestInfo,
@@ -117,6 +117,31 @@ export default function Board({
   // 선택된 셀인지 확인하는 함수
   const isSelectedCell = (cell: Cell) => {
     return selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z;
+  };
+
+  // Deterministic pseudo-random (0..1) based on tile coords
+  const rand01 = (x: number, z: number, seed = 1337) => {
+    let n = (x | 0) * 374761393 + ((z | 0) * 668265263) + seed;
+    n = (n ^ (n >>> 13)) >>> 0;
+    n = (n * 1274126177) >>> 0;
+    return (n >>> 0) / 0x100000000;
+  };
+
+  // Background/dirt variant per tile
+  const getDirtImage = (x: number, z: number) => {
+    const r = rand01(x, z);
+    if (r < 0.05) return DIRT_PLAIN_IMG; // a few bare dirt tiles
+    if (r < 0.35) return DIRT_IMG2;      // patchy grass-dirt
+    if (r < 0.70) return DIRT_IMG;       // weeds
+    return GRASS_IMG;                    // full grass
+  };
+
+  // Slight variation on grass top faces (non-water)
+  const getGrassTopImage = (x: number, z: number) => {
+    const r = rand01(x * 3, z * 3, 911);
+    if (r < 0.12) return DIRT_IMG;  // subtle weeds
+    if (r < 0.22) return DIRT_IMG2; // darker patch
+    return GRASS_IMG;
   };
 
   // 죽은 나무인지 확인하는 함수
@@ -270,7 +295,7 @@ export default function Board({
 
           return (
             <View key={`base-container-${ix}-${iz}`}>
-              <TouchableOpacity
+              <TouchableOpacity pointerEvents="none"
                 style={{
                   position: "absolute",
                   left: sx - SPRITE_W / 2,
@@ -287,7 +312,9 @@ export default function Board({
                 disabled={!isExpandable}
               >
                 <Image
-                  source={DIRT_IMG}
+                  source={((actualX >= -1 && actualX <= forestSize) && (actualZ >= -1 && actualZ <= forestSize))
+                    ? GRASS_IMG
+                    : getDirtImage(actualX, actualZ)}
                   style={{
                     width: SPRITE_W,
                     height: FOOT_H + WALL_H,
@@ -402,51 +429,43 @@ export default function Board({
 
       {/* Layer 3: 히트박스 + 하이라이트 (잔디 영역만) */}
       {layoutW > 0 && (
-        <Svg
-          style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
-          pointerEvents="box-none"
-        >
-          {cells.map((c) => {
-            const isSelected = isSelectedCell(c);
-            
-            return (
-              <Path
-                key={`path-${c.x}-${c.z}`}
-                d={c.path}
-                fill={
-                  isSelected 
-                    ? "rgba(255, 215, 0, 0.6)"
-                    : showHitbox 
-                      ? "rgba(0,255,0,0.3)" 
-                      : "#00FF00"
-                }
-                fillOpacity={
-                  isSelected 
-                    ? 0.6
-                    : showHitbox 
-                      ? 0.3 
-                      : 0
-                }
-                stroke={
-                  isSelected 
-                    ? "#FFD700"
-                    : showHitbox 
-                      ? "blue" 
-                      : "#000"
-                }
-                strokeOpacity={
-                  isSelected 
-                    ? 1
-                    : showHitbox 
-                      ? 1 
-                      : 0
-                }
-                strokeWidth={isSelected ? 3 : 1}
-                onPress={() => onCellPress(c)}
-              />
-            );
-          })}
-        </Svg>
+        <>
+          <Svg
+            style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
+            pointerEvents="none"
+          >
+            {cells.map((c) => {
+              const isSelected = isSelectedCell(c);
+              return (
+                <Path
+                  key={`path-${c.x}-${c.z}`}
+                  d={c.path}
+                  fill={isSelected ? "rgba(255, 215, 0, 0.6)" : "#00FF00"}
+                  fillOpacity={isSelected ? 0.6 : 0}
+                  stroke={isSelected ? "#FFD700" : "#000"}
+                  strokeOpacity={isSelected ? 1 : 0}
+                  strokeWidth={isSelected ? 3 : 1}
+                />
+              );
+            })}
+          </Svg>
+
+          {cells.map((c) => (
+            <TouchableOpacity
+              key={`cell-touch-${c.x}-${c.z}`}
+              style={{
+                position: "absolute",
+                left: c.sx - SPRITE_W / 2,
+                top: c.sy - FOOT_H / 2 - WALL_H - TOP_FACE_H / 2,
+                width: SPRITE_W,
+                height: FOOT_H + WALL_H,
+                zIndex: 4,
+              }}
+              onPress={() => onCellPress(c)}
+              activeOpacity={1}
+            />
+          ))}
+        </>
       )}
       </View>
     </View>
