@@ -1,4 +1,4 @@
-// src/api/dashboard.ts
+﻿// src/api/dashboard.ts
 import apiClient from './axios';
 import logger from '../utils/logger';
 import { getCategoryColor } from '../constants/dashboardStyles';
@@ -21,6 +21,11 @@ import type {
  * @returns 표준화된 에러
  */
 const handleApiError = (error: any, operation: string): Error => {
+  const serverMessage: string | undefined = error?.response?.data?.message;
+  const url: string | undefined = error?.config?.url;
+  const status: number | undefined = error?.response?.status;
+
+  // Map unlinked-card case to a friendly message for dashboard/card APIs
   if (error.response?.status === 500) {
     return new Error(`${operation} 중 서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.`);
   } else if (error.response?.status === 404) {
@@ -31,6 +36,8 @@ const handleApiError = (error: any, operation: string): Error => {
     return new Error(`${operation}: 인증이 필요합니다.`);
   } else if (error.response?.status === 403) {
     return new Error(`${operation}: 접근 권한이 없습니다.`);
+  } else if (error.response?.status === 5204) {
+    return new Error(`${operation}: 카드를 연결해주세요`);
   } else {
     return new Error(`${operation} 중 네트워크 오류가 발생했습니다. 연결 상태를 확인해주세요.`);
   }
@@ -153,8 +160,10 @@ export const fetchCategoryMonthlyDetails = async (
  * 오늘 날짜의 일별 데이터 가져오기
  */
 export const fetchTodayData = async (): Promise<DayData> => {
-  const today = new Date();
-  const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  // Compute today's date in KST (UTC+9) to avoid UTC offset issues
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const dateString = kst.toISOString().split('T')[0]; // YYYY-MM-DD (KST)
 
   logger.info(`오늘 데이터 조회: ${dateString}`);
   const result = await fetchDayDetails(dateString, true);

@@ -23,6 +23,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +45,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
         // 기본(최근) 카드 선택 및 소유권 검증
         UserCard userCard = userCardRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "No linked card"));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_CARD_NOT_LINKED));
         if (!userCard.getUserId().equals(userId)) {
             throw new BaseException(BaseResponseStatus.NO_ACCESS_AUTHORITY, "Forbidden card access");
         }
@@ -96,7 +97,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         // parse date/time
         LocalDate txDate = parseDate(res.getTransactionDate());
         LocalTime txTime = parseTime(res.getTransactionTime());
-        tx.setTxDate(txDate != null ? txDate : LocalDate.now());
+        tx.setTxDate(txDate != null ? txDate : LocalDate.now(ZoneId.of("Asia/Seoul")));
         tx.setTxTime(txTime);
         tx.setAmountKrw(safeParseLong(res.getPaymentBalance(), in.getPaymentBalance()));
         tx.setStatus(CardTransaction.Status.APPROVED);
@@ -105,7 +106,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         } catch (JsonProcessingException e) {
             tx.setRawResponse(null);
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         tx.setCreatedAt(now);
         tx.setUpdatedAt(now);
 
