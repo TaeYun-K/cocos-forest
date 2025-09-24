@@ -55,6 +55,9 @@ public class Forest {
     @OneToMany(mappedBy = "forest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Tree> trees = new ArrayList<>();
 
+    @OneToMany(mappedBy = "forest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Decoration> decorations = new ArrayList<>();
+
     @Builder
     public Forest(Long userId, Integer size, Integer pondX, Integer pondY) {
         this.userId = userId;
