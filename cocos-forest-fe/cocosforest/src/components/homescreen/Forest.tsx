@@ -95,8 +95,7 @@ export default function Board({
   const pondY = forestInfo?.pondY || 3;
   const assetKeyById = useMemo(() => {
     const map = new Map<number, string>();
-    const anyInfo: any = forestInfo as any;
-    const assets = anyInfo?.assets as Array<{ id: number; spriteKey?: string }> | undefined;
+    const assets = forestInfo?.assets;
     assets?.forEach((a) => {
       if (a && a.id != null && a.spriteKey) map.set(a.id, a.spriteKey);
     });

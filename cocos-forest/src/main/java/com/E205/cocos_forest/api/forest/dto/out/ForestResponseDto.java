@@ -30,6 +30,7 @@ public class ForestResponseDto {
     private Integer deadHighlightCount;
     private List<TreeResponseDto> trees;
     private List<DecorationResponseDto> decorations;
+    private List<AssetResponseDto> assets;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -48,6 +49,7 @@ public class ForestResponseDto {
                 .decorations(forest.getDecorations().stream()
                         .map(DecorationResponseDto::from)
                         .collect(Collectors.toList()))
+                .assets(Collections.emptyList())
                 .createdAt(forest.getCreatedAt())
                 .updatedAt(forest.getUpdatedAt())
                 .build();
@@ -68,6 +70,7 @@ public class ForestResponseDto {
                 .decorations(forest.getDecorations().stream()
                         .map(DecorationResponseDto::from)
                         .collect(Collectors.toList()))
+                .assets(assets != null ? assets : Collections.emptyList())
                 .createdAt(forest.getCreatedAt())
                 .updatedAt(forest.getUpdatedAt())
                 .build();
