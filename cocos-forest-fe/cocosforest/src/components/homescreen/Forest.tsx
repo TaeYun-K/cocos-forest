@@ -60,6 +60,10 @@ type Props = {
   cells: Cell[];
   markers: Marker[];
   layoutW: number;
+  layoutH?: number;
+  zoom?: number;
+  panX?: number;
+  panY?: number;
   showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
@@ -72,6 +76,10 @@ export default function Board({
   cells,
   markers,
   layoutW,
+  layoutH,
+  zoom = 1,
+  panX = 0,
+  panY = 0,
   showHitbox,
   onCellPress,
   selectedCell,
@@ -149,8 +157,103 @@ export default function Board({
   const dirtSize = forestSize * 2;
   const dirtRange = Array.from({ length: dirtSize }, (_, i) => i);
 
+  // Container center (for aligning board center to view center)
+  const containerCenterX = layoutW > 0 ? layoutW / 2 : center.sx;
+  const containerCenterY = layoutH && layoutH > 0 ? layoutH / 2 : center.sy;
+
+  // 전체(잔디 + 외곽 흙) 타일 이미지의 경계 박스를 계산해 시각적 중심을 구한다
+  const bounds = (() => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    // 잔디/물 셀들 (Layer 1)
+    for (const c of cells) {
+      const left = c.sx - SPRITE_W / 2;
+      const top = c.sy - FOOT_H / 2 - WALL_H - TOP_FACE_H / 2;
+      const right = left + SPRITE_W;
+      const bottom = top + (FOOT_H + WALL_H);
+      if (left < minX) minX = left;
+      if (top < minY) minY = top;
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+    // 외곽 흙 타일들 (Layer 0)
+    const size = dirtSize;
+    for (let ix = 0; ix < size; ix++) {
+      for (let iz = 0; iz < size; iz++) {
+        const rx = ix - (size / 2 - 0.5);
+        const rz = iz - (size / 2 - 0.5);
+        const sx = center.sx + rx * stepX.dx + rz * stepZ.dx;
+        const sy = center.sy + rx * stepX.dy + rz * stepZ.dy;
+        const actualX = ix - size / 2 + forestSize / 2;
+        const actualZ = iz - size / 2 + forestSize / 2;
+        const expandable = isExpandableArea(actualX, actualZ);
+        const left = sx - SPRITE_W / 2;
+        const top = expandable
+          ? sy - FOOT_H / 2 - WALL_H
+          : sy - FOOT_H / 2 - WALL_H + TOP_FACE_H / 2;
+        const right = left + SPRITE_W;
+        const bottom = top + (FOOT_H + WALL_H);
+        if (left < minX) minX = left;
+        if (top < minY) minY = top;
+        if (right > maxX) maxX = right;
+        if (bottom > maxY) maxY = bottom;
+      }
+    }
+    // 3) 마커(나무) 이미지까지 포함하면 확대/축소 기준의 체감 중심이 더 안정적
+    for (const m of markers) {
+      const left = m.sx - MARKER_SIZE / 2;
+      const top = m.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2;
+      const right = left + MARKER_SIZE;
+      const bottom = top + MARKER_SIZE;
+      if (left < minX) minX = left;
+      if (top < minY) minY = top;
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+    return { minX, minY, maxX, maxY };
+  })();
+
+  const contentCenterX = (bounds.minX + bounds.maxX) / 2;
+  const contentCenterY = (bounds.minY + bounds.maxY) / 2;
+  const baseDX = containerCenterX - contentCenterX;
+  const baseDY = containerCenterY - contentCenterY;
+
+  // 보드의 상단면 중심(Y)의 평균으로 시각적 중앙을 계산
+  const avgTopFaceCenterY = (() => {
+    if (!cells?.length) return center.sy;
+    let sum = 0;
+    for (const c of cells) {
+      const verts = getTopFaceVertices(c.sx, c.sy);
+      const topFaceY = (verts[0][1] + verts[2][1]) / 2;
+      sum += topFaceY;
+    }
+    return sum / cells.length;
+  })();
+
+  const boardCenterX = center.sx;
+  const boardCenterY = avgTopFaceCenterY;
+  
+  // 최종 보드가 위치할 중심점
+  const finalCenterX = containerCenterX;
+  const finalCenterY = containerCenterY;
+
   return (
     <View style={s.board} pointerEvents="box-none">
+      <View
+        style={{
+          flex: 1,
+          transform: [
+            // 컨테이너 중앙 기준으로 스케일
+            { translateX: -containerCenterX },
+            { translateY: -containerCenterY },
+            { scale: zoom },
+            { translateX: containerCenterX },
+            { translateY: containerCenterY },
+            // 전체(잔디+흙) 경계 박스 중심을 컨테이너 중앙에 정렬 (스케일 영향 없음)
+            { translateX: baseDX },
+            { translateY: baseDY },
+          ],
+        }}
+      >
       {/* Layer 0: 바닥층 dirt (동적 크기) */}
       {dirtRange.map((ix) =>
         dirtRange.map((iz) => {
@@ -345,6 +448,7 @@ export default function Board({
           })}
         </Svg>
       )}
+      </View>
     </View>
   );
 }

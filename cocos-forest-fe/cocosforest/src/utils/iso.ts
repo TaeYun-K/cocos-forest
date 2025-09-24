@@ -38,6 +38,10 @@ export function computeBoardHeight(forestSize: number = 8) {
   return (forestSize - 1 + forestSize - 1) * (FOOT_H / 2) + FOOT_H + WALL_H;
 }
 
+export function computeBoardWidth(forestSize: number = 8) {
+  return (forestSize - 1 + forestSize - 1) * (SPRITE_W / 2) + SPRITE_W;
+}
+
 export function computeTopMargin(containerH: number, forestSize: number = 8) {
   const boardHeight = computeBoardHeight(forestSize);
   return Math.max(12, (containerH - boardHeight) / 2);
