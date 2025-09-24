@@ -128,4 +128,47 @@ public class Forest {
                && !isPondArea(x, y)
                && plants.stream().noneMatch(tree -> tree.getX() == x && tree.getY() == y);
     }
+
+    /**
+     * 숲 크기 확장 및 나무들 위치 조정
+     * @param offsetX X 좌표 이동량
+     * @param offsetY Y 좌표 이동량
+     */
+    public void expandSizeAndShiftTrees(int offsetX, int offsetY) {
+        this.size += 2; // 8 -> 10 -> 12 ...
+
+        // 기존 나무들의 위치를 메모리상에서 조정
+        for (Tree tree : this.trees) {
+            tree.updatePosition(tree.getX() + offsetX, tree.getY() + offsetY);
+        }
+
+        // 연못을 새로운 중앙으로 이동
+        this.pondX = calculateDefaultPondX(this.size);
+        this.pondY = calculateDefaultPondY(this.size);
+    }
+
+    /**
+     * 나무 위치 일괄 조정을 위한 좌표 계산
+     */
+    public TreePositionShift calculateTreeShift(int offsetX, int offsetY) {
+        return new TreePositionShift(this.id, offsetX, offsetY);
+    }
+
+    // 위치 조정 정보를 담는 내부 클래스
+    public static class TreePositionShift {
+        private final Long forestId;
+        private final int offsetX;
+        private final int offsetY;
+
+        public TreePositionShift(Long forestId, int offsetX, int offsetY) {
+            this.forestId = forestId;
+            this.offsetX = offsetX;
+            this.offsetY = offsetY;
+        }
+
+        // getters
+        public Long getForestId() { return forestId; }
+        public int getOffsetX() { return offsetX; }
+        public int getOffsetY() { return offsetY; }
+    }
 }

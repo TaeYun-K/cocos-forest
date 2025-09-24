@@ -216,4 +216,9 @@ public class Plants {
     public boolean isFullyGrown() {
         return growthStage == GrowthStage.LARGE && health >= 80 && !isDead;
     }
+
+    public void updatePosition(int newX, int newY) {
+        this.x = newX;
+        this.y = newY;
+    }
 }
