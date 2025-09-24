@@ -1,13 +1,22 @@
 package com.E205.cocos_forest.api.forest.service;
 
-import com.E205.cocos_forest.domain.forest.dto.*;
+import com.E205.cocos_forest.api.forest.dto.in.MovePondRequestDto;
+import com.E205.cocos_forest.api.forest.dto.in.MoveTreeRequestDto;
+import com.E205.cocos_forest.api.forest.dto.in.PlaceDecorationRequestDto;
+import com.E205.cocos_forest.api.forest.dto.in.PlantTreeRequestDto;
+import com.E205.cocos_forest.api.forest.dto.out.DecorationResponseDto;
+import com.E205.cocos_forest.api.forest.dto.out.ForestResponseDto;
+import com.E205.cocos_forest.api.forest.dto.out.TreeResponseDto;
+import com.E205.cocos_forest.api.forest.dto.out.WaterTreeResponseDto;
 import com.E205.cocos_forest.domain.forest.entity.Forest;
 import com.E205.cocos_forest.domain.forest.entity.GrowthStage;
 import com.E205.cocos_forest.domain.forest.entity.Plants;
 import com.E205.cocos_forest.domain.forest.entity.Asset;
+import com.E205.cocos_forest.domain.forest.entity.Decoration;
 import com.E205.cocos_forest.domain.forest.repository.ForestRepository;
 import com.E205.cocos_forest.domain.forest.repository.TreeRepository;
 import com.E205.cocos_forest.domain.forest.repository.AssetRepository;
+import com.E205.cocos_forest.domain.forest.repository.DecorationRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +37,7 @@ public class ForestService {
     private final TreeRepository treeRepository;
     private final PointService pointService;
     private final AssetRepository assetRepository;
+    private final DecorationRepository decorationRepository;
 
     /**
      * 사용자의 숲 생성 (최초 1회)
@@ -114,12 +124,79 @@ public class ForestService {
     }
 
     /**
+     * 장식 배치 (자산 가격만큼 포인트 차감)
+     */
+    @Transactional
+    public DecorationResponseDto placeDecoration(Long userId, PlaceDecorationRequestDto request) {
+        // 숲 조회
+        Forest forest = forestRepository.findByUserId(userId)
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
+
+        // 좌표 유효성: 경계/연못
+        Integer x = request.getX();
+        Integer y = request.getY();
+        if (x == null || y == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "좌표가 필요합니다.");
+        }
+        if (x < 0 || x >= forest.getSize() || y < 0 || y >= forest.getSize()) {
+            throw new BaseException(BaseResponseStatus.OUT_OF_FOREST_BOUNDS,
+                String.format("숲 범위를 벗어난 위치입니다. (유효 범위: 0~%d)", forest.getSize()-1));
+        }
+        if (forest.isPondArea(x, y)) {
+            throw new BaseException(BaseResponseStatus.POND_AREA_RESTRICTION);
+        }
+
+        // 점유 확인: 식물/장식 모두 비어 있어야 함
+        boolean plantOccupied = treeRepository.existsByForestIdAndXAndY(forest.getId(), x, y);
+        boolean decoOccupied = decorationRepository.existsByForestIdAndXAndY(forest.getId(), x, y);
+        if (plantOccupied || decoOccupied) {
+            throw new BaseException(BaseResponseStatus.POSITION_OCCUPIED);
+        }
+
+        // 자산 검증: 활성 + 카테고리는 식물이 아니어야 함 (1,2 제외)
+        if (request.getAssetId() == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "assetId가 필요합니다.");
+        }
+        Asset asset = assetRepository.findById(request.getAssetId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "유효하지 않은 자산입니다."));
+        if (asset.getActive() == null || !asset.getActive()) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "비활성 자산은 배치할 수 없습니다.");
+        }
+        Long categoryId = asset.getCategoryId();
+        if (categoryId != null && (categoryId == 1L || categoryId == 2L)) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "식물 자산은 장식 배치 API가 아닌 식물 심기 API를 사용하세요.");
+        }
+
+        // 포인트 차감
+        try {
+            int price = asset.getPricePoints() != null ? asset.getPricePoints() : 0;
+            pointService.spendPoints(userId, price, "DECORATE", forest.getId(), String.format("장식 배치 - %s", asset.getName()));
+        } catch (IllegalArgumentException e) {
+            throw new BaseException(BaseResponseStatus.INSUFFICIENT_POINTS, e.getMessage());
+        }
+
+        // 장식 저장
+        Decoration decoration = Decoration.builder()
+                .forestId(forest.getId())
+                .x(x)
+                .y(y)
+                .assetId(asset.getId())
+                .build();
+
+        Decoration saved = decorationRepository.save(decoration);
+        log.info("사용자 {}가 ({}, {}) 위치에 장식(assetId={})을 배치했습니다. Decoration ID: {}",
+                userId, x, y, asset.getId(), saved.getId());
+
+        return DecorationResponseDto.from(saved);
+    }
+
+    /**
      * 물주기 (50포인트 차감, 하루 3회 제한)
      */
     @Transactional
-    public WaterTreeResponseDto waterTree(Long userId, Long treeId) {
+    public WaterTreeResponseDto waterPlant(Long userId, Long plantId) {
         // 나무 조회 및 권한 확인
-        Plants plants = treeRepository.findById(treeId)
+        Plants plants = treeRepository.findById(plantId)
             .orElseThrow(() -> new BaseException(BaseResponseStatus.TREE_NOT_FOUND));
 
         validateTreeOwnership(plants, userId);
@@ -137,14 +214,14 @@ public class ForestService {
 
         // 포인트 차감 (50포인트)
         try {
-            pointService.spendPoints(userId, 50, "WATER", treeId, "물주기");
+            pointService.spendPoints(userId, 50, "WATER", plantId, "물주기");
         } catch (IllegalArgumentException e) {
             throw new BaseException(BaseResponseStatus.INSUFFICIENT_POINTS, e.getMessage());
         }
 
         treeRepository.save(plants);
-        log.info("사용자 {}가 나무 {}에 물을 주었습니다. 현재 체력: {}/{}",
-            userId, treeId, plants.getHealth(), plants.getMaxHealth());
+        log.info("사용자 {}가 식물 {}에 물을 주었습니다. 현재 체력: {}/{}",
+            userId, plantId, plants.getHealth(), plants.getMaxHealth());
 
         return WaterTreeResponseDto.success(plants);
     }

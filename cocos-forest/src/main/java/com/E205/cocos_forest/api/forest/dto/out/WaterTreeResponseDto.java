@@ -1,4 +1,4 @@
-package com.E205.cocos_forest.domain.forest.dto;
+package com.E205.cocos_forest.api.forest.dto.out;
 
 import com.E205.cocos_forest.domain.forest.entity.Plants;
 import lombok.Builder;
