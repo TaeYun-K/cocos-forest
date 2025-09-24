@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert } from "react-native";
+import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert, Image } from "react-native";
 import { PinchGestureHandler, PanGestureHandler, State as GestureState } from "react-native-gesture-handler";
 import InfoBar from "../components/homescreen/InfoBar";
 import Coco from "../components/homescreen/Coco";
@@ -103,8 +103,9 @@ export default function HomeScreen() {
   const getPanLimits = (z: number) => {
     const contentW = computeBoardWidth(forestSize) * z;
     const contentH = computeBoardHeight(forestSize) * z;
-    // Allow more vertical slack so users can move up/down noticeably.
-    const extraX = layout.w * 0.15;  // 15% of screen width
+    // Allow more slack so users can move further, especially horizontally.
+    // Increase horizontal slack to make left/right panning feel roomier.
+    const extraX = Math.max(180, layout.w * 0.35);  // was 15%
     const extraY = Math.max(240, layout.h * 0.8); // at least 240px or 80% of screen height
     const maxX = Math.max(0, (contentW - layout.w) / 2 + extraX);
     const maxY = Math.max(0, (contentH - layout.h) / 2 + extraY);
@@ -372,6 +373,19 @@ export default function HomeScreen() {
       end={{ x: 0.5, y: 1 }}
       style={s.container}
     >
+      {/* Cloud layer (non-interactive) */}
+      <Image
+        source={require('../../assets/tiles/cloud1.png')}
+        pointerEvents="none"
+        resizeMode="contain"
+        style={{ position: 'absolute', top: 36, left: -24, width: 240, height: 130, opacity: 0.55 }}
+      />
+      <Image
+        source={require('../../assets/tiles/cloud2.png')}
+        pointerEvents="none"
+        resizeMode="contain"
+        style={{ position: 'absolute', top: 120, right: -28, width: 280, height: 150, opacity: 0.48 }}
+      />
       <InfoBar
         points={loading ? "로딩 중..." : points}
         growth={loading ? "0" : String(growth)}
