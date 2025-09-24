@@ -62,6 +62,8 @@ type Props = {
   layoutW: number;
   layoutH?: number;
   zoom?: number;
+  panX?: number;
+  panY?: number;
   showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
@@ -76,6 +78,8 @@ export default function Board({
   layoutW,
   layoutH,
   zoom = 1,
+  panX = 0,
+  panY = 0,
   showHitbox,
   onCellPress,
   selectedCell,

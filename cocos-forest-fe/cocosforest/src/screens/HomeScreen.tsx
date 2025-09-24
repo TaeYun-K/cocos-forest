@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert } from "react-native";
+import { PinchGestureHandler, PanGestureHandler, State as GestureState } from "react-native-gesture-handler";
 import InfoBar from "../components/homescreen/InfoBar";
 import Coco from "../components/homescreen/Coco";
 import Board from "../components/homescreen/Forest";
 import ExpandForestModal from "../components/homescreen/ExpandForestModal";
 import { homeStyles as s } from "../styles/homeStyles";
-import { computeTopMargin } from "../utils/iso";
+import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
 import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest } from "../api/home";
@@ -43,6 +44,80 @@ export default function HomeScreen() {
   const ZOOM_STEP = 0.1;
   const incZoom = () => setZoom((z) => Math.min(MAX_ZOOM, parseFloat((z + ZOOM_STEP).toFixed(2))));
   const decZoom = () => setZoom((z) => Math.max(MIN_ZOOM, parseFloat((z - ZOOM_STEP).toFixed(2))));
+  // Base zoom during pinch (so pinch scale multiplies this)
+  const baseZoomRef = useRef(1);
+  useEffect(() => {
+    baseZoomRef.current = zoom;
+  }, [zoom]);
+
+  const clamp = (v: number) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v));
+  const onPinchEvent = (e: any) => {
+    const scale = e?.nativeEvent?.scale ?? 1;
+    const next = clamp(baseZoomRef.current * scale);
+    setZoom(next);
+  };
+  const onPinchStateChange = (e: any) => {
+    const state = e?.nativeEvent?.state;
+    if (state === GestureState.BEGAN) {
+      // sync base zoom at start
+      baseZoomRef.current = zoom;
+    }
+    if (state === GestureState.END || state === GestureState.CANCELLED || state === GestureState.FAILED) {
+      const scale = e?.nativeEvent?.scale ?? 1;
+      const next = clamp(baseZoomRef.current * scale);
+      baseZoomRef.current = next;
+      setZoom(next);
+    }
+  };
+
+  // Pan (drag) state for board-level translation
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const panBaseRef = useRef({ x: 0, y: 0 });
+  const onPanEvent = (e: any) => {
+    const tx = e?.nativeEvent?.translationX ?? 0;
+    const ty = e?.nativeEvent?.translationY ?? 0;
+    const { x: baseX, y: baseY } = panBaseRef.current;
+    const { maxX, maxY } = getPanLimits(zoom);
+    const nextX = Math.max(-maxX, Math.min(maxX, baseX + tx));
+    const nextY = Math.max(-maxY, Math.min(maxY, baseY + ty));
+    setPan({ x: nextX, y: nextY });
+  };
+  const onPanStateChange = (e: any) => {
+    const state = e?.nativeEvent?.state;
+    if (state === GestureState.BEGAN) {
+      panBaseRef.current = { ...pan };
+    }
+    if (state === GestureState.END || state === GestureState.CANCELLED || state === GestureState.FAILED) {
+      const tx = e?.nativeEvent?.translationX ?? 0;
+      const ty = e?.nativeEvent?.translationY ?? 0;
+      const { x: baseX, y: baseY } = panBaseRef.current;
+      const { maxX, maxY } = getPanLimits(zoom);
+      const nextX = Math.max(-maxX, Math.min(maxX, baseX + tx));
+      const nextY = Math.max(-maxY, Math.min(maxY, baseY + ty));
+      panBaseRef.current = { x: nextX, y: nextY };
+      setPan(panBaseRef.current);
+    }
+  };
+
+  // Pan limits based on content size vs container size and zoom
+  const getPanLimits = (z: number) => {
+    const contentW = computeBoardWidth(forestSize) * z;
+    const contentH = computeBoardHeight(forestSize) * z;
+    const maxX = Math.max(0, (contentW - layout.w) / 2);
+    const maxY = Math.max(0, (contentH - layout.h) / 2);
+    return { maxX, maxY };
+  };
+
+  // When zoom or layout changes, clamp current pan within new limits
+  useEffect(() => {
+    const { maxX, maxY } = getPanLimits(zoom);
+    setPan((p) => ({ x: Math.max(-maxX, Math.min(maxX, p.x)), y: Math.max(-maxY, Math.min(maxY, p.y)) }));
+    const clamped = {
+      x: Math.max(-maxX, Math.min(maxX, panBaseRef.current.x)),
+      y: Math.max(-maxY, Math.min(maxY, panBaseRef.current.y)),
+    };
+    panBaseRef.current = clamped;
+  }, [zoom, layout.w, layout.h, forestSize]);
 
   // 포인트/성장률 (API)
   const [points, setPoints] = useState("0");
@@ -298,21 +373,27 @@ export default function HomeScreen() {
         onToggle={() => setShowCocoTip((v) => !v)}
       />
 
-      <View style={{ flex: 1 }} onLayout={onLayout}>
-        <Board
-          cells={cells}
-          markers={markers}
-          layoutW={layout.w}
-          layoutH={layout.h}
-          zoom={zoom}
-          showHitbox={showHitbox}
-          onCellPress={handleCellPress}
-          selectedCell={selected}
-          forestInfo={forestInfo}
-          onDeadTreePress={handleDeadTreePress}
-          onExpandableAreaPress={handleExpandableAreaPress}
-        />
-      </View>
+      <PinchGestureHandler onGestureEvent={onPinchEvent} onHandlerStateChange={onPinchStateChange}>
+        <PanGestureHandler onGestureEvent={onPanEvent} onHandlerStateChange={onPanStateChange} minDist={10} enabled={zoom > 1}>
+          <View style={{ flex: 1 }} onLayout={onLayout}>
+            <View style={{ flex: 1, transform: [{ translateX: pan.x }, { translateY: pan.y }] }}>
+              <Board
+                cells={cells}
+                markers={markers}
+                layoutW={layout.w}
+                layoutH={layout.h}
+                zoom={zoom}
+                showHitbox={showHitbox}
+                onCellPress={handleCellPress}
+                selectedCell={selected}
+                forestInfo={forestInfo}
+                onDeadTreePress={handleDeadTreePress}
+                onExpandableAreaPress={handleExpandableAreaPress}
+              />
+            </View>
+          </View>
+        </PanGestureHandler>
+      </PinchGestureHandler>
 
       {/* Zoom controls (+ / -) */}
       <View
