@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Challenge, ChallengeType, ChallengeStatus, ChallengeInstance, TodayChallengesResponse } from '../types/challenge';
 import { challengeApi } from '../api/challenge';
 
@@ -18,7 +19,8 @@ interface ChallengeState {
   completeChallenge: (challengeId: string) => void;
   claimReward: (challengeId: string) => void;
   claimChallengeReward: (userChallengeId: string) => Promise<boolean>;
-  checkAttendance: () => void;
+  checkAttendance: () => Promise<void>;
+  isAttendanceCheckedToday: () => Promise<boolean>;
   updateSteps: (steps: number) => void;
   checkTransportUsage: (hasUsed: boolean) => void;
   verifyTumbler: (isVerified: boolean) => void;
@@ -98,6 +100,61 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   loadTodayChallenges: async () => {
     set({ isLoading: true });
     try {
+      // 출석체크 상태와 보상 수령 상태를 먼저 확인 (로컬 우선)
+      const isAttendanceChecked = await get().isAttendanceCheckedToday();
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 오늘 수령한 보상 목록 가져오기
+      let claimedRewardsToday: string[] = [];
+      try {
+        const claimedRewardsData = JSON.parse(await AsyncStorage.getItem('claimedRewardsData') || '{}');
+        claimedRewardsToday = claimedRewardsData[today] || [];
+      } catch (error) {
+      }
+      
+      // 텀블러 인증 완료 상태 가져오기
+      let isTumblerVerifiedToday = false;
+      try {
+        const tumblerData = JSON.parse(await AsyncStorage.getItem('tumblerData') || '{}');
+        isTumblerVerifiedToday = tumblerData[today] || false;
+      } catch (error) {
+      }
+      
+      // 출석체크가 완료된 경우 백엔드 API 호출을 건너뛰고 로컬 상태만 업데이트
+      if (isAttendanceChecked) {
+        const currentChallenges = get().challenges;
+        const updatedChallenges = currentChallenges.map(challenge => {
+          if (challenge.id === 'attendance') {
+            return {
+              ...challenge,
+              status: 'completed' as const,
+              progress: challenge.maxProgress,
+              rewardClaimed: true, // 출석체크 완료 시 보상도 자동 수령
+            };
+          }
+          // 보상 수령 상태 복원
+          if (claimedRewardsToday.includes(challenge.id)) {
+            return {
+              ...challenge,
+              rewardClaimed: true,
+            };
+          }
+          // 텀블러 인증 완료 상태 복원
+          if (challenge.id === 'tumbler' && isTumblerVerifiedToday) {
+            return {
+              ...challenge,
+              status: 'completed' as const,
+              progress: challenge.maxProgress,
+            };
+          }
+          return challenge;
+        });
+        set({ challenges: updatedChallenges });
+        set({ isLoading: false });
+        return;
+      }
+      
+      // 출석체크가 완료되지 않은 경우에만 백엔드 API 호출
       const response = await challengeApi.getTodayChallenges();
       
       if (response.isSuccess && response.result) {
@@ -108,15 +165,27 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
           if (existingChallenge) {
             const newStatus = challengeInstance.status === 'completed' ? 'completed' : 
                              challengeInstance.status === 'in_progress' ? 'in_progress' : 'pending';
-            const newProgress = challengeInstance.status === 'completed' ? existingChallenge.maxProgress : 
-                               existingChallenge.progress;
+            const newProgress = newStatus === 'completed' ? existingChallenge.maxProgress : 
+                               newStatus === 'in_progress' ? Math.max(existingChallenge.progress, 1) : 0;
+            
+            // 보상 수령 상태는 로컬 저장소 우선, 없으면 백엔드 데이터 사용
+            const isRewardClaimed = claimedRewardsToday.includes(existingChallenge.id) || challengeInstance.awarded;
+            
+            // 텀블러 인증 완료 상태는 로컬 저장소 우선
+            let finalStatus = newStatus;
+            let finalProgress = newProgress;
+            
+            if (existingChallenge.id === 'tumbler' && isTumblerVerifiedToday) {
+              finalStatus = 'completed';
+              finalProgress = existingChallenge.maxProgress;
+            }
             
             return {
               ...existingChallenge,
-              status: newStatus,
+              status: finalStatus,
               points: challengeInstance.rewardPoints,
-              rewardClaimed: challengeInstance.awarded,
-              progress: newProgress,
+              rewardClaimed: isRewardClaimed,
+              progress: finalProgress,
             };
           }
           return existingChallenge;
@@ -127,7 +196,6 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
         set({ challenges: initialChallenges });
       }
     } catch (error) {
-      console.error('백엔드 API 호출 실패:', error);
       set({ challenges: initialChallenges });
     } finally {
       set({ isLoading: false });
@@ -161,13 +229,11 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
 
   completeChallenge: (challengeId: string) => {
     const now = new Date().toISOString();
-    console.log(`🎯 챌린지 완료 처리: ${challengeId}`);
     
     set((state) => {
       const updatedChallenges = state.challenges.map((challenge) => {
         if (challenge.id === challengeId) {
           const updatedChallenge = { ...challenge, status: 'completed', completedAt: now };
-          console.log(`✅ 챌린지 완료됨:`, updatedChallenge);
           return updatedChallenge;
         }
         return challenge;
@@ -180,8 +246,10 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
     });
   },
 
-  claimReward: (challengeId: string) => {
+  claimReward: async (challengeId: string) => {
     const now = new Date().toISOString();
+    const today = new Date().toISOString().split('T')[0];
+    
     set((state) => ({
       challenges: state.challenges.map((challenge) =>
         challenge.id === challengeId
@@ -190,6 +258,19 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
       ),
       claimedRewards: [...state.claimedRewards, challengeId],
     }));
+    
+    // AsyncStorage에 보상 수령 상태 저장
+    try {
+      const claimedRewardsData = JSON.parse(await AsyncStorage.getItem('claimedRewardsData') || '{}');
+      if (!claimedRewardsData[today]) {
+        claimedRewardsData[today] = [];
+      }
+      if (!claimedRewardsData[today].includes(challengeId)) {
+        claimedRewardsData[today].push(challengeId);
+        await AsyncStorage.setItem('claimedRewardsData', JSON.stringify(claimedRewardsData));
+      }
+    } catch (error) {
+    }
   },
 
   claimChallengeReward: async (userChallengeId: string): Promise<boolean> => {
@@ -212,19 +293,46 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
         
         return true;
       } else {
-        console.error('보상 수령 실패:', response.message);
         return false;
       }
     } catch (error) {
-      console.error('챌린지 보상 수령 오류:', error);
       return false;
     }
   },
 
-  checkAttendance: () => {
+  checkAttendance: async () => {
     const { updateChallengeProgress, completeChallenge } = get();
+    
+    // 오늘 날짜 확인
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 이미 오늘 출석체크를 했는지 확인
+    const isAlreadyChecked = await get().isAttendanceCheckedToday();
+    if (isAlreadyChecked) {
+      return;
+    }
+    
+    // 출석체크 완료 처리
     updateChallengeProgress('attendance', 1);
     completeChallenge('attendance');
+    
+    // AsyncStorage에 오늘 출석체크 완료 상태 저장
+    try {
+      const attendanceData = JSON.parse(await AsyncStorage.getItem('attendanceData') || '{}');
+      attendanceData[today] = true;
+      await AsyncStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+    } catch (error) {
+    }
+  },
+
+  isAttendanceCheckedToday: async (): Promise<boolean> => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const attendanceData = JSON.parse(await AsyncStorage.getItem('attendanceData') || '{}');
+      return attendanceData[today] === true;
+    } catch (error) {
+      return false;
+    }
   },
 
   updateSteps: (steps: number) => {
@@ -244,12 +352,22 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
     }
   },
 
-  verifyTumbler: (isVerified: boolean) => {
+  verifyTumbler: async (isVerified: boolean) => {
     const { updateChallengeProgress, completeChallenge, setTumblerVerificationFailed } = get();
+    const today = new Date().toISOString().split('T')[0];
+    
     if (isVerified) {
       updateChallengeProgress('tumbler', 1);
       completeChallenge('tumbler');
       setTumblerVerificationFailed(false); // 성공 시 실패 상태 초기화
+      
+      // 텀블러 인증 완료 상태를 AsyncStorage에 저장
+      try {
+        const tumblerData = JSON.parse(await AsyncStorage.getItem('tumblerData') || '{}');
+        tumblerData[today] = true;
+        await AsyncStorage.setItem('tumblerData', JSON.stringify(tumblerData));
+      } catch (error) {
+      }
     } else {
       setTumblerVerificationFailed(true); // 실패 시 상태 설정
     }
