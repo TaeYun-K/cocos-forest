@@ -10,6 +10,7 @@ import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../util
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
 import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest } from "../api/home";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
   // 숲 정보 상태 (확장을 위해 최상단으로 이동)
@@ -366,7 +367,12 @@ export default function HomeScreen() {
   ];
 
   return (
-    <View style={s.container}>
+    <LinearGradient
+      colors={["#87CEEB", "#E0F7FA"]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={s.container}
+    >
       <InfoBar
         points={loading ? "로딩 중..." : points}
         growth={loading ? "0" : String(growth)}
@@ -560,6 +566,6 @@ export default function HomeScreen() {
         currentPoints={pointsNumber}
         loading={expandLoading}
       />
-    </View>
+    </LinearGradient>
   );
 }

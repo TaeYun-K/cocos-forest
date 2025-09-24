@@ -15,7 +15,9 @@ import {
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
 
-const DIRT_IMG = require("../../../assets/tiles/dirt.png");
+const DIRT_IMG2 = require("../../../assets/tiles/grassdark.png");
+const DIRT_IMG = require("../../../assets/tiles/grassweeds.png");
+const DIRT_PLAIN_IMG = require("../../../assets/tiles/dirt.png");
 const GRASS_IMG = require("../../../assets/tiles/grass.png");
 const WATER_IMG = require("../../../assets/tiles/water.png");
 const MARKER_IMG = require("../../../assets/models/medium_tree.png");
@@ -117,6 +119,31 @@ export default function Board({
   // 선택된 셀인지 확인하는 함수
   const isSelectedCell = (cell: Cell) => {
     return selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z;
+  };
+
+  // Deterministic pseudo-random (0..1) based on tile coords
+  const rand01 = (x: number, z: number, seed = 1337) => {
+    let n = (x | 0) * 374761393 + ((z | 0) * 668265263) + seed;
+    n = (n ^ (n >>> 13)) >>> 0;
+    n = (n * 1274126177) >>> 0;
+    return (n >>> 0) / 0x100000000;
+  };
+
+  // Background/dirt variant per tile
+  const getDirtImage = (x: number, z: number) => {
+    const r = rand01(x, z);
+    if (r < 0.05) return DIRT_PLAIN_IMG; // a few bare dirt tiles
+    if (r < 0.35) return DIRT_IMG2;      // patchy grass-dirt
+    if (r < 0.70) return DIRT_IMG;       // weeds
+    return GRASS_IMG;                    // full grass
+  };
+
+  // Slight variation on grass top faces (non-water)
+  const getGrassTopImage = (x: number, z: number) => {
+    const r = rand01(x * 3, z * 3, 911);
+    if (r < 0.12) return DIRT_IMG;  // subtle weeds
+    if (r < 0.22) return DIRT_IMG2; // darker patch
+    return GRASS_IMG;
   };
 
   // 죽은 나무인지 확인하는 함수
@@ -287,7 +314,9 @@ export default function Board({
                 disabled={!isExpandable}
               >
                 <Image
-                  source={DIRT_IMG}
+                  source={(actualX >= 0 && actualX < forestSize && actualZ >= 0 && actualZ < forestSize)
+                    ? GRASS_IMG
+                    : getDirtImage(actualX, actualZ)}
                   style={{
                     width: SPRITE_W,
                     height: FOOT_H + WALL_H,
