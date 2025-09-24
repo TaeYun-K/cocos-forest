@@ -103,8 +103,11 @@ export default function HomeScreen() {
   const getPanLimits = (z: number) => {
     const contentW = computeBoardWidth(forestSize) * z;
     const contentH = computeBoardHeight(forestSize) * z;
-    const maxX = Math.max(0, (contentW - layout.w) / 2);
-    const maxY = Math.max(0, (contentH - layout.h) / 2);
+    // Allow more vertical slack so users can move up/down noticeably.
+    const extraX = layout.w * 0.15;  // 15% of screen width
+    const extraY = Math.max(240, layout.h * 0.8); // at least 240px or 80% of screen height
+    const maxX = Math.max(0, (contentW - layout.w) / 2 + extraX);
+    const maxY = Math.max(0, (contentH - layout.h) / 2 + extraY);
     return { maxX, maxY };
   };
 
@@ -374,7 +377,7 @@ export default function HomeScreen() {
       />
 
       <PinchGestureHandler onGestureEvent={onPinchEvent} onHandlerStateChange={onPinchStateChange}>
-        <PanGestureHandler onGestureEvent={onPanEvent} onHandlerStateChange={onPanStateChange} minDist={10} enabled={zoom > 1}>
+        <PanGestureHandler onGestureEvent={onPanEvent} onHandlerStateChange={onPanStateChange} minDist={10}>
           <View style={{ flex: 1 }} onLayout={onLayout}>
             <View style={{ flex: 1, transform: [{ translateX: pan.x }, { translateY: pan.y }] }}>
               <Board
