@@ -31,9 +31,75 @@ export const useDayDetails = (year: number, month: number, day: number, enabled:
   const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   const cacheConfig = getDateBasedCacheConfig(date);
 
+  // 임시로 API 호출 비활성화하고 더미 데이터 반환
+  const createDummyData = (): DayData => ({
+    date,
+    totals: {
+      amountTotal: 150000,
+      transactionCount: 5,
+      carbonTotalKg: 12.5,
+    },
+    transactions: [
+      {
+        id: '1',
+        merchantName: '서울메트로',
+        amountKrw: 1500,
+        carbonKg: 0.8,
+        txTime: '08:30',
+        categoryName: '대중교통',
+        cardName: '신한카드',
+        cardLast4: '1234',
+      },
+      {
+        id: '2',
+        merchantName: '스타벅스',
+        amountKrw: 4500,
+        carbonKg: 1.2,
+        txTime: '10:15',
+        categoryName: '카페',
+        cardName: '신한카드',
+        cardLast4: '1234',
+      },
+      {
+        id: '3',
+        merchantName: '편의점',
+        amountKrw: 3500,
+        carbonKg: 0.5,
+        txTime: '12:30',
+        categoryName: '생활용품',
+        cardName: '신한카드',
+        cardLast4: '1234',
+      },
+      {
+        id: '4',
+        merchantName: '지하철',
+        amountKrw: 1400,
+        carbonKg: 0.7,
+        txTime: '18:20',
+        categoryName: '대중교통',
+        cardName: '신한카드',
+        cardLast4: '1234',
+      },
+      {
+        id: '5',
+        merchantName: '마트',
+        amountKrw: 135000,
+        carbonKg: 9.3,
+        txTime: '19:45',
+        categoryName: '식품',
+        cardName: '신한카드',
+        cardLast4: '1234',
+      },
+    ],
+  });
+
   return useQuery<DayData>({
     queryKey: dashboardQueryKeys.dayDetail(date),
-    queryFn: () => fetchDayDetails(date, true),
+    queryFn: () => {
+      // 임시로 더미 데이터 반환
+      console.log(`📊 더미 데이터 반환: ${date}`);
+      return Promise.resolve(createDummyData());
+    },
     enabled,
     ...cacheConfig,
     ...QUERY_CONFIG.BACKGROUND_REFETCH,
@@ -43,9 +109,79 @@ export const useDayDetails = (year: number, month: number, day: number, enabled:
 
 // Today Data Query Hook
 export const useTodayData = () => {
+  // 임시로 더미 데이터 반환
+  const createTodayDummyData = (): DayData => {
+    const today = new Date();
+    const date = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    
+    return {
+      date,
+      totals: {
+        amountTotal: 150000,
+        transactionCount: 5,
+        carbonTotalKg: 12.5,
+      },
+      transactions: [
+        {
+          id: '1',
+          merchantName: '서울메트로',
+          amountKrw: 1500,
+          carbonKg: 0.8,
+          txTime: '08:30',
+          categoryName: '대중교통',
+          cardName: '신한카드',
+          cardLast4: '1234',
+        },
+        {
+          id: '2',
+          merchantName: '스타벅스',
+          amountKrw: 4500,
+          carbonKg: 1.2,
+          txTime: '10:15',
+          categoryName: '카페',
+          cardName: '신한카드',
+          cardLast4: '1234',
+        },
+        {
+          id: '3',
+          merchantName: '편의점',
+          amountKrw: 3500,
+          carbonKg: 0.5,
+          txTime: '12:30',
+          categoryName: '생활용품',
+          cardName: '신한카드',
+          cardLast4: '1234',
+        },
+        {
+          id: '4',
+          merchantName: '지하철',
+          amountKrw: 1400,
+          carbonKg: 0.7,
+          txTime: '18:20',
+          categoryName: '대중교통',
+          cardName: '신한카드',
+          cardLast4: '1234',
+        },
+        {
+          id: '5',
+          merchantName: '마트',
+          amountKrw: 135000,
+          carbonKg: 9.3,
+          txTime: '19:45',
+          categoryName: '식품',
+          cardName: '신한카드',
+          cardLast4: '1234',
+        },
+      ],
+    };
+  };
+
   return useQuery<DayData>({
     queryKey: dashboardQueryKeys.todayData(),
-    queryFn: fetchTodayData,
+    queryFn: () => {
+      console.log('📊 오늘 데이터 더미 반환');
+      return Promise.resolve(createTodayDummyData());
+    },
     ...QUERY_CONFIG.TODAY_DATA,
     ...QUERY_CONFIG.BACKGROUND_REFETCH,
     ...QUERY_CONFIG.ERROR_HANDLING,

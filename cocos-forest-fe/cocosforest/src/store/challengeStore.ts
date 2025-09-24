@@ -8,6 +8,7 @@ interface ChallengeState {
   claimedRewards: string[];
   todayChallenges: ChallengeInstance[];
   isLoading: boolean;
+  tumblerVerificationFailed: boolean; // 텀블러 인증 실패 상태
   
   // Actions
   initializeChallenges: () => void;
@@ -21,6 +22,7 @@ interface ChallengeState {
   updateSteps: (steps: number) => void;
   checkTransportUsage: (hasUsed: boolean) => void;
   verifyTumbler: (isVerified: boolean) => void;
+  setTumblerVerificationFailed: (failed: boolean) => void;
 }
 
 const initialChallenges: Challenge[] = [
@@ -84,37 +86,49 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   claimedRewards: [],
   todayChallenges: [],
   isLoading: false,
+  tumblerVerificationFailed: false,
 
   initializeChallenges: () => {
-    set({ challenges: initialChallenges });
+    set({ 
+      challenges: initialChallenges,
+      isLoading: false
+    });
   },
 
   loadTodayChallenges: async () => {
     set({ isLoading: true });
     try {
       const response = await challengeApi.getTodayChallenges();
-      if (response.isSuccess) {
+      
+      if (response.isSuccess && response.result) {
         set({ todayChallenges: response.result.challenges });
-        // 백엔드 데이터를 로컬 챌린지 형식으로 변환하여 업데이트
+        
         const updatedChallenges = response.result.challenges.map((challengeInstance) => {
           const existingChallenge = get().challenges.find(c => c.id === challengeInstance.challengeId);
           if (existingChallenge) {
+            const newStatus = challengeInstance.status === 'completed' ? 'completed' : 
+                             challengeInstance.status === 'in_progress' ? 'in_progress' : 'pending';
+            const newProgress = challengeInstance.status === 'completed' ? existingChallenge.maxProgress : 
+                               existingChallenge.progress;
+            
             return {
               ...existingChallenge,
-              status: challengeInstance.status === 'completed' ? 'completed' : 
-                     challengeInstance.status === 'in_progress' ? 'in_progress' : 'pending',
+              status: newStatus,
               points: challengeInstance.rewardPoints,
               rewardClaimed: challengeInstance.awarded,
-              progress: challengeInstance.status === 'completed' ? existingChallenge.maxProgress : 0,
+              progress: newProgress,
             };
           }
           return existingChallenge;
         }).filter(Boolean);
         
         set({ challenges: updatedChallenges });
+      } else {
+        set({ challenges: initialChallenges });
       }
     } catch (error) {
-      console.error('Failed to load today challenges:', error);
+      console.error('백엔드 API 호출 실패:', error);
+      set({ challenges: initialChallenges });
     } finally {
       set({ isLoading: false });
     }
@@ -147,14 +161,23 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
 
   completeChallenge: (challengeId: string) => {
     const now = new Date().toISOString();
-    set((state) => ({
-      challenges: state.challenges.map((challenge) =>
-        challenge.id === challengeId
-          ? { ...challenge, status: 'completed', completedAt: now }
-          : challenge
-      ),
-      completedChallenges: [...state.completedChallenges, challengeId],
-    }));
+    console.log(`🎯 챌린지 완료 처리: ${challengeId}`);
+    
+    set((state) => {
+      const updatedChallenges = state.challenges.map((challenge) => {
+        if (challenge.id === challengeId) {
+          const updatedChallenge = { ...challenge, status: 'completed', completedAt: now };
+          console.log(`✅ 챌린지 완료됨:`, updatedChallenge);
+          return updatedChallenge;
+        }
+        return challenge;
+      });
+      
+      return {
+        challenges: updatedChallenges,
+        completedChallenges: [...state.completedChallenges, challengeId],
+      };
+    });
   },
 
   claimReward: (challengeId: string) => {
@@ -172,8 +195,8 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   claimChallengeReward: async (userChallengeId: string): Promise<boolean> => {
     try {
       const response = await challengeApi.claimChallengeReward(userChallengeId);
+      
       if (response.isSuccess) {
-        // 해당 챌린지 인스턴스의 보상 수령 상태 업데이트
         set((state) => ({
           todayChallenges: state.todayChallenges.map((challenge) =>
             challenge.instanceId === userChallengeId
@@ -182,17 +205,18 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
           ),
         }));
         
-        // 로컬 챌린지 상태도 업데이트
         const challengeInstance = get().todayChallenges.find(c => c.instanceId === userChallengeId);
         if (challengeInstance) {
           get().claimReward(challengeInstance.challengeId);
         }
         
         return true;
+      } else {
+        console.error('보상 수령 실패:', response.message);
+        return false;
       }
-      return false;
     } catch (error) {
-      console.error('Failed to claim challenge reward:', error);
+      console.error('챌린지 보상 수령 오류:', error);
       return false;
     }
   },
@@ -206,6 +230,7 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   updateSteps: (steps: number) => {
     const { updateChallengeProgress, completeChallenge } = get();
     updateChallengeProgress('steps', steps);
+    
     if (steps >= 10000) {
       completeChallenge('steps');
     }
@@ -220,11 +245,18 @@ export const useChallengeStore = create<ChallengeState>((set, get) => ({
   },
 
   verifyTumbler: (isVerified: boolean) => {
-    const { updateChallengeProgress, completeChallenge } = get();
+    const { updateChallengeProgress, completeChallenge, setTumblerVerificationFailed } = get();
     if (isVerified) {
       updateChallengeProgress('tumbler', 1);
       completeChallenge('tumbler');
+      setTumblerVerificationFailed(false); // 성공 시 실패 상태 초기화
+    } else {
+      setTumblerVerificationFailed(true); // 실패 시 상태 설정
     }
+  },
+
+  setTumblerVerificationFailed: (failed: boolean) => {
+    set({ tumblerVerificationFailed: failed });
   },
 }));
 

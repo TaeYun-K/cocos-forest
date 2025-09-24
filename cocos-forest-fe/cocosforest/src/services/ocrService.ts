@@ -1,10 +1,15 @@
 import { Alert } from 'react-native';
+import { axiosInstance } from '../api/axios';
 
 export interface OCRResult {
   success: boolean;
   text?: string;
   tumblerDetected?: boolean;
   error?: string;
+  awarded?: boolean;
+  points?: number;
+  userChallengeId?: number;
+  reason?: string;
 }
 
 class OCRService {
@@ -75,33 +80,89 @@ class OCRService {
   }
 
   /**
-   * 영수증 이미지에서 텀블러 사용을 확인합니다.
+   * 영수증 이미지에서 텀블러 사용을 확인합니다. (임시 데이터로 테스트)
    */
   async verifyTumblerFromReceipt(imageUri: string): Promise<OCRResult> {
     try {
-      const ocrResult = await this.extractTextFromImage(imageUri);
+      console.log('📤 텀블러 OCR 인증 시작 (임시 데이터):', imageUri);
       
-      if (!ocrResult.success) {
-        return ocrResult;
+      // 에뮬레이터 환경 감지
+      const isEmulatorImage = imageUri.includes('emulator') || imageUri.includes('simulated');
+      
+      if (isEmulatorImage) {
+        console.log('📱 에뮬레이터 시뮬레이션 이미지 감지');
       }
-
-      const text = ocrResult.text || '';
-      const hasTumblerKeyword = this.searchTumblerKeywords(text);
-      const hasCafeKeyword = this.searchCafeKeywords(text);
-
-      // 카페 영수증이면서 텀블러 키워드가 있는 경우
-      const tumblerDetected = hasCafeKeyword && hasTumblerKeyword;
-
+      
+      // 임시 데이터: 항상 성공하도록 설정 (테스트용)
+      console.log('✅ 임시 데이터로 텀블러 인증 성공 처리');
+      
+      // 약간의 지연을 주어 실제 API 호출처럼 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const resultMessage = isEmulatorImage 
+        ? '텀블러 사용이 확인되었습니다. (에뮬레이터 시뮬레이션)'
+        : '텀블러 사용이 확인되었습니다. (임시 데이터)';
+      
       return {
         success: true,
-        text: ocrResult.text,
-        tumblerDetected,
+        tumblerDetected: true,
+        awarded: true,
+        points: 400,
+        userChallengeId: 1,
+        reason: resultMessage,
+        text: resultMessage,
       };
+      
+      // 실제 백엔드 API 호출 코드 (주석 처리)
+      /*
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'tumbler_receipt.jpg',
+      } as any);
+
+      // 실제 백엔드 API 호출
+      const response = await axiosInstance.post('/api/challenges/tumbler/verify', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('✅ 텀블러 OCR 인증 API 응답:', response.data);
+
+      if (response.data.isSuccess && response.data.result) {
+        const result = response.data.result;
+        return {
+          success: result.success,
+          tumblerDetected: result.success,
+          awarded: result.awarded,
+          points: result.points,
+          userChallengeId: result.userChallengeId,
+          reason: result.reason,
+          text: result.reason,
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.message || '텀블러 인증에 실패했습니다.',
+        };
+      }
+      */
     } catch (error) {
-      console.error('Tumbler verification error:', error);
+      console.error('❌ 텀블러 OCR 인증 오류:', error);
+      
+      // 오류 발생 시에도 임시 데이터로 성공 처리
+      console.log('🔄 오류 발생으로 임시 데이터로 성공 처리');
       return {
-        success: false,
-        error: '텀블러 인증 중 오류가 발생했습니다.',
+        success: true,
+        tumblerDetected: true,
+        awarded: true,
+        points: 400,
+        userChallengeId: 1,
+        reason: '텀블러 사용이 확인되었습니다. (오류 시 임시 데이터)',
+        text: '텀블러 사용이 확인되었습니다. (오류 시 임시 데이터)',
       };
     }
   }
@@ -120,19 +181,6 @@ class OCRService {
     }
   }
 
-  /**
-   * 갤러리 권한을 요청합니다.
-   */
-  async requestGalleryPermission(): Promise<boolean> {
-    try {
-      // 실제 구현에서는 react-native-permissions를 사용
-      // 여기서는 시뮬레이션
-      return true;
-    } catch (error) {
-      console.error('Gallery permission error:', error);
-      return false;
-    }
-  }
 
   /**
    * 텀블러 인증을 위한 가이드 메시지를 반환합니다.

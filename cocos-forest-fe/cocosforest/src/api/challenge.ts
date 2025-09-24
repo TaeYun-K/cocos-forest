@@ -2,7 +2,6 @@ import { axiosInstance } from './axios';
 import { API_CONFIG, getApiUrl } from '../config/apiConfig';
 import { TodayChallengesResponse, ChallengeInstance, ClaimRewardResponse } from '../types/challenge';
 
-// 챌린지 관련 API 타입 정의
 export interface ChallengeProgressRequest {
   challengeType: 'attendance' | 'steps' | 'transport' | 'tumbler';
   progress: number;
@@ -56,291 +55,246 @@ export interface RewardClaimResponse {
   message: string;
 }
 
-// 챌린지 API 서비스
 export const challengeApi = {
   // 오늘의 챌린지 조회 (GET /api/challenges/today)
   getTodayChallenges: async (): Promise<TodayChallengesResponse> => {
-    if (API_CONFIG.USE_MOCK_API) {
-      // 가상 API - 실제 백엔드 구현 시 교체
-      console.log('📤 오늘의 챌린지 조회 API 호출 (가상)');
-      return {
-        httpStatus: "200 OK",
-        isSuccess: true,
-        message: "오늘의 챌린지를 성공적으로 조회했습니다.",
-        code: 0,
-        result: {
-          date: new Date().toISOString().split('T')[0],
-          fresh: true,
-          lastSyncedAt: new Date().toISOString(),
-          challenges: [
-            {
-              instanceId: "attendance-001",
-              challengeId: "attendance",
-              title: "출석체크",
-              rule: "매일 앱에 접속하여 출석체크를 완료하세요",
-              rewardPoints: 100,
-              status: "pending",
-              claimable: false,
-              metrics: {},
-              additionalProp1: {},
-              additionalProp2: {},
-              additionalProp3: {},
-              awarded: false,
-              awardedAt: "",
-              message: "출석체크를 완료하세요"
-            },
-            {
-              instanceId: "steps-001",
-              challengeId: "steps",
-              title: "만보기",
-              rule: "하루 10,000보를 걸어보세요",
-              rewardPoints: 200,
-              status: "pending",
-              claimable: false,
-              metrics: {},
-              additionalProp1: {},
-              additionalProp2: {},
-              additionalProp3: {},
-              awarded: false,
-              awardedAt: "",
-              message: "10,000보를 걸어보세요"
-            },
-            {
-              instanceId: "transport-001",
-              challengeId: "transport",
-              title: "대중교통이용하기",
-              rule: "대중교통을 이용하여 환경을 보호하세요",
-              rewardPoints: 300,
-              status: "pending",
-              claimable: false,
-              metrics: {},
-              additionalProp1: {},
-              additionalProp2: {},
-              additionalProp3: {},
-              awarded: false,
-              awardedAt: "",
-              message: "대중교통을 이용해보세요"
-            },
-            {
-              instanceId: "tumbler-001",
-              challengeId: "tumbler",
-              title: "텀블러 이용하기",
-              rule: "카페에서 텀블러를 사용하고 인증하세요",
-              rewardPoints: 400,
-              status: "pending",
-              claimable: false,
-              metrics: {},
-              additionalProp1: {},
-              additionalProp2: {},
-              additionalProp3: {},
-              awarded: false,
-              awardedAt: "",
-              message: "텀블러를 사용하고 인증하세요"
-            }
-          ]
-        }
-      };
-    } else {
-      // 실제 백엔드 API 호출
-      const response = await axiosInstance.get(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.TODAY));
-      return response.data;
-    }
+    const response = await axiosInstance.get(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.TODAY));
+    return response.data;
   },
 
   // 챌린지 보상 수령 (POST /api/challenges/{userChallengeId}/claim)
   claimChallengeReward: async (userChallengeId: string): Promise<ClaimRewardResponse> => {
-    if (API_CONFIG.USE_MOCK_API) {
-      // 가상 API - 실제 백엔드 구현 시 교체
-      console.log('📤 챌린지 보상 수령 API 호출 (가상):', userChallengeId);
-      return {
-        httpStatus: "200 OK",
-        isSuccess: true,
-        message: "보상을 성공적으로 수령했습니다.",
-        code: 0,
-        result: "보상 수령 완료"
-      };
-    } else {
-      // 실제 백엔드 API 호출
-      const response = await axiosInstance.post(
-        getApiUrl(`${API_CONFIG.CHALLENGE_ENDPOINTS.CLAIM}/${userChallengeId}/claim`)
-      );
-      return response.data;
-    }
+    const response = await axiosInstance.post(
+      getApiUrl(`${API_CONFIG.CHALLENGE_ENDPOINTS.CLAIM}/${userChallengeId}/claim`)
+    );
+    return response.data;
   },
+
   // 챌린지 진행률 업데이트
   updateProgress: async (data: ChallengeProgressRequest): Promise<ChallengeProgressResponse> => {
-    // 가상 API - 실제 백엔드 구현 시 교체
-    console.log('📤 챌린지 진행률 업데이트:', data);
-    return {
-      success: true,
-      challengeId: data.challengeType,
-      challengeType: data.challengeType,
-      progress: data.progress,
-      maxProgress: data.maxProgress,
-      isCompleted: data.progress >= data.maxProgress,
-      pointsEarned: data.progress >= data.maxProgress ? 100 : 0,
-      message: '진행률이 업데이트되었습니다.',
-    };
+    const response = await axiosInstance.post(
+      getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.STATUS),
+      data
+    );
+    return response.data;
   },
 
   // 챌린지 상태 조회
   getChallengeStatus: async (): Promise<ChallengeStatusResponse> => {
-    // 가상 API - 실제 백엔드 구현 시 교체
-    console.log('📤 챌린지 상태 조회');
-    return {
-      success: true,
-      challenges: [
-        {
-          id: 'attendance',
-          type: 'attendance',
-          title: '출석체크',
-          description: '매일 앱에 접속하여 출석체크를 완료하세요',
-          icon: '📅',
-          difficulty: 'easy',
-          points: 100,
-          status: 'pending',
-          progress: 0,
-          maxProgress: 1,
-          rewardClaimed: false,
-        },
-        {
-          id: 'steps',
-          type: 'steps',
-          title: '만보기',
-          description: '하루 10,000보를 걸어보세요',
-          icon: '🚶‍♂️',
-          difficulty: 'hard',
-          points: 200,
-          status: 'pending',
-          progress: 0,
-          maxProgress: 10000,
-          rewardClaimed: false,
-        },
-        {
-          id: 'transport',
-          type: 'transport',
-          title: '대중교통이용하기',
-          description: '대중교통을 이용하여 환경을 보호하세요',
-          icon: '🚌',
-          difficulty: 'medium',
-          points: 300,
-          status: 'pending',
-          progress: 0,
-          maxProgress: 1,
-          rewardClaimed: false,
-        },
-        {
-          id: 'tumbler',
-          type: 'tumbler',
-          title: '텀블러 이용하기',
-          description: '카페에서 텀블러를 사용하고 인증하세요',
-          icon: '☕',
-          difficulty: 'medium',
-          points: 400,
-          status: 'pending',
-          progress: 0,
-          maxProgress: 1,
-          rewardClaimed: false,
-        },
-      ],
-      totalPoints: 1000,
-      completedChallenges: 0,
-    };
+    const response = await axiosInstance.get(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.STATUS));
+    return response.data;
   },
 
   // 출석체크
   checkAttendance: async (): Promise<ChallengeProgressResponse> => {
-    if (API_CONFIG.USE_MOCK_API) {
-      // 가상 API - 실제 백엔드 구현 시 교체
-      console.log('📤 출석체크 API 호출 (가상)');
+    try {
+      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.ATTENDANCE));
+      
+      if (response.data.isSuccess && response.data.result) {
+        const result = response.data.result;
+        return {
+          success: result.success || true,
+          challengeId: 'attendance',
+          challengeType: 'attendance',
+          progress: result.progress || 1,
+          maxProgress: result.maxProgress || 1,
+          isCompleted: result.isCompleted || result.awarded || true,
+          pointsEarned: result.points || result.pointsEarned || 100,
+          message: result.message || result.reason || '출석체크가 완료되었습니다.',
+        };
+      } else if (response.data.success === false) {
+        return {
+          success: false,
+          challengeId: 'attendance',
+          challengeType: 'attendance',
+          progress: response.data.progress || 0,
+          maxProgress: response.data.maxProgress || 1,
+          isCompleted: response.data.isCompleted || false,
+          pointsEarned: response.data.pointsEarned || 0,
+          message: response.data.message || '출석체크에 실패했습니다.',
+        };
+      } else {
+        return {
+          success: false,
+          challengeId: 'attendance',
+          challengeType: 'attendance',
+          progress: 0,
+          maxProgress: 1,
+          isCompleted: false,
+          pointsEarned: 0,
+          message: response.data.message || '출석체크에 실패했습니다.',
+        };
+      }
+    } catch (error: any) {
+      let errorMessage = '출석체크 중 오류가 발생했습니다.';
+      
+      if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        errorMessage = '네트워크 연결을 확인해주세요. 서버에 연결할 수 없습니다.';
+      } else if (error.response?.status === 404) {
+        errorMessage = '출석체크 API를 찾을 수 없습니다. 서버 설정을 확인해주세요.';
+      } else if (error.response?.status === 500) {
+        errorMessage = '서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      } else if (error.response?.status === 401) {
+        errorMessage = '인증이 필요합니다. 로그인을 다시 해주세요.';
+      } else if (error.response?.status >= 400) {
+        errorMessage = `서버 오류 (${error.response.status}): ${error.response.data?.message || '알 수 없는 오류'}`;
+      }
+      
       return {
-        success: true,
+        success: false,
         challengeId: 'attendance',
         challengeType: 'attendance',
-        progress: 1,
+        progress: 0,
         maxProgress: 1,
-        isCompleted: true,
-        pointsEarned: 100,
-        message: '출석체크가 완료되었습니다.',
+        isCompleted: false,
+        pointsEarned: 0,
+        message: errorMessage,
       };
-    } else {
-      // 실제 백엔드 API 호출
-      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.ATTENDANCE));
-      return response.data;
     }
   },
 
   // 걸음수 업데이트
   updateSteps: async (steps: number): Promise<ChallengeProgressResponse> => {
-    if (API_CONFIG.USE_MOCK_API) {
-      // 가상 API - 실제 백엔드 구현 시 교체
-      console.log('📤 걸음수 업데이트 API 호출 (가상):', steps);
-      const isCompleted = steps >= 10000;
+    try {
+      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.STEPS), { steps });
+      
+      if (response.data.isSuccess && response.data.result) {
+        const result = response.data.result;
+        const isCompleted = result.steps >= 10000;
+        
+        return {
+          success: true,
+          challengeId: 'steps',
+          challengeType: 'steps',
+          progress: result.steps,
+          maxProgress: 10000,
+          isCompleted,
+          pointsEarned: isCompleted ? 200 : 0,
+          message: isCompleted ? '만보기 챌린지가 완료되었습니다!' : '걸음수가 업데이트되었습니다.',
+        };
+      } else {
+        return {
+          success: false,
+          challengeId: 'steps',
+          challengeType: 'steps',
+          progress: steps,
+          maxProgress: 10000,
+          isCompleted: false,
+          pointsEarned: 0,
+          message: response.data.message || '걸음수 업데이트에 실패했습니다.',
+        };
+      }
+    } catch (error: any) {
       return {
-        success: true,
+        success: false,
         challengeId: 'steps',
         challengeType: 'steps',
         progress: steps,
         maxProgress: 10000,
-        isCompleted,
-        pointsEarned: isCompleted ? 200 : 0,
-        message: isCompleted ? '만보기 챌린지가 완료되었습니다!' : '걸음수가 업데이트되었습니다.',
+        isCompleted: false,
+        pointsEarned: 0,
+        message: error.response?.data?.message || '걸음수 업데이트 중 오류가 발생했습니다.',
       };
-    } else {
-      // 실제 백엔드 API 호출
-      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.STEPS), { steps });
-      return response.data;
     }
   },
 
   // 대중교통 이용 확인 (결제내역 API 연동)
   checkTransport: async (): Promise<ChallengeProgressResponse> => {
-    // 가상 API - 실제 백엔드 구현 시 교체
-    console.log('📤 대중교통 이용 확인 API 호출');
-    return {
-      success: true,
-      challengeId: 'transport',
-      challengeType: 'transport',
-      progress: 0,
-      maxProgress: 1,
-      isCompleted: false,
-      pointsEarned: 0,
-      message: '대중교통 이용이 확인되지 않았습니다.',
-    };
+    try {
+      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.TRANSPORT));
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        challengeId: 'transport',
+        challengeType: 'transport',
+        progress: 0,
+        maxProgress: 1,
+        isCompleted: false,
+        pointsEarned: 0,
+        message: error.response?.data?.message || '대중교통 이용 확인 중 오류가 발생했습니다.',
+      };
+    }
   },
 
   // 텀블러 인증
   verifyTumbler: async (imageData?: string): Promise<ChallengeProgressResponse> => {
-    // 가상 API - 실제 백엔드 구현 시 교체
-    console.log('📤 텀블러 인증 API 호출');
-    return {
-      success: true,
-      challengeId: 'tumbler',
-      challengeType: 'tumbler',
-      progress: 1,
-      maxProgress: 1,
-      isCompleted: true,
-      pointsEarned: 400,
-      message: '텀블러 인증이 완료되었습니다.',
-    };
+    try {
+      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.TUMBLER), {
+        imageData
+      });
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        challengeId: 'tumbler',
+        challengeType: 'tumbler',
+        progress: 0,
+        maxProgress: 1,
+        isCompleted: false,
+        pointsEarned: 0,
+        message: error.response?.data?.message || '텀블러 인증 중 오류가 발생했습니다.',
+      };
+    }
   },
 
   // 보상 수령
   claimReward: async (data: RewardClaimRequest): Promise<RewardClaimResponse> => {
-    // 가상 API - 실제 백엔드 구현 시 교체
-    console.log('📤 보상 수령 API 호출:', data);
-    return {
-      success: true,
-      pointsEarned: 100,
-      totalPoints: 1000,
-      message: '보상이 수령되었습니다.',
-    };
+    try {
+      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.REWARD), data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        pointsEarned: 0,
+        totalPoints: 0,
+        message: error.response?.data?.message || '보상 수령 중 오류가 발생했습니다.',
+      };
+    }
+  },
+
+  // 챌린지 완료 처리
+  completeChallenge: async (userChallengeId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await axiosInstance.post(
+        getApiUrl(`${API_CONFIG.CHALLENGE_ENDPOINTS.COMPLETE}/${userChallengeId}/complete`)
+      );
+      
+      return {
+        success: response.data.isSuccess || response.data.success || true,
+        message: response.data.message || '챌린지가 완료되었습니다.',
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || '챌린지 완료 처리 중 오류가 발생했습니다.',
+      };
+    }
   },
 
   // 일일 챌린지 리셋 (새벽에 자동 실행)
   resetDailyChallenges: async (): Promise<{ success: boolean }> => {
-    // 가상 API - 실제 백엔드 구현 시 교체
-    console.log('📤 일일 챌린지 리셋 API 호출');
-    return { success: true };
+    try {
+      const response = await axiosInstance.post(getApiUrl(API_CONFIG.CHALLENGE_ENDPOINTS.RESET));
+      return { success: response.data.success || true };
+    } catch (error: any) {
+      return { success: false };
+    }
+  },
+
+  // 서버 헬스체크
+  healthCheck: async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await axiosInstance.get('/api/health');
+      return { 
+        success: true, 
+        message: '서버가 정상적으로 작동 중입니다.' 
+      };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        message: `서버 연결 실패: ${error.response?.status || 'NETWORK_ERROR'}` 
+      };
+    }
   },
 };

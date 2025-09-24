@@ -86,6 +86,7 @@ class HealthService {
       }
     } catch (error) {
       console.log('Error fetching steps:', error);
+      console.log('⚠️ 걸음수 센서를 사용할 수 없습니다. 시뮬레이션 데이터를 사용합니다.');
       // 에러 발생 시 시뮬레이션 데이터 반환
       const simulatedSteps = Math.floor(Math.random() * 5000) + 3000;
       return {
