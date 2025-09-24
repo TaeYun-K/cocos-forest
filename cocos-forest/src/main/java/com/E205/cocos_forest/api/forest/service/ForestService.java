@@ -303,8 +303,9 @@ public class ForestService {
         int offsetX = 1;
         int offsetY = 1;
 
-        // 나무 위치 조정 (유니크 제약 회피)
+        // 식물/장식 위치 조정 (유니크 제약 회피)
         shiftTreesPosition(forest.getId(), offsetX, offsetY);
+        shiftDecorationsPosition(forest.getId(), offsetX, offsetY);
 
         // 숲 확장
         forest.expandSize();
@@ -320,7 +321,7 @@ public class ForestService {
      */
     private void shiftTreesPosition(Long forestId, int offsetX, int offsetY) {
         // 1단계: 임시로 음수 변환하여 유니크 제약 회피
-        String tempQuery = "UPDATE trees SET x = -(x + ?1), y = -(y + ?2) WHERE forest_id = ?3";
+        String tempQuery = "UPDATE user_plants SET x = -(x + ?1), y = -(y + ?2) WHERE forest_id = ?3";
 
         entityManager.createNativeQuery(tempQuery)
                         .setParameter(1, offsetX)
@@ -329,7 +330,7 @@ public class ForestService {
                         .executeUpdate();
 
         // 2단계: 최종 위치로 조정 (음수를 양수로)
-        String finalQuery = "UPDATE trees SET x = -x, y = -y WHERE forest_id = ?1";
+        String finalQuery = "UPDATE user_plants SET x = -x, y = -y WHERE forest_id = ?1";
 
         entityManager.createNativeQuery(finalQuery)
                         .setParameter(1, forestId)
@@ -396,5 +397,26 @@ public class ForestService {
         if (!forest.getUserId().equals(userId)) {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_TREE_ACCESS);
         }
+    }
+
+    /**
+     * 장식 위치 일괄 조정 (유니크 제약 회피를 위한 2단계 처리)
+     */
+    private void shiftDecorationsPosition(Long forestId, int offsetX, int offsetY) {
+        String tempQuery = "UPDATE user_decorations SET x = -(x + ?1), y = -(y + ?2) WHERE forest_id = ?3";
+
+        entityManager.createNativeQuery(tempQuery)
+                .setParameter(1, offsetX)
+                .setParameter(2, offsetY)
+                .setParameter(3, forestId)
+                .executeUpdate();
+
+        String finalQuery = "UPDATE user_decorations SET x = -x, y = -y WHERE forest_id = ?1";
+
+        entityManager.createNativeQuery(finalQuery)
+                .setParameter(1, forestId)
+                .executeUpdate();
+
+        log.debug("숲 {}의 장식 위치를 ({}, {})만큼 이동했습니다.", forestId, offsetX, offsetY);
     }
 }
