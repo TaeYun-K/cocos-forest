@@ -114,3 +114,32 @@ export async function expandForest(): Promise<ForestInfoDto> {
     throw error;
   }
 }
+
+/* 걸음수 갱신 */
+export interface StepCountUpdateRequest {
+  steps: number;
+  date: string;
+}
+
+export interface StepCountUpdateResponse {
+  success: boolean;
+  message: string;
+  pointsEarned?: number;
+  totalPoints?: number;
+}
+
+export async function updateStepCount(stepData: StepCountUpdateRequest): Promise<StepCountUpdateResponse> {
+  try {
+    const response = await apiClient.post<BaseResponse<StepCountUpdateResponse>>("/api/forest/steps", stepData);
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "걸음수 갱신에 실패했습니다.");
+    }
+    
+    console.log("걸음수 갱신 성공:", response.data.result);
+    return response.data.result;
+  } catch (error) {
+    console.error("updateStepCount error:", error);
+    throw error;
+  }
+}

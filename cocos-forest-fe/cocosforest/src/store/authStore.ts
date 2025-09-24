@@ -73,6 +73,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await AsyncStorage.setItem(AUTH_TOKEN_KEY, tokenInfo.accessToken);
       await AsyncStorage.setItem(ENV.REFRESH_TOKEN_KEY, tokenInfo.refreshToken);
 
+      console.log('🔐 로그인 성공 - 토큰 저장 완료');
+      console.log('🔐 Access Token:', tokenInfo.accessToken.substring(0, 50) + '...');
+      console.log('🔐 Refresh Token:', tokenInfo.refreshToken.substring(0, 50) + '...');
+      console.log('🔐 AUTH_TOKEN_KEY:', AUTH_TOKEN_KEY);
+      console.log('🔐 REFRESH_TOKEN_KEY:', ENV.REFRESH_TOKEN_KEY);
+
       // 상태 업데이트 (사용자 정보는 별도 API 호출이 필요할 수 있음)
       set({
         isAuthenticated: true,
@@ -109,6 +115,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // AsyncStorage에 토큰 저장
       await AsyncStorage.setItem(AUTH_TOKEN_KEY, tokenInfo.accessToken);
       await AsyncStorage.setItem(ENV.REFRESH_TOKEN_KEY, tokenInfo.refreshToken);
+
+      console.log('🔐 회원가입 성공 - 토큰 저장 완료');
+      console.log('🔐 Access Token:', tokenInfo.accessToken.substring(0, 50) + '...');
+      console.log('🔐 Refresh Token:', tokenInfo.refreshToken.substring(0, 50) + '...');
+      console.log('🔐 AUTH_TOKEN_KEY:', AUTH_TOKEN_KEY);
+      console.log('🔐 REFRESH_TOKEN_KEY:', ENV.REFRESH_TOKEN_KEY);
 
       // User 타입에 맞게 변환
       const user: User = {
@@ -175,31 +187,49 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: loading });
   },
 
-  // 앱 시작 시 저장된 인증 정보 복원 (기존 코드 유지)
+  // 앱 시작 시 저장된 인증 정보 복원
   initialize: async () => {
     try {
       set({ isLoading: true });
 
-      // 임시: 개발 중에는 항상 로그아웃 상태로 시작
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-      await AsyncStorage.removeItem(AUTH_USER_KEY);
-
       const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
       const userString = await AsyncStorage.getItem(AUTH_USER_KEY);
 
-      if (token && userString) {
-        const user = JSON.parse(userString);
+      console.log('🔍 === 인증 상태 복원 시작 ===');
+      console.log('🔍 AUTH_TOKEN_KEY:', AUTH_TOKEN_KEY);
+      console.log('🔍 AUTH_USER_KEY:', AUTH_USER_KEY);
+      console.log('🔍 토큰 확인:', token ? `${token.substring(0, 50)}... (길이: ${token.length})` : '없음');
+      console.log('🔍 사용자 정보 확인:', userString ? '있음' : '없음');
+
+      if (token) {
+        // 토큰이 있으면 인증된 상태로 설정 (사용자 정보는 선택적)
+        const user = userString ? JSON.parse(userString) : null;
         set({
           isAuthenticated: true,
           user,
           token,
         });
+        console.log('✅ 저장된 토큰으로 인증 상태 복원 완료');
+        console.log('✅ 인증 상태:', { isAuthenticated: true, hasUser: !!user, tokenLength: token.length });
+      } else {
+        console.log('ℹ️ 저장된 토큰이 없습니다. 로그인이 필요합니다.');
+        set({
+          isAuthenticated: false,
+          user: null,
+          token: null,
+        });
       }
+      console.log('🔍 === 인증 상태 복원 완료 ===');
     } catch (error) {
       console.error('인증 정보 복원 실패:', error);
       // 에러 발생 시 저장된 정보 삭제
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
       await AsyncStorage.removeItem(AUTH_USER_KEY);
+      set({
+        isAuthenticated: false,
+        user: null,
+        token: null,
+      });
     } finally {
       set({ isLoading: false });
     }
