@@ -35,7 +35,6 @@ export default function HomeScreen() {
   const [selected, setSelected] = useState<Cell | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [expandModalVisible, setExpandModalVisible] = useState(false);
-  const [showHitbox, setShowHitbox] = useState(true);
   const [showCocoTip, setShowCocoTip] = useState(false);
 
   // Zoom state (+ / - controls)
@@ -352,7 +351,7 @@ export default function HomeScreen() {
   };
 
   // 동적 스타일 헬퍼 함수들
-  const getFabStyle = () => [s.fab, showHitbox ? s.fabActive : s.fabInactive];
+  // Hitbox toggle removed
   
   const getPlantButtonStyle = () => [
     s.modalBtn,
@@ -392,7 +391,6 @@ export default function HomeScreen() {
                 layoutW={layout.w}
                 layoutH={layout.h}
                 zoom={zoom}
-                showHitbox={showHitbox}
                 onCellPress={handleCellPress}
                 selectedCell={selected}
                 forestInfo={forestInfo}
@@ -441,14 +439,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      <Pressable
-        onPress={() => setShowHitbox((v) => !v)}
-        style={getFabStyle()}
-      >
-        <Text style={s.fabText}>
-          {showHitbox ? "히트박스 ON" : "히트박스 OFF"}
-        </Text>
-      </Pressable>
+      {/** Hitbox toggle UI removed */}
 
       {/* 기존 셀 정보 모달 */}
       <Modal

@@ -66,7 +66,6 @@ type Props = {
   zoom?: number;
   panX?: number;
   panY?: number;
-  showHitbox: boolean;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
   forestInfo?: ForestInfoDto;
@@ -82,7 +81,6 @@ export default function Board({
   zoom = 1,
   panX = 0,
   panY = 0,
-  showHitbox,
   onCellPress,
   selectedCell,
   forestInfo,
@@ -297,7 +295,7 @@ export default function Board({
 
           return (
             <View key={`base-container-${ix}-${iz}`}>
-              <TouchableOpacity
+              <TouchableOpacity pointerEvents="none"
                 style={{
                   position: "absolute",
                   left: sx - SPRITE_W / 2,
@@ -314,7 +312,7 @@ export default function Board({
                 disabled={!isExpandable}
               >
                 <Image
-                  source={(actualX >= 0 && actualX < forestSize && actualZ >= 0 && actualZ < forestSize)
+                  source={((actualX >= -1 && actualX <= forestSize) && (actualZ >= -1 && actualZ <= forestSize))
                     ? GRASS_IMG
                     : getDirtImage(actualX, actualZ)}
                   style={{
@@ -431,51 +429,43 @@ export default function Board({
 
       {/* Layer 3: 히트박스 + 하이라이트 (잔디 영역만) */}
       {layoutW > 0 && (
-        <Svg
-          style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
-          pointerEvents="box-none"
-        >
-          {cells.map((c) => {
-            const isSelected = isSelectedCell(c);
-            
-            return (
-              <Path
-                key={`path-${c.x}-${c.z}`}
-                d={c.path}
-                fill={
-                  isSelected 
-                    ? "rgba(255, 215, 0, 0.6)"
-                    : showHitbox 
-                      ? "rgba(0,255,0,0.3)" 
-                      : "#00FF00"
-                }
-                fillOpacity={
-                  isSelected 
-                    ? 0.6
-                    : showHitbox 
-                      ? 0.3 
-                      : 0
-                }
-                stroke={
-                  isSelected 
-                    ? "#FFD700"
-                    : showHitbox 
-                      ? "blue" 
-                      : "#000"
-                }
-                strokeOpacity={
-                  isSelected 
-                    ? 1
-                    : showHitbox 
-                      ? 1 
-                      : 0
-                }
-                strokeWidth={isSelected ? 3 : 1}
-                onPress={() => onCellPress(c)}
-              />
-            );
-          })}
-        </Svg>
+        <>
+          <Svg
+            style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
+            pointerEvents="none"
+          >
+            {cells.map((c) => {
+              const isSelected = isSelectedCell(c);
+              return (
+                <Path
+                  key={`path-${c.x}-${c.z}`}
+                  d={c.path}
+                  fill={isSelected ? "rgba(255, 215, 0, 0.6)" : "#00FF00"}
+                  fillOpacity={isSelected ? 0.6 : 0}
+                  stroke={isSelected ? "#FFD700" : "#000"}
+                  strokeOpacity={isSelected ? 1 : 0}
+                  strokeWidth={isSelected ? 3 : 1}
+                />
+              );
+            })}
+          </Svg>
+
+          {cells.map((c) => (
+            <TouchableOpacity
+              key={`cell-touch-${c.x}-${c.z}`}
+              style={{
+                position: "absolute",
+                left: c.sx - SPRITE_W / 2,
+                top: c.sy - FOOT_H / 2 - WALL_H - TOP_FACE_H / 2,
+                width: SPRITE_W,
+                height: FOOT_H + WALL_H,
+                zIndex: 4,
+              }}
+              onPress={() => onCellPress(c)}
+              activeOpacity={1}
+            />
+          ))}
+        </>
       )}
       </View>
     </View>
