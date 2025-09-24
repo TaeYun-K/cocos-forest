@@ -1,7 +1,6 @@
 package com.E205.cocos_forest.api.forest.dto.out;
 
 import com.E205.cocos_forest.domain.forest.entity.Forest;
-import com.E205.cocos_forest.api.forest.dto.out.AssetResponseDto;
 import com.E205.cocos_forest.api.forest.dto.out.DecorationResponseDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.E205.cocos_forest.domain.forest.entity.Plants;
@@ -30,7 +29,6 @@ public class ForestResponseDto {
     private Integer deadHighlightCount;
     private List<TreeResponseDto> trees;
     private List<DecorationResponseDto> decorations;
-    private List<AssetResponseDto> assets;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -49,28 +47,6 @@ public class ForestResponseDto {
                 .decorations(forest.getDecorations().stream()
                         .map(DecorationResponseDto::from)
                         .collect(Collectors.toList()))
-                .assets(Collections.emptyList())
-                .createdAt(forest.getCreatedAt())
-                .updatedAt(forest.getUpdatedAt())
-                .build();
-    }
-
-    public static ForestResponseDto from(Forest forest, List<AssetResponseDto> assets) {
-        return ForestResponseDto.builder()
-                .forestId(forest.getId())
-                .userId(forest.getUserId())
-                .size(forest.getSize())
-                .pondX(forest.getPondX())
-                .pondY(forest.getPondY())
-                .aliveTreeCount((int) forest.getPlants().stream().filter(tree -> !tree.getIsDead()).count())
-                .deadHighlightCount((int) forest.getPlants().stream().filter(Plants::getDeadHighlight).count())
-                .trees(forest.getPlants().stream()
-                        .map(TreeResponseDto::from)
-                        .collect(Collectors.toList()))
-                .decorations(forest.getDecorations().stream()
-                        .map(DecorationResponseDto::from)
-                        .collect(Collectors.toList()))
-                .assets(assets != null ? assets : Collections.emptyList())
                 .createdAt(forest.getCreatedAt())
                 .updatedAt(forest.getUpdatedAt())
                 .build();

@@ -1,5 +1,5 @@
 //Forest.tsx
-import React, { useMemo } from "react";
+import React from "react";
 import { View, Image, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { homeStyles as s } from "../../styles/homeStyles";
@@ -93,14 +93,7 @@ export default function Board({
   const forestSize = forestInfo?.size || 8;
   const pondX = forestInfo?.pondX || 3;
   const pondY = forestInfo?.pondY || 3;
-  const assetKeyById = useMemo(() => {
-    const map = new Map<number, string>();
-    const assets = forestInfo?.assets;
-    assets?.forEach((a) => {
-      if (a && a.id != null && a.spriteKey) map.set(a.id, a.spriteKey);
-    });
-    return map;
-  }, [forestInfo]);
+  // No global asset catalog here; each tree carries its spriteKey from API.
   
   // 물 타일인지 확인 (pondX, pondY 기준으로 2x2 영역)
   const isWater = (c: Cell) => 
@@ -407,8 +400,7 @@ export default function Board({
           <Image
             key={`marker-${m.x}-${m.z}`}
             source={(() => {
-              const key = treeInfo?.assetId ? assetKeyById.get(treeInfo.assetId) : undefined;
-              const sprite = key ? getSpriteByKey(key) : undefined;
+              const sprite = getSpriteByKey(treeInfo?.spriteKey);
               return sprite || getTreeAsset(
                 m.growthStage,
                 treeInfo?.isDead,

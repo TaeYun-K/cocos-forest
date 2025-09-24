@@ -27,14 +27,11 @@ export type ForestInfoDto = {
   pondX: number;
   pondY: number;
   size: number;
-  assets?: Array<{
-    id: number;
-    spriteKey?: string | null;
-  }>;
   trees: Array<{
     deadHighlight: boolean;
     growthDays: number;
     growthStage: string;
+    spriteKey?: string | null;
     health: number;
     isDead: boolean;
     lastWateredDate: string | null;
