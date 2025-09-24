@@ -1,5 +1,5 @@
 //Forest.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Image, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { homeStyles as s } from "../../styles/homeStyles";
@@ -14,6 +14,7 @@ import {
 } from "../../utils/iso";
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
+import { getSpriteByKey } from "../../assets/spriteMap";
 
 const GRASS_DARK = require("../../../assets/home/tiles/grassdark.png");
 const GRASS_WEEDS = require("../../../assets/home/tiles/grassweeds.png");
@@ -28,6 +29,8 @@ const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tre
 
 // dead tree asset
 const DEAD_TREE_WARNING_IMG = require("../../../assets/home/tiles/alert.png");
+
+// mapping by assetId not needed; use spriteKey from API assets
 
 // 나무 상태에 따른 에셋 선택 함수
 const getTreeAsset = (growthStage?: string, isDead?: boolean, health?: number, maxHealth?: number) => {
@@ -90,6 +93,15 @@ export default function Board({
   const forestSize = forestInfo?.size || 8;
   const pondX = forestInfo?.pondX || 3;
   const pondY = forestInfo?.pondY || 3;
+  const assetKeyById = useMemo(() => {
+    const map = new Map<number, string>();
+    const anyInfo: any = forestInfo as any;
+    const assets = anyInfo?.assets as Array<{ id: number; spriteKey?: string }> | undefined;
+    assets?.forEach((a) => {
+      if (a && a.id != null && a.spriteKey) map.set(a.id, a.spriteKey);
+    });
+    return map;
+  }, [forestInfo]);
   
   // 물 타일인지 확인 (pondX, pondY 기준으로 2x2 영역)
   const isWater = (c: Cell) => 
@@ -395,12 +407,16 @@ export default function Board({
         return (
           <Image
             key={`marker-${m.x}-${m.z}`}
-            source={getTreeAsset(
-              m.growthStage, 
-              treeInfo?.isDead, 
-              treeInfo?.health, 
-              treeInfo?.maxHealth
-            )}
+            source={(() => {
+              const key = treeInfo?.assetId ? assetKeyById.get(treeInfo.assetId) : undefined;
+              const sprite = key ? getSpriteByKey(key) : undefined;
+              return sprite || getTreeAsset(
+                m.growthStage,
+                treeInfo?.isDead,
+                treeInfo?.health,
+                treeInfo?.maxHealth
+              );
+            })()}
             style={{
               position: "absolute",
               left: m.sx - MARKER_SIZE / 2,

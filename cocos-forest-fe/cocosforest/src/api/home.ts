@@ -48,11 +48,12 @@ export async function fetchPoints(): Promise<PointsDto> {
 }
 
 /* 나무 심기 */
-export async function plantTree(x: number, y: number): Promise<void> {
+export async function plantTree(x: number, y: number, assetId: number = 1): Promise<void> {
   try {
-    const response = await apiClient.post<BaseResponse<any>>("/api/forest/trees", {
+    const response = await apiClient.post<BaseResponse<any>>("/api/forest/assets/plants", {
       x,
-      y
+      y,
+      assetId,
     });
     
     if (!response.data.isSuccess) {
@@ -69,7 +70,7 @@ export async function plantTree(x: number, y: number): Promise<void> {
 /* 물주기 */
 export async function waterTree(treeId: number): Promise<void> {
   try {
-    const response = await apiClient.post<BaseResponse<any>>(`/api/forest/trees/${treeId}/water`);
+    const response = await apiClient.post<BaseResponse<any>>(`/api/forest/assets/plants/${treeId}/water`);
     
     if (!response.data.isSuccess) {
       throw new Error(response.data.message || "물주기에 실패했습니다.");
@@ -85,7 +86,7 @@ export async function waterTree(treeId: number): Promise<void> {
 /* 죽은 나무 제거 */
 export async function removeDeadTree(treeId: number): Promise<void> {
   try {
-    const response = await apiClient.delete<BaseResponse<any>>(`/api/forest/trees/${treeId}/dead`);
+    const response = await apiClient.delete<BaseResponse<any>>(`/api/forest/assets/plants/${treeId}`);
     
     if (!response.data.isSuccess) {
       throw new Error(response.data.message || "죽은 나무 제거에 실패했습니다.");
@@ -113,4 +114,27 @@ export async function expandForest(): Promise<ForestInfoDto> {
     console.error("expandForest error:", error);
     throw error;
   }
+}
+
+// ========= Asset Catalog =========
+export interface AssetDto {
+  id: number;
+  name: string;
+  categoryId: number;
+  categoryCode?: string | null;
+  categoryName?: string | null;
+  pricePoints?: number | null;
+  spriteKey?: string | null;
+  active?: boolean | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function listAssets(categoryId?: number): Promise<AssetDto[]> {
+  const url = categoryId != null ? `/api/forest/assets?categoryId=${categoryId}` : "/api/forest/assets";
+  const response = await apiClient.get<BaseResponse<AssetDto[]>>(url);
+  if (!response.data.isSuccess) {
+    throw new Error(response.data.message || "자산 목록 조회에 실패했습니다.");
+  }
+  return response.data.result;
 }

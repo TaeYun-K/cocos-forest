@@ -8,6 +8,8 @@ import com.E205.cocos_forest.api.forest.dto.out.DecorationResponseDto;
 import com.E205.cocos_forest.api.forest.dto.out.ForestResponseDto;
 import com.E205.cocos_forest.api.forest.dto.out.TreeResponseDto;
 import com.E205.cocos_forest.api.forest.dto.out.WaterTreeResponseDto;
+import com.E205.cocos_forest.api.forest.dto.out.AssetResponseDto;
+import com.E205.cocos_forest.api.forest.service.AssetService;
 import com.E205.cocos_forest.domain.forest.entity.Forest;
 import com.E205.cocos_forest.domain.forest.entity.GrowthStage;
 import com.E205.cocos_forest.domain.forest.entity.Plants;
@@ -38,6 +40,7 @@ public class ForestService {
     private final PointService pointService;
     private final AssetRepository assetRepository;
     private final DecorationRepository decorationRepository;
+    private final AssetService assetService;
 
     /**
      * 사용자의 숲 생성 (최초 1회)
@@ -60,7 +63,7 @@ public class ForestService {
         Forest savedForest = forestRepository.save(forest);
         log.info("사용자 {}의 숲이 생성되었습니다. Forest ID: {}", userId, savedForest.getId());
 
-        return ForestResponseDto.from(savedForest);
+        return ForestResponseDto.from(savedForest, assetService.listAssets(null));
     }
 
     /**
@@ -70,7 +73,7 @@ public class ForestService {
         Forest forest = forestRepository.findByUserIdWithTrees(userId)
             .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
 
-        return ForestResponseDto.from(forest);
+        return ForestResponseDto.from(forest, assetService.listAssets(null));
     }
 
     /**
@@ -297,7 +300,7 @@ public class ForestService {
 
         log.info("사용자 {}가 숲을 {}x{}로 확장했습니다.", userId, savedForest.getSize(), savedForest.getSize());
 
-        return ForestResponseDto.from(savedForest);
+        return ForestResponseDto.from(savedForest, assetService.listAssets(null));
     }
 
     /**
@@ -321,7 +324,7 @@ public class ForestService {
         log.info("사용자 {}가 연못을 ({}, {})로 이동했습니다.",
             userId, request.getNewX(), request.getNewY());
 
-        return ForestResponseDto.from(savedForest);
+        return ForestResponseDto.from(savedForest, assetService.listAssets(null));
     }
 
     // ===== 검증 메서드들 =====

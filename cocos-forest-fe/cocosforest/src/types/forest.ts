@@ -40,6 +40,14 @@ export type ForestInfoDto = {
     waterCountToday: number;
     x: number;
     y: number;
+    assetId: number;
+  }>;
+  assets?: Array<{
+    id: number;
+    name?: string;
+    categoryId?: number;
+    spriteKey?: string;
+    pricePoints?: number;
   }>;
   updatedAt: string;
   userId: number;
