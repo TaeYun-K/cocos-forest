@@ -3,9 +3,11 @@ package com.E205.cocos_forest.api.forest.service;
 import com.E205.cocos_forest.domain.forest.dto.*;
 import com.E205.cocos_forest.domain.forest.entity.Forest;
 import com.E205.cocos_forest.domain.forest.entity.GrowthStage;
-import com.E205.cocos_forest.domain.forest.entity.Tree;
+import com.E205.cocos_forest.domain.forest.entity.Plants;
+import com.E205.cocos_forest.domain.forest.entity.Asset;
 import com.E205.cocos_forest.domain.forest.repository.ForestRepository;
 import com.E205.cocos_forest.domain.forest.repository.TreeRepository;
+import com.E205.cocos_forest.domain.forest.repository.AssetRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class ForestService {
     private final ForestRepository forestRepository;
     private final TreeRepository treeRepository;
     private final PointService pointService;
+    private final AssetRepository assetRepository;
 
     /**
      * 사용자의 숲 생성 (최초 1회)
@@ -61,10 +64,10 @@ public class ForestService {
     }
 
     /**
-     * 나무 심기 (100포인트 차감)
+     * 나무/꽃(식물) 심기 (asset 가격만큼 포인트 차감)
      */
     @Transactional
-    public TreeResponseDto plantTree(Long userId, PlantTreeRequestDto request) {
+    public TreeResponseDto plant(Long userId, PlantTreeRequestDto request) {
         // 숲 조회
         Forest forest = forestRepository.findByUserIdWithTrees(userId)
             .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
@@ -72,26 +75,42 @@ public class ForestService {
         // 심을 수 있는 위치인지 확인 (구체적인 에러 메시지)
         validateTreePosition(forest, request.getX(), request.getY());
 
-        // 포인트 차감 (100포인트)
+        // 자산 검증 (활성 + 카테고리: 1=나무, 2=꽃)
+        if (request.getAssetId() == null) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "assetId가 필요합니다.");
+        }
+        Asset asset = assetRepository.findById(request.getAssetId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "유효하지 않은 자산입니다."));
+        if (asset.getActive() == null || !asset.getActive()) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "비활성 자산은 심을 수 없습니다.");
+        }
+        Long categoryId = asset.getCategoryId();
+        if (categoryId == null || (categoryId != 1L && categoryId != 2L)) {
+            throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "나무/꽃 자산만 심을 수 있습니다.");
+        }
+
+        // 포인트 차감 (자산 가격)
         try {
-            pointService.spendPoints(userId, 100, "PLANT", forest.getId(), "나무 심기");
+            int price = asset.getPricePoints() != null ? asset.getPricePoints() : 0;
+            pointService.spendPoints(userId, price, "PLANT", forest.getId(), String.format("식물 심기 - %s", asset.getName()));
         } catch (IllegalArgumentException e) {
             throw new BaseException(BaseResponseStatus.INSUFFICIENT_POINTS, e.getMessage());
         }
 
-        // 나무 생성
-        Tree tree = Tree.builder()
+        // 식물 생성
+        Plants plants = Plants.builder()
             .forestId(forest.getId())
             .x(request.getX())
             .y(request.getY())
             .growthStage(GrowthStage.SMALL)
+            .assetId(asset.getId())
             .build();
 
-        Tree savedTree = treeRepository.save(tree);
+        Plants savedPlants = treeRepository.save(plants);
         log.info("사용자 {}가 ({}, {}) 위치에 나무를 심었습니다. Tree ID: {}",
-            userId, request.getX(), request.getY(), savedTree.getId());
+            userId, request.getX(), request.getY(), savedPlants.getId());
 
-        return TreeResponseDto.from(savedTree);
+        return TreeResponseDto.from(savedPlants);
     }
 
     /**
@@ -100,18 +119,18 @@ public class ForestService {
     @Transactional
     public WaterTreeResponseDto waterTree(Long userId, Long treeId) {
         // 나무 조회 및 권한 확인
-        Tree tree = treeRepository.findById(treeId)
+        Plants plants = treeRepository.findById(treeId)
             .orElseThrow(() -> new BaseException(BaseResponseStatus.TREE_NOT_FOUND));
 
-        validateTreeOwnership(tree, userId);
+        validateTreeOwnership(plants, userId);
 
         // 죽은 나무인지 확인
-        if (tree.getIsDead()) {
+        if (plants.getIsDead()) {
             throw new BaseException(BaseResponseStatus.DEAD_TREE_ACTION, "죽은 나무에는 물을 줄 수 없습니다.");
         }
 
         // 물주기 시도
-        boolean success = tree.water();
+        boolean success = plants.water();
         if (!success) {
             throw new BaseException(BaseResponseStatus.WATER_LIMIT_EXCEEDED);
         }
@@ -123,11 +142,11 @@ public class ForestService {
             throw new BaseException(BaseResponseStatus.INSUFFICIENT_POINTS, e.getMessage());
         }
 
-        treeRepository.save(tree);
+        treeRepository.save(plants);
         log.info("사용자 {}가 나무 {}에 물을 주었습니다. 현재 체력: {}/{}",
-            userId, treeId, tree.getHealth(), tree.getMaxHealth());
+            userId, treeId, plants.getHealth(), plants.getMaxHealth());
 
-        return WaterTreeResponseDto.success(tree);
+        return WaterTreeResponseDto.success(plants);
     }
 
     /**
@@ -136,25 +155,25 @@ public class ForestService {
     @Transactional
     public TreeResponseDto moveTree(Long userId, MoveTreeRequestDto request) {
         // 나무 조회 및 권한 확인
-        Tree tree = treeRepository.findById(request.getTreeId())
+        Plants plants = treeRepository.findById(request.getTreeId())
             .orElseThrow(() -> new BaseException(BaseResponseStatus.TREE_NOT_FOUND));
 
-        Forest forest = forestRepository.findById(tree.getForestId())
+        Forest forest = forestRepository.findById(plants.getForestId())
             .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
 
-        validateTreeOwnership(tree, userId);
+        validateTreeOwnership(plants, userId);
 
         // 이동할 위치가 유효한지 확인
         validateTreePosition(forest, request.getNewX(), request.getNewY());
 
         // 위치 이동
-        tree.moveTo(request.getNewX(), request.getNewY());
-        Tree savedTree = treeRepository.save(tree);
+        plants.moveTo(request.getNewX(), request.getNewY());
+        Plants savedPlants = treeRepository.save(plants);
 
         log.info("사용자 {}가 나무 {}를 ({}, {})로 이동했습니다.",
             userId, request.getTreeId(), request.getNewX(), request.getNewY());
 
-        return TreeResponseDto.from(savedTree);
+        return TreeResponseDto.from(savedPlants);
     }
 
     /**
@@ -163,18 +182,18 @@ public class ForestService {
     @Transactional
     public void removeDeadTree(Long userId, Long treeId) {
         // 나무 조회 및 권한 확인
-        Tree tree = treeRepository.findById(treeId)
+        Plants plants = treeRepository.findById(treeId)
                         .orElseThrow(() -> new BaseException(BaseResponseStatus.TREE_NOT_FOUND));
 
-        validateTreeOwnership(tree, userId);
+        validateTreeOwnership(plants, userId);
 
         // 죽은 나무인지 확인 (getter 메서드 사용)
-        if (!tree.getIsDead() && tree.getHealth() > 0) {
+        if (!plants.getIsDead() && plants.getHealth() > 0) {
             throw new BaseException(BaseResponseStatus.TREE_NOT_DEAD);
         }
 
         // 나무 완전 삭제
-        treeRepository.delete(tree);
+        treeRepository.delete(plants);
 
         log.info("사용자 {}가 죽은 나무 {}를 완전 삭제했습니다.", userId, treeId);
     }
@@ -246,7 +265,7 @@ public class ForestService {
         }
 
         // 이미 나무가 있는지 체크
-        if (forest.getTrees().stream().anyMatch(tree ->
+        if (forest.getPlants().stream().anyMatch(tree ->
             tree.getX().equals(x) && tree.getY().equals(y))) {
             throw new BaseException(BaseResponseStatus.POSITION_OCCUPIED);
         }
@@ -255,8 +274,8 @@ public class ForestService {
     /**
      * 나무 소유권 검증
      */
-    private void validateTreeOwnership(Tree tree, Long userId) {
-        Forest forest = forestRepository.findById(tree.getForestId())
+    private void validateTreeOwnership(Plants plants, Long userId) {
+        Forest forest = forestRepository.findById(plants.getForestId())
             .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
 
         if (!forest.getUserId().equals(userId)) {

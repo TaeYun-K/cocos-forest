@@ -53,7 +53,7 @@ public class Forest {
 
     // 양방향 관계 설정 (숲에 속한 나무들)
     @OneToMany(mappedBy = "forest", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tree> trees = new ArrayList<>();
+    private List<Plants> plants = new ArrayList<>();
 
     @OneToMany(mappedBy = "forest", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Decoration> decorations = new ArrayList<>();
@@ -126,6 +126,6 @@ public class Forest {
         // 숲 범위 내에 있고, 연못이 아니며, 이미 나무가 없어야 함
         return x >= 0 && x < size && y >= 0 && y < size 
                && !isPondArea(x, y)
-               && trees.stream().noneMatch(tree -> tree.getX() == x && tree.getY() == y);
+               && plants.stream().noneMatch(tree -> tree.getX() == x && tree.getY() == y);
     }
 }

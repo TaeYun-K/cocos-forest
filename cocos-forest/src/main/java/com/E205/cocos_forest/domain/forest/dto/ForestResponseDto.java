@@ -1,7 +1,7 @@
 package com.E205.cocos_forest.domain.forest.dto;
 
 import com.E205.cocos_forest.domain.forest.entity.Forest;
-import com.E205.cocos_forest.domain.forest.entity.Tree;
+import com.E205.cocos_forest.domain.forest.entity.Plants;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -34,9 +34,9 @@ public class ForestResponseDto {
                 .size(forest.getSize())
                 .pondX(forest.getPondX())
                 .pondY(forest.getPondY())
-                .aliveTreeCount((int) forest.getTrees().stream().filter(tree -> !tree.getIsDead()).count())
-                .deadHighlightCount((int) forest.getTrees().stream().filter(Tree::getDeadHighlight).count())
-                .trees(forest.getTrees().stream()
+                .aliveTreeCount((int) forest.getPlants().stream().filter(tree -> !tree.getIsDead()).count())
+                .deadHighlightCount((int) forest.getPlants().stream().filter(Plants::getDeadHighlight).count())
+                .trees(forest.getPlants().stream()
                         .map(TreeResponseDto::from)
                         .collect(Collectors.toList()))
                 .createdAt(forest.getCreatedAt())

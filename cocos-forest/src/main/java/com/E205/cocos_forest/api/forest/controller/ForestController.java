@@ -64,16 +64,16 @@ public class ForestController {
     }
 
     /**
-     * 나무 심기
+     * 식물 심기
      */
-    @PostMapping("/trees")
-    @Operation(summary = "나무 심기", description = "지정된 위치에 나무를 심습니다. (100포인트 차감)")
-    public ResponseEntity<BaseResponse<TreeResponseDto>> plantTree(
+    @PostMapping({"/plants"})
+    @Operation(summary = "식물 심기", description = "지정된 위치에 식물(나무/꽃)을 심습니다. 자산 가격만큼 포인트 차감")
+    public ResponseEntity<BaseResponse<TreeResponseDto>> plant(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody PlantTreeRequestDto request) {
 
         Long userId = userDetails.getUser().getId();
-        TreeResponseDto tree = forestService.plantTree(userId, request);
+        TreeResponseDto tree = forestService.plant(userId, request);
 
         return ResponseEntity.ok(new BaseResponse<>(tree));
     }
