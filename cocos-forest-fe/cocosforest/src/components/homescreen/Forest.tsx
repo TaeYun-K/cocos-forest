@@ -15,19 +15,19 @@ import {
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
 
-const DIRT_IMG2 = require("../../../assets/tiles/grassdark.png");
-const DIRT_IMG = require("../../../assets/tiles/grassweeds.png");
-const DIRT_PLAIN_IMG = require("../../../assets/tiles/dirt.png");
-const GRASS_IMG = require("../../../assets/tiles/grass.png");
-const WATER_IMG = require("../../../assets/tiles/water.png");
-const MARKER_IMG = require("../../../assets/models/medium_tree.png");
+const GRASS_DARK = require("../../../assets/home/tiles/grassdark.png");
+const GRASS_WEEDS = require("../../../assets/home/tiles/grassweeds.png");
+const DIRT_PLAIN_IMG = require("../../../assets/home/tiles/dirt.png");
+const GRASS_IMG = require("../../../assets/home/tiles/grass.png");
+const WATER_IMG = require("../../../assets/home/tiles/water.png");
+const MARKER_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
-const SMALL_TREE_IMG = require("../../../assets/models/small_tree.png");
-const MEDIUM_TREE_IMG = require("../../../assets/models/medium_tree.png");
-const LARGE_TREE_IMG = require("../../../assets/models/medium_tree.png");
+const SMALL_TREE_IMG = require("../../../assets/home/decorations/tree/small_tree.png");
+const MEDIUM_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
+const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
 // dead tree asset
-const DEAD_TREE_WARNING_IMG = require("../../../assets/tiles/alert.png");
+const DEAD_TREE_WARNING_IMG = require("../../../assets/home/tiles/alert.png");
 
 // 나무 상태에 따른 에셋 선택 함수
 const getTreeAsset = (growthStage?: string, isDead?: boolean, health?: number, maxHealth?: number) => {
@@ -127,20 +127,35 @@ export default function Board({
     return (n >>> 0) / 0x100000000;
   };
 
-  // Background/dirt variant per tile
+  // Background/dirt variant per tile (previous randomizer - kept for reference)
   const getDirtImage = (x: number, z: number) => {
     const r = rand01(x, z);
     if (r < 0.05) return DIRT_PLAIN_IMG; // a few bare dirt tiles
-    if (r < 0.35) return DIRT_IMG2;      // patchy grass-dirt
-    if (r < 0.70) return DIRT_IMG;       // weeds
+    if (r < 0.35) return GRASS_DARK;      // patchy grass-dirt
+    if (r < 0.70) return GRASS_WEEDS;       // weeds
     return GRASS_IMG;                    // full grass
+  };
+
+  // Island-like concentric lines around plantable square
+  const getStripBackground = (x: number, z: number) => {
+    // Inside plantable area
+    if (x >= 0 && x < forestSize && z >= 0 && z < forestSize) {
+      return GRASS_IMG;
+    }
+    // Distance (in grid lines) outside the square
+    const dx = x < 0 ? -x : (x - (forestSize - 1));
+    const dz = z < 0 ? -z : (z - (forestSize - 1));
+    const outside = Math.max(dx, dz); // Chebyshev distance from boundary
+    if (outside === 1) return GRASS_DARK;     // first line
+    if (outside === 2) return DIRT_PLAIN_IMG;     // second line
+    return WATER_IMG;                              // beyond -> water
   };
 
   // Slight variation on grass top faces (non-water)
   const getGrassTopImage = (x: number, z: number) => {
     const r = rand01(x * 3, z * 3, 911);
-    if (r < 0.12) return DIRT_IMG;  // subtle weeds
-    if (r < 0.22) return DIRT_IMG2; // darker patch
+    if (r < 0.12) return GRASS_WEEDS;  // subtle weeds
+    if (r < 0.22) return GRASS_DARK; // darker patch
     return GRASS_IMG;
   };
 
@@ -312,9 +327,7 @@ export default function Board({
                 disabled={!isExpandable}
               >
                 <Image
-                  source={((actualX >= -1 && actualX <= forestSize) && (actualZ >= -1 && actualZ <= forestSize))
-                    ? GRASS_IMG
-                    : getDirtImage(actualX, actualZ)}
+                  source={getStripBackground(actualX, actualZ)}
                   style={{
                     width: SPRITE_W,
                     height: FOOT_H + WALL_H,
