@@ -1,6 +1,7 @@
 package com.E205.cocos_forest.domain.forest.entity;
 
 import jakarta.persistence.*;
+import com.E205.cocos_forest.domain.forest.entity.Asset;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,10 +16,10 @@ import java.time.LocalDateTime;
  * 숲에 심어진 나무 정보를 담는 엔티티
  */
 @Entity
-@Table(name = "trees")
+@Table(name = "user_plants")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Tree {
+public class Plants {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +38,14 @@ public class Tree {
 
     @Column(nullable = false)
     private Integer y; // y좌표
+
+    /** 심은 자산 FK (assets.id) */
+    @Column(name = "asset_id", columnDefinition = "BIGINT UNSIGNED", nullable = false)
+    private Long assetId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "asset_id", insertable = false, updatable = false)
+    private Asset asset;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "growth_stage", nullable = false)
@@ -72,13 +81,14 @@ public class Tree {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Tree(Long forestId, Integer x, Integer y, GrowthStage growthStage) {
+    public Plants(Long forestId, Integer x, Integer y, GrowthStage growthStage, Long assetId) {
         this.forestId = forestId;
         this.x = x;
         this.y = y;
         this.growthStage = growthStage != null ? growthStage : GrowthStage.SMALL;
         this.health = this.growthStage.getMaxHealth();
         this.maxHealth = this.growthStage.getMaxHealth();
+        this.assetId = assetId;
     }
 
     /**

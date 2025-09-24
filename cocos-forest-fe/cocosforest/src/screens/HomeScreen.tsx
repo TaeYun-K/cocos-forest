@@ -9,7 +9,7 @@ import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
-import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest } from "../api/home";
+import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, type AssetDto } from "../api/home";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
@@ -36,6 +36,10 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [expandModalVisible, setExpandModalVisible] = useState(false);
   const [showCocoTip, setShowCocoTip] = useState(false);
+  // Asset catalog (for planting UI)
+  const [assets, setAssets] = useState<AssetDto[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
 
   // Zoom state (+ / - controls)
   const [zoom, setZoom] = useState(1);
@@ -170,6 +174,7 @@ export default function HomeScreen() {
         x: tree.x,
         z: tree.y,
         growthStage: tree.growthStage,
+        assetId: tree.assetId,
       }));
       setOriginalMarkers(treeMarkers);
       
@@ -210,7 +215,16 @@ export default function HomeScreen() {
   const handleCellPress = useCallback((cell: Cell) => {
     setSelected(cell);
     setModalVisible(true);
-  }, []);
+    // If empty cell, prepare asset picker
+    const exists = treeData.find(tree => tree.x === cell.x && tree.y === cell.z);
+    if (!exists) {
+      setSelectedAssetId(null);
+      if (assets.length === 0) {
+        // load asset catalog lazily
+        loadAssetsForPlanting();
+      }
+    }
+  }, [treeData, assets.length, loadAssetsForPlanting]);
 
   // 확장 가능 영역 클릭 핸들러
   const handleExpandableAreaPress = useCallback(() => {
@@ -234,6 +248,7 @@ export default function HomeScreen() {
         x: tree.x,
         z: tree.y,
         growthStage: tree.growthStage,
+        assetId: tree.assetId,
       }));
       setOriginalMarkers(treeMarkers);
       setTreeData(expandedForestInfo.trees);
@@ -259,11 +274,15 @@ export default function HomeScreen() {
   // 나무 심기 핸들러
   const handlePlantTree = async () => {
     if (!selected || actionLoading) return;
+    if (!selectedAssetId) {
+      Alert.alert("안내", "심을 나무를 선택해 주세요.");
+      return;
+    }
     
     try {
       setActionLoading(true);
       
-      await plantTree(selected.x, selected.z);
+      await plantTree(selected.x, selected.z, selectedAssetId);
       await loadForestData();
       setModalVisible(false);
       
@@ -366,6 +385,20 @@ export default function HomeScreen() {
     actionLoading ? s.modalBtnDisabled : s.modalBtnWater
   ];
 
+  // Load assets (trees) when needed
+  const loadAssetsForPlanting = useCallback(async () => {
+    try {
+      setAssetsLoading(true);
+      const all = await listAssets();
+      const treeAssets = all.filter(a => a.categoryId === 1 || a.categoryId === 2);
+      setAssets(treeAssets);
+    } catch (error) {
+      console.error('Failed to load assets:', error);
+    } finally {
+      setAssetsLoading(false);
+    }
+  }, []);
+
   return (
     <LinearGradient
       colors={["#87CEEB", "#E0F7FA"]}
@@ -375,13 +408,13 @@ export default function HomeScreen() {
     >
       {/* Cloud layer (non-interactive) */}
       <Image
-        source={require('../../assets/tiles/cloud1.png')}
+        source={require('../../assets/home/cloud/cloud1.png')}
         pointerEvents="none"
         resizeMode="contain"
         style={{ position: 'absolute', top: 36, left: -24, width: 240, height: 130, opacity: 0.55 }}
       />
       <Image
-        source={require('../../assets/tiles/cloud2.png')}
+        source={require('../../assets/home/cloud/cloud2.png')}
         pointerEvents="none"
         resizeMode="contain"
         style={{ position: 'absolute', top: 120, right: -28, width: 280, height: 150, opacity: 0.48 }}
@@ -512,6 +545,36 @@ export default function HomeScreen() {
               <Text style={s.modalHint}>나무심기</Text>
             )}
             
+            {!hasTreeData && (
+              <View>
+                <Text style={s.modalHint}>나무 선택</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                  {assetsLoading && (
+                    <Text style={s.modalText}>불러오는 중...</Text>
+                  )}
+                  {!assetsLoading && assets.map((a) => (
+                    <Pressable
+                      key={a.id}
+                      onPress={() => setSelectedAssetId(a.id)}
+                      style={{
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        borderRadius: 8,
+                        borderWidth: 2,
+                        borderColor: selectedAssetId === a.id ? '#2563EB' : '#CBD5E1',
+                        backgroundColor: selectedAssetId === a.id ? '#DBEAFE' : '#F1F5F9',
+                        marginRight: 8,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <Text style={{ fontWeight: '700', color: '#0F172A' }}>{a.name}</Text>
+                      <Text style={{ color: '#334155', marginTop: 2 }}>{(a.pricePoints ?? 0).toLocaleString()} P</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            )}
+
             <View style={s.modalButtonRow}>
               {!hasTreeData && (
                 <Pressable

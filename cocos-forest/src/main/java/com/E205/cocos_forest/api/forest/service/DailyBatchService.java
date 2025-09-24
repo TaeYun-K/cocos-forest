@@ -1,7 +1,7 @@
 package com.E205.cocos_forest.api.forest.service;
 
 import com.E205.cocos_forest.domain.forest.entity.GrowthStage;
-import com.E205.cocos_forest.domain.forest.entity.Tree;
+import com.E205.cocos_forest.domain.forest.entity.Plants;
 import com.E205.cocos_forest.domain.forest.repository.TreeRepository;
 import com.E205.cocos_forest.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -131,22 +131,22 @@ public class DailyBatchService {
      */
     private void giveTreeRewards() {
         // 완전 성장한 나무들 조회 (LARGE 단계, 체력 80 이상)
-        List<Tree> fullyGrownTrees = treeRepository
+        List<Plants> fullyGrownPlants = treeRepository
                 .findFullyGrownTrees(GrowthStage.LARGE, 80);
         
-        if (fullyGrownTrees.isEmpty()) {
+        if (fullyGrownPlants.isEmpty()) {
             log.info("완전 성장한 나무가 없어 보상을 지급하지 않습니다.");
             return;
         }
         
         // 사용자별로 그룹화하여 포인트 지급
-        Map<Long, List<Tree>> treesByUserId = fullyGrownTrees.stream()
+        Map<Long, List<Plants>> treesByUserId = fullyGrownPlants.stream()
                 .collect(Collectors.groupingBy(tree -> tree.getForest().getUserId()));
         
         int totalRewardedUsers = 0;
         int totalRewardedTrees = 0;
         
-        for (Map.Entry<Long, List<Tree>> entry : treesByUserId.entrySet()) {
+        for (Map.Entry<Long, List<Plants>> entry : treesByUserId.entrySet()) {
             Long userId = entry.getKey();
             int treeCount = entry.getValue().size();
             

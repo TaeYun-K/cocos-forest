@@ -1,6 +1,6 @@
-package com.E205.cocos_forest.domain.forest.dto;
+package com.E205.cocos_forest.api.forest.dto.out;
 
-import com.E205.cocos_forest.domain.forest.entity.Tree;
+import com.E205.cocos_forest.domain.forest.entity.Plants;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,13 +17,13 @@ public class WaterTreeResponseDto {
     private Integer waterCountToday;
     private Integer remainingWaterCount;
     
-    public static WaterTreeResponseDto success(Tree tree) {
+    public static WaterTreeResponseDto success(Plants plants) {
         return WaterTreeResponseDto.builder()
                 .success(true)
                 .message("물주기 성공!")
-                .currentHealth(tree.getHealth())
-                .waterCountToday(tree.getWaterCountToday())
-                .remainingWaterCount(3 - tree.getWaterCountToday())
+                .currentHealth(plants.getHealth())
+                .waterCountToday(plants.getWaterCountToday())
+                .remainingWaterCount(3 - plants.getWaterCountToday())
                 .build();
     }
     

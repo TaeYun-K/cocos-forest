@@ -1,6 +1,6 @@
 package com.E205.cocos_forest.api.forest.service;
 
-import com.E205.cocos_forest.domain.forest.dto.AssetResponseDto;
+import com.E205.cocos_forest.api.forest.dto.out.AssetResponseDto;
 import com.E205.cocos_forest.domain.forest.entity.Asset;
 import com.E205.cocos_forest.domain.forest.repository.AssetRepository;
 import lombok.RequiredArgsConstructor;
