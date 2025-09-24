@@ -41,26 +41,19 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-font"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "d27ed203-5255-485b-9c31-a1984d1476e7"
-      }
-    },
-<<<<<<< Updated upstream
-    "owner": "minju_kim"
-=======
-    "owner": "kwonin",
-    "plugins": [
-      "expo-asset",
+      "expo-font",
       [
         "expo-camera",
         {
           "cameraPermission": "텀블러 인증을 위해 영수증을 촬영하기 위해 사용됩니다."
         }
       ]
-    ]
->>>>>>> Stashed changes
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d27ed203-5255-485b-9c31-a1984d1476e7"
+      }
+    },
+    "owner": "minju_kim"
   }
 }
