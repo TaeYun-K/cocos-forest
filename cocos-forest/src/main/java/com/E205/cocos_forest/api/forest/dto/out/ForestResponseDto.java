@@ -2,6 +2,7 @@ package com.E205.cocos_forest.api.forest.dto.out;
 
 import com.E205.cocos_forest.domain.forest.entity.Forest;
 import com.E205.cocos_forest.api.forest.dto.out.AssetResponseDto;
+import com.E205.cocos_forest.api.forest.dto.out.DecorationResponseDto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.E205.cocos_forest.domain.forest.entity.Plants;
 import lombok.Builder;
@@ -28,8 +29,7 @@ public class ForestResponseDto {
     private Integer aliveTreeCount;
     private Integer deadHighlightCount;
     private List<TreeResponseDto> trees;
-    @Builder.Default
-    private List<AssetResponseDto> assets = Collections.emptyList();
+    private List<DecorationResponseDto> decorations;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -44,6 +44,9 @@ public class ForestResponseDto {
                 .deadHighlightCount((int) forest.getPlants().stream().filter(Plants::getDeadHighlight).count())
                 .trees(forest.getPlants().stream()
                         .map(TreeResponseDto::from)
+                        .collect(Collectors.toList()))
+                .decorations(forest.getDecorations().stream()
+                        .map(DecorationResponseDto::from)
                         .collect(Collectors.toList()))
                 .createdAt(forest.getCreatedAt())
                 .updatedAt(forest.getUpdatedAt())
@@ -62,7 +65,9 @@ public class ForestResponseDto {
                 .trees(forest.getPlants().stream()
                         .map(TreeResponseDto::from)
                         .collect(Collectors.toList()))
-                .assets(assets)
+                .decorations(forest.getDecorations().stream()
+                        .map(DecorationResponseDto::from)
+                        .collect(Collectors.toList()))
                 .createdAt(forest.getCreatedAt())
                 .updatedAt(forest.getUpdatedAt())
                 .build();

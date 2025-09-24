@@ -22,9 +22,25 @@ const SPRITES: Record<string, any> = {
   "home/decorations/tree/tree.png": require("../../assets/home/decorations/tree/tree.png"),
 };
 
+// Some DB rows might omit subfolders (e.g., home/decorations/poppy.png)
+// Try known directories as fallback.
+const FALLBACK_DIRS = [
+  "home/decorations/flower/",
+  "home/decorations/tree/",
+  "home/decorations/obstacle/",
+  "home/decorations/torch/",
+];
+
 export function getSpriteByKey(spriteKey?: string) {
-  return spriteKey ? SPRITES[spriteKey] : undefined;
+  if (!spriteKey) return undefined;
+  if (SPRITES[spriteKey]) return SPRITES[spriteKey];
+  const base = spriteKey.split('/').pop();
+  if (!base) return undefined;
+  for (const dir of FALLBACK_DIRS) {
+    const candidate = dir + base;
+    if (SPRITES[candidate]) return SPRITES[candidate];
+  }
+  return undefined;
 }
 
 export default SPRITES;
-
