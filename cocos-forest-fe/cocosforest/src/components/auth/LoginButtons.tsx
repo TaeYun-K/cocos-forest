@@ -40,7 +40,7 @@ export const LoginButtons: React.FC<LoginButtonsProps> = ({
 
 const styles = StyleSheet.create({
   loginButton: {
-    backgroundColor: '#7CB342',
+    backgroundColor: '#15803d',
     borderRadius: 25,
     paddingVertical: 16,
     alignItems: 'center',
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   },
   signupLink: {
     fontSize: 14,
-    color: '#7CB342',
+    color: '#15803d',
     fontWeight: 'bold',
   },
 });
