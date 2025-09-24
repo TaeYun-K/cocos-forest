@@ -19,6 +19,7 @@ public class TreeResponseDto {
     private Integer x;
     private Integer y;
     private Long assetId;
+    private String spriteKey;
     private GrowthStage growthStage;
     private Integer health;
     private Integer maxHealth;
@@ -35,6 +36,7 @@ public class TreeResponseDto {
                 .x(plants.getX())
                 .y(plants.getY())
                 .assetId(plants.getAssetId())
+                .spriteKey(plants.getAsset() != null ? plants.getAsset().getSpriteKey() : null)
                 .growthStage(plants.getGrowthStage())
                 .health(plants.getHealth())
                 .maxHealth(plants.getMaxHealth())

@@ -31,6 +31,7 @@ export type ForestInfoDto = {
     deadHighlight: boolean;
     growthDays: number;
     growthStage: string;
+    spriteKey?: string | null;
     health: number;
     isDead: boolean;
     lastWateredDate: string | null;

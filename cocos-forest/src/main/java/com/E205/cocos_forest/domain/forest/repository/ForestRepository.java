@@ -27,8 +27,10 @@ public interface ForestRepository extends JpaRepository<Forest, Long> {
     /**
      * 사용자의 숲과 식물(나무/꽃) 정보를 함께 조회 (Fetch Join)
      */
-    @Query("SELECT f FROM Forest f " +
+    @Query("SELECT DISTINCT f FROM Forest f " +
            "LEFT JOIN FETCH f.plants p " +
+           "LEFT JOIN FETCH p.asset " +
+           "LEFT JOIN FETCH f.decorations d " +
            "WHERE f.userId = :userId")
     Optional<Forest> findByUserIdWithTrees(@Param("userId") Long userId);
 
