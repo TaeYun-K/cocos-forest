@@ -8,6 +8,8 @@ import com.E205.cocos_forest.domain.forest.repository.ForestRepository;
 import com.E205.cocos_forest.domain.forest.repository.TreeRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,8 @@ public class ForestService {
     private final ForestRepository forestRepository;
     private final TreeRepository treeRepository;
     private final PointService pointService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * 사용자의 숲 생성 (최초 1회)
@@ -186,7 +190,7 @@ public class ForestService {
     public ForestResponseDto expandForest(Long userId) {
         // 숲 조회
         Forest forest = forestRepository.findByUserId(userId)
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
+                        .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
 
         // 포인트 차감 (1000포인트)
         try {
@@ -195,6 +199,14 @@ public class ForestService {
             throw new BaseException(BaseResponseStatus.INSUFFICIENT_POINTS, e.getMessage());
         }
 
+        // 기존 나무들의 위치를 조정 (확장으로 인해 중앙으로 이동)
+        // 숲이 2칸씩 확장되므로 각 방향으로 1칸씩 이동
+        int offsetX = 1;
+        int offsetY = 1;
+
+        // 나무 위치 조정 (유니크 제약 회피)
+        shiftTreesPosition(forest.getId(), offsetX, offsetY);
+
         // 숲 확장
         forest.expandSize();
         Forest savedForest = forestRepository.save(forest);
@@ -202,6 +214,29 @@ public class ForestService {
         log.info("사용자 {}가 숲을 {}x{}로 확장했습니다.", userId, savedForest.getSize(), savedForest.getSize());
 
         return ForestResponseDto.from(savedForest);
+    }
+
+    /**
+     * 나무 위치 일괄 조정 (유니크 제약 회피를 위한 2단계 처리)
+     */
+    private void shiftTreesPosition(Long forestId, int offsetX, int offsetY) {
+        // 1단계: 임시로 음수 변환하여 유니크 제약 회피
+        String tempQuery = "UPDATE trees SET x = -(x + ?1), y = -(y + ?2) WHERE forest_id = ?3";
+
+        entityManager.createNativeQuery(tempQuery)
+                        .setParameter(1, offsetX)
+                        .setParameter(2, offsetY)
+                        .setParameter(3, forestId)
+                        .executeUpdate();
+
+        // 2단계: 최종 위치로 조정 (음수를 양수로)
+        String finalQuery = "UPDATE trees SET x = -x, y = -y WHERE forest_id = ?1";
+
+        entityManager.createNativeQuery(finalQuery)
+                        .setParameter(1, forestId)
+                        .executeUpdate();
+
+        log.debug("숲 {}의 나무 위치를 ({}, {})만큼 이동했습니다.", forestId, offsetX, offsetY);
     }
 
     /**
