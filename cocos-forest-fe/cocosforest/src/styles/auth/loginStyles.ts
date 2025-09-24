@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const loginStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#E8F5E9',
   },
   scrollContent: {
     flexGrow: 1,
