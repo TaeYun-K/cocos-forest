@@ -30,7 +30,6 @@ public interface ForestRepository extends JpaRepository<Forest, Long> {
     @Query("SELECT DISTINCT f FROM Forest f " +
            "LEFT JOIN FETCH f.plants p " +
            "LEFT JOIN FETCH p.asset " +
-           "LEFT JOIN FETCH f.decorations d " +
            "WHERE f.userId = :userId")
     Optional<Forest> findByUserIdWithTrees(@Param("userId") Long userId);
 
