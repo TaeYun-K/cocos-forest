@@ -20,6 +20,14 @@ const SPRITES: Record<string, any> = {
   "home/decorations/tree/orange_tree.png": require("../../assets/home/decorations/tree/orange_tree.png"),
   "home/decorations/tree/small_tree.png": require("../../assets/home/decorations/tree/small_tree.png"),
   "home/decorations/tree/tree.png": require("../../assets/home/decorations/tree/tree.png"),
+  "home/decorations/tree/apple_tree.png": require("../../assets/home/decorations/tree/apple_tree.png"),
+  "home/decorations/tree/snow_tree.png": require("../../assets/home/decorations/tree/snow_tree.png"),
+
+  // characters
+  "home/decorations/character/coco.png": require("../../assets/home/decorations/character/coco.png"),
+  "home/decorations/character/coco_travler.png": require("../../assets/home/decorations/character/coco_travler.png"),
+  "home/decorations/character/eren.png": require("../../assets/home/decorations/character/eren.png"),
+  "home/decorations/character/mikasa.png": require("../../assets/home/decorations/character/mikasa.png"),
 };
 
 // Some DB rows might omit subfolders (e.g., home/decorations/poppy.png)
@@ -29,6 +37,7 @@ const FALLBACK_DIRS = [
   "home/decorations/tree/",
   "home/decorations/obstacle/",
   "home/decorations/torch/",
+  "home/decorations/character/",
 ];
 
 export function getSpriteByKey(spriteKey?: string) {
