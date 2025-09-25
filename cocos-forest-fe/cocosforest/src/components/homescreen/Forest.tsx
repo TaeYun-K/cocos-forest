@@ -29,7 +29,7 @@ const MEDIUM_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tr
 const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
 // dead tree asset
-const DEAD_TREE_WARNING_IMG = require("../../../assets/home/tiles/alert.png");
+const DEAD_TREE_WARNING_IMG = require("../../../assets/home/decorations/tree/dead_tree.png");
 
 // mapping by assetId not needed; use spriteKey from API assets
 
