@@ -39,7 +39,7 @@ import AccountProductModal from '../components/profile/AccountProductModal';
 import AccountSelectionModal from '../components/profile/AccountSelectionModal';
 import AccountMenuModal from '../components/profile/AccountMenuModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
-import { getBankColor, getCardColor } from '../utils/bankUtils';
+import { getBankColor, getCardColor, getBankIcon } from '../utils/bankUtils';
 import { getErrorMessage, handleApiError } from '../utils/errorUtils';
 import { UnifiedHeader } from '../components/common';
 
@@ -86,30 +86,7 @@ const ProfileScreen = () => {
   
   const userId = Number(user?.id) || 1;
 
-  // 은행 로고 가져오기 함수
-  const getBankLogo = (bankCode: string) => {
-    const logoMap: { [key: string]: any } = {
-      '001': require('../../assets/bank-logos/bok.png'),
-      '002': require('../../assets/bank-logos/kdb.png'),
-      '003': require('../../assets/bank-logos/ibk.png'),
-      '004': require('../../assets/bank-logos/kb.png'),
-      '011': require('../../assets/bank-logos/nh.png'),
-      '020': require('../../assets/bank-logos/woori.png'),
-      '023': require('../../assets/bank-logos/sc.png'),
-      '027': require('../../assets/bank-logos/citi.png'),
-      '032': require('../../assets/bank-logos/dgb.png'),
-      '034': require('../../assets/bank-logos/kjb.png'),
-      '035': require('../../assets/bank-logos/jb.png'),
-      '037': require('../../assets/bank-logos/jbbank.png'),
-      '039': require('../../assets/bank-logos/knb.png'),
-      '045': require('../../assets/bank-logos/kfcc.png'),
-      '081': require('../../assets/bank-logos/hana.png'),
-      '088': require('../../assets/bank-logos/shinhan.png'),
-      '090': require('../../assets/bank-logos/kakao.png'),
-      '999': require('../../assets/bank-logos/ssafy-bank.png')
-    };
-    return logoMap[bankCode] || null;
-  };
+  // 유틸 함수 사용으로 코드 일관성 확보
 
   const loadUserProfile = async () => {
   try {
@@ -673,7 +650,7 @@ const ProfileScreen = () => {
               {userAccounts.map((account) => {
                 const bank = banks.find(b => b.bankCode === account.bankCode);
                 const bankName = bank?.bankName || `은행 ${account.bankCode}`;
-                const bankLogo = getBankLogo(account.bankCode);
+                const bankLogo = getBankIcon(account.bankCode, bankName);
                 
                 return (
                   <View key={account.accountId} style={styles.tempCard}>

@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { fetchUserAccounts } from '../../api/finance';
 import type { Bank, CardProduct, UserAccount } from '../../api/finance';
-import { getBankColor } from '../../utils/bankUtils';
+import { getBankColor, getBankIcon } from '../../utils/bankUtils';
 
 interface AccountSelectionModalProps {
   visible: boolean;
@@ -97,7 +98,7 @@ const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
             
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#6366F1" />
+                <ActivityIndicator size="large" color="#15803d" />
                 <Text style={styles.loadingText}>계좌 정보를 불러오는 중...</Text>
               </View>
             ) : accounts.length > 0 ? (
@@ -115,10 +116,18 @@ const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
                       onPress={() => onAccountSelect(account)}
                     >
                       <View style={styles.accountSelectionInfo}>
-                        <View style={[styles.accountIcon, { backgroundColor: getBankColor(account.bankCode) }]}>
-                          <Text style={styles.accountIconText}>
-                            {banks.find(b => b.bankCode === account.bankCode)?.bankName?.charAt(0) || '?'}
-                          </Text>
+                        <View style={styles.accountIcon}>
+                          {getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '') ? (
+                            <Image
+                              source={getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '')}
+                              style={styles.bankLogoImage}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <Text style={styles.accountIconText}>
+                              {banks.find(b => b.bankCode === account.bankCode)?.bankName?.charAt(0) || '?'}
+                            </Text>
+                          )}
                         </View>
                         <View style={styles.accountDetails}>
                           <Text style={styles.accountName}>
@@ -255,7 +264,7 @@ const styles = StyleSheet.create({
   },
   accountCountInfo: {
     fontSize: 16,
-    color: '#6366F1',
+    color: '#15803d',
     fontWeight: '600',
     marginBottom: 16,
     textAlign: 'center',
@@ -299,8 +308,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   bankLogoImage: {
-    width: 24,
-    height: 24,
+    width: 36,
+    height: 36,
   },
   accountDetails: {
     flex: 1,

@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import type { Bank, CardProduct } from '../../api/finance';
+import { getBankIcon } from '../../utils/bankUtils';
 
 interface BankSelectionModalProps {
   visible: boolean;
@@ -91,7 +93,7 @@ const BankSelectionModal: React.FC<BankSelectionModalProps> = ({
           {/* 로딩 표시 */}
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366F1" />
+              <ActivityIndicator size="large" color="#15803d" />
               <Text style={styles.loadingText}>데이터를 불러오는 중...</Text>
             </View>
           )}
@@ -118,8 +120,16 @@ const BankSelectionModal: React.FC<BankSelectionModalProps> = ({
                       style={styles.bankItem}
                       onPress={() => onBankSelect(bank)}
                     >
-                      <View style={[styles.bankLogoContainer, { backgroundColor: getBankColor(bank.bankCode) }]}>
-                        <Text style={styles.bankIconText}>{bank.bankName.charAt(0)}</Text>
+                      <View style={styles.bankLogoContainer}>
+                        {getBankIcon(bank.bankCode, bank.bankName) ? (
+                          <Image
+                            source={getBankIcon(bank.bankCode, bank.bankName)}
+                            style={styles.bankLogoImage}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={styles.bankIconText}>{bank.bankName.charAt(0)}</Text>
+                        )}
                       </View>
                       <Text style={styles.bankName}>{bank.bankName}</Text>
                     </TouchableOpacity>
@@ -165,7 +175,7 @@ const BankSelectionModal: React.FC<BankSelectionModalProps> = ({
                 ) : (
                   <View style={styles.emptyCardContainer}>
                     <Text style={styles.emptyCardText}>카드 상품을 불러오는 중...</Text>
-                    <ActivityIndicator size="small" color="#6366F1" />
+                    <ActivityIndicator size="small" color="#15803d" />
                   </View>
                 )
               )}
@@ -233,7 +243,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   accountTypeButtonActive: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#15803d',
   },
   accountTypeText: {
     fontSize: 14,
@@ -312,8 +322,8 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   bankLogoImage: {
-    width: 32,
-    height: 32,
+    width: 42,
+    height: 42,
   },
   bankIconText: {
     fontSize: 24,
@@ -338,7 +348,7 @@ const styles = StyleSheet.create({
   },
   bankModalInfoIcon: {
     fontSize: 16,
-    color: '#6366F1',
+    color: '#15803d',
     marginRight: 8,
     marginTop: 2,
   },

@@ -49,7 +49,7 @@ const AccountProductModal: React.FC<AccountProductModalProps> = ({
           {/* 로딩 표시 */}
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366F1" />
+              <ActivityIndicator size="large" color="#15803d" />
               <Text style={styles.loadingText}>상품 목록을 불러오는 중...</Text>
             </View>
           )}
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   },
   bankModalInfoIcon: {
     fontSize: 16,
-    color: '#6366F1',
+    color: '#15803d',
     marginRight: 8,
     marginTop: 2,
   },
