@@ -421,10 +421,12 @@ export default function Board({
           <Image
             key={`marker-${m.x}-${m.z}`}
             source={(() => {
+              const isDead = !!(treeInfo && (treeInfo.isDead || treeInfo.health === 0));
+              if (isDead) return DEAD_TREE_WARNING_IMG;
               const sprite = getSpriteByKey(treeInfo?.spriteKey);
               return sprite || getTreeAsset(
                 m.growthStage,
-                treeInfo?.isDead,
+                false,
                 treeInfo?.health,
                 treeInfo?.maxHealth
               );
