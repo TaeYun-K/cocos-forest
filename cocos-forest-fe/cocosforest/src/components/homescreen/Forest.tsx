@@ -15,6 +15,7 @@ import {
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
 import { getSpriteByKey } from "../../assets/spriteMap";
+import { listAssets, type AssetDto } from "../../api/home";
 
 const GRASS_DARK = require("../../../assets/home/tiles/grassdark.png");
 const GRASS_WEEDS = require("../../../assets/home/tiles/grassweeds.png");
@@ -94,6 +95,26 @@ export default function Board({
   const pondX = forestInfo?.pondX || 3;
   const pondY = forestInfo?.pondY || 3;
   // No global asset catalog here; each tree carries its spriteKey from API.
+  // For decorations, fetch asset catalog once to resolve sprite by assetId.
+  const [decoSpriteById, setDecoSpriteById] = React.useState<Record<number, any>>({});
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const all: AssetDto[] = await listAssets();
+        if (!mounted) return;
+        const map: Record<number, any> = {};
+        for (const a of all) {
+          const sprite = getSpriteByKey(a.spriteKey || undefined);
+          if (sprite) map[a.id] = sprite;
+        }
+        setDecoSpriteById(map);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   
   // 물 타일인지 확인 (pondX, pondY 기준으로 2x2 영역)
   const isWater = (c: Cell) => 
@@ -412,6 +433,30 @@ export default function Board({
               position: "absolute",
               left: m.sx - MARKER_SIZE / 2,
               top: m.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+              width: MARKER_SIZE,
+              height: MARKER_SIZE,
+              resizeMode: "contain",
+              zIndex: 2,
+              elevation: 2,
+            }}
+            pointerEvents="none"
+          />
+        );
+      })}
+
+      {/* Layer 2b: Decorations */}
+      {forestInfo?.decorations?.map((deco) => {
+        const cell = cells.find(c => c.x === deco.x && c.z === deco.y);
+        if (!cell) return null;
+        const sprite = decoSpriteById[deco.assetId] || MARKER_IMG;
+        return (
+          <Image
+            key={`deco-${deco.id}-${deco.x}-${deco.y}`}
+            source={sprite}
+            style={{
+              position: "absolute",
+              left: cell.sx - MARKER_SIZE / 2,
+              top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
               width: MARKER_SIZE,
               height: MARKER_SIZE,
               resizeMode: "contain",
