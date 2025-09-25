@@ -1,4 +1,5 @@
 import { Platform, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // @ts-ignore
 import Pedometer from 'react-native-pedometer';
 
@@ -77,22 +78,47 @@ class HealthService {
           date: today.toISOString().split('T')[0],
         };
       } else {
-        // 실제 데이터가 없을 경우 시뮬레이션
-        const simulatedSteps = Math.floor(Math.random() * 5000) + 3000;
+        const todayKey = today.toISOString().split('T')[0];
+        const storageKey = `simulatedSteps_${todayKey}`;
+        
+        try {
+          const storedSteps = await AsyncStorage.getItem(storageKey);
+          let currentSteps = storedSteps ? parseInt(storedSteps) : 0;
+          currentSteps += 3000;
+          await AsyncStorage.setItem(storageKey, currentSteps.toString());
+          
+          return {
+            steps: currentSteps,
+            date: today.toISOString().split('T')[0],
+          };
+        } catch (error) {
+          return {
+            steps: 5000,
+            date: today.toISOString().split('T')[0],
+          };
+        }
+      }
+    } catch (error) {
+      const today = new Date();
+      const todayKey = today.toISOString().split('T')[0];
+      const storageKey = `simulatedSteps_${todayKey}`;
+      
+      try {
+        const storedSteps = await AsyncStorage.getItem(storageKey);
+        let currentSteps = storedSteps ? parseInt(storedSteps) : 0;
+        currentSteps += 3000;
+        await AsyncStorage.setItem(storageKey, currentSteps.toString());
+        
         return {
-          steps: simulatedSteps,
+          steps: currentSteps,
+          date: today.toISOString().split('T')[0],
+        };
+      } catch (storageError) {
+        return {
+          steps: 5000,
           date: today.toISOString().split('T')[0],
         };
       }
-    } catch (error) {
-      console.log('Error fetching steps:', error);
-      console.log('⚠️ 걸음수 센서를 사용할 수 없습니다. 시뮬레이션 데이터를 사용합니다.');
-      // 에러 발생 시 시뮬레이션 데이터 반환
-      const simulatedSteps = Math.floor(Math.random() * 5000) + 3000;
-      return {
-        steps: simulatedSteps,
-        date: new Date().toISOString().split('T')[0],
-      };
     }
   }
 

@@ -19,9 +19,6 @@ apiClient.interceptors.request.use(
       const token = await AsyncStorage.getItem(ENV.AUTH_TOKEN_KEY);
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log(`🔐 토큰 추가됨: ${token.substring(0, 20)}...`);
-        console.log(`🔐 전체 토큰 길이: ${token.length}자`);
-        console.log(`🔐 Authorization 헤더: Bearer ${token.substring(0, 50)}...`);
       } else {
         console.log('⚠️ 저장된 토큰이 없습니다 - 인증이 필요한 API 호출 시 403 에러가 발생할 수 있습니다');
         console.log('⚠️ AsyncStorage 키:', ENV.AUTH_TOKEN_KEY);
@@ -31,11 +28,6 @@ apiClient.interceptors.request.use(
     }
 
     if (ENV.IS_DEV) {
-      console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
-      console.log('📋 Request Headers:', JSON.stringify(config.headers, null, 2));
-      if (config.data) {
-        console.log('📊 Request Data:', JSON.stringify(config.data, null, 2));
-      }
     }
     return config;
   },
@@ -49,8 +41,6 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     if (ENV.IS_DEV) {
-      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - ${response.status}`);
-      console.log(`📊 Response data:`, response.data);
     }
     return response;
   },
@@ -143,14 +133,6 @@ export const debugTokenStatus = async () => {
     const refreshToken = await AsyncStorage.getItem(ENV.REFRESH_TOKEN_KEY);
     const user = await AsyncStorage.getItem(ENV.AUTH_USER_KEY);
     
-    console.log('🔍 === 토큰 상태 디버깅 ===');
-    console.log('🔍 AUTH_TOKEN_KEY:', ENV.AUTH_TOKEN_KEY);
-    console.log('🔍 REFRESH_TOKEN_KEY:', ENV.REFRESH_TOKEN_KEY);
-    console.log('🔍 AUTH_USER_KEY:', ENV.AUTH_USER_KEY);
-    console.log('🔍 Access Token:', token ? `${token.substring(0, 50)}... (길이: ${token.length})` : '없음');
-    console.log('🔍 Refresh Token:', refreshToken ? `${refreshToken.substring(0, 50)}... (길이: ${refreshToken.length})` : '없음');
-    console.log('🔍 User Info:', user ? '있음' : '없음');
-    console.log('🔍 ========================');
     
     return {
       hasAccessToken: !!token,
