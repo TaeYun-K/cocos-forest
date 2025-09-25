@@ -18,7 +18,7 @@
       "infoPlist": {
         "NSHealthShareUsageDescription": "걸음수를 측정하여 탄소 발자국을 추적하고 포인트를 획득하기 위해 사용됩니다.",
         "NSHealthUpdateUsageDescription": "걸음수 데이터를 동기화하여 포인트를 획득하기 위해 사용됩니다.",
-        "NSCameraUsageDescription": "텀블러 인증을 위해 영수증을 촬영하기 위해 사용됩니다.",
+        "NSCameraUsageDescription": "텀블러 인증을 위해 영수증을 촬영하기 위해 사용됩니다."
       }
     },
     "android": {
@@ -34,6 +34,7 @@
         "android.permission.ACTIVITY_RECOGNITION",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -51,9 +52,8 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "d27ed203-5255-485b-9c31-a1984d1476e7"
+        "projectId": "019eed11-10ee-43e1-bad0-2d788a586ff6"
       }
-    },
-    "owner": "minju_kim"
+    }
   }
 }

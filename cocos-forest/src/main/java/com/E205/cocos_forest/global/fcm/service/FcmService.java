@@ -26,7 +26,7 @@ public class FcmService {
     private final ResourceLoader resourceLoader;
 
     @Value("${fcm.service-account-file.location}")
-    private String serviceAccountLocation; // ex) classpath:keys/firebase-service-account.json or file:/run/secrets/firebase.json
+    private String serviceAccountLocation;
 
     @Value("${fcm.topic-name}")
     private String topicName;
