@@ -86,78 +86,6 @@ async function registerForPushNotificationsAsync() {
   }
 }
 
-// 개발용 토큰 표시 컴포넌트
-const DevTokenDisplay: React.FC = () => {
-  const { pushToken } = useNotificationStore();
-  const [showToken, setShowToken] = useState(false);
-
-  const copyToClipboard = async () => {
-    if (pushToken) {
-      await Clipboard.setStringAsync(pushToken);
-      Alert.alert('복사 완료!', '푸시 토큰이 클립보드에 복사되었습니다.');
-    }
-  };
-
-  const showTokenInfo = () => {
-    if (pushToken) {
-      const isEmulator = !Device.isDevice;
-      const tokenPreview = pushToken.length > 50 ? 
-        pushToken.substring(0, 30) + '...' + pushToken.substring(pushToken.length - 10) : 
-        pushToken;
-
-      Alert.alert(
-        '🔑 푸시 토큰 정보',
-        `${isEmulator ? '🖥️ 에뮬레이터용 가짜 토큰\n\n' : '📱 실제 디바이스 토큰\n\n'}토큰: ${tokenPreview}\n\n${isEmulator ? '실제 푸시 알림 테스트를 위해서는 실제 디바이스가 필요합니다.' : 'https://expo.dev/notifications 에서 테스트 가능합니다.'}`,
-        [
-          { text: '전체 토큰 복사', onPress: copyToClipboard },
-          { text: '닫기', style: 'cancel' }
-        ]
-      );
-    } else {
-      Alert.alert('알림', '푸시 토큰이 아직 생성되지 않았습니다.');
-    }
-  };
-
-  // 개발 모드에서만 표시
-  if (__DEV__) {
-    return (
-      <View style={styles.devTokenContainer}>
-        <TouchableOpacity 
-          style={styles.tokenButton}
-          onPress={() => setShowToken(!showToken)}
-        >
-          <Text style={styles.tokenButtonText}>
-            🔔 {showToken ? '숨기기' : '토큰 보기'}
-          </Text>
-        </TouchableOpacity>
-
-        {showToken && (
-          <View style={styles.tokenInfo}>
-            <TouchableOpacity style={styles.infoButton} onPress={showTokenInfo}>
-              <Text style={styles.infoButtonText}>
-                {pushToken ? '📋 토큰 정보' : '⏳ 토큰 생성 중...'}
-              </Text>
-            </TouchableOpacity>
-            
-            {pushToken && (
-              <View style={styles.tokenStatus}>
-                <Text style={styles.statusText}>
-                  {Device.isDevice ? '📱 실제 디바이스' : '🖥️ 에뮬레이터'}
-                </Text>
-                <Text style={styles.tokenPreview}>
-                  {pushToken.substring(0, 20)}...
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
-      </View>
-    );
-  }
-
-  return null;
-};
-
 export default function App() {
   const { setPushToken } = useNotificationStore();
   
@@ -247,10 +175,6 @@ const initializeNotifications = async () => {
         <NavigationContainer>
           <RootNavigator />
         </NavigationContainer>
-        
-        {/* 개발용 토큰 표시 컴포넌트 */}
-        <DevTokenDisplay />
-        
         <StatusBar style="light" />
       </View>
     </QueryClientProvider>
@@ -260,30 +184,6 @@ const initializeNotifications = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  devTokenContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 10,
-    zIndex: 1000,
-  },
-  tokenButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  tokenButtonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  tokenInfo: {
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    padding: 10,
-    borderRadius: 8,
-    maxWidth: 200,
   },
   infoButton: {
     backgroundColor: '#34C759',
@@ -296,22 +196,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 'bold',
     textAlign: 'center',
-  },
-  tokenStatus: {
-    alignItems: 'center',
-  },
-  statusText: {
-    color: '#FFD700',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  tokenPreview: {
-    color: '#00FF00',
-    fontSize: 9,
-    fontFamily: 'monospace',
-    backgroundColor: '#333',
-    padding: 4,
-    borderRadius: 2,
-  },
+  }
 });
