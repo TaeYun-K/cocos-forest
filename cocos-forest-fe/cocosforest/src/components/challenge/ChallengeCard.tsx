@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Challenge } from '../../types/challenge';
 import type { Transaction } from '../../types/dashboard';
 import { colors } from '../../styles/commonStyles';
@@ -21,6 +22,17 @@ interface ChallengeCardProps {
   onTumblerVerification: () => void;
   onClaimReward: (challenge: Challenge) => void;
 }
+
+// 이모지를 벡터 아이콘으로 매핑
+const getIconName = (emoji: string): keyof typeof Ionicons.glyphMap => {
+  const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+    '📅': 'calendar-outline',
+    '🚶‍♂️': 'walk-outline',
+    '🚌': 'bus-outline',
+    '☕': 'cafe-outline',
+  };
+  return iconMap[emoji] || 'help-circle-outline';
+};
 
 const ChallengeCard: React.FC<ChallengeCardProps> = ({
   challenge,
@@ -46,7 +58,12 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     >
       <View style={styles.challengeHeader}>
         <View style={styles.challengeIconContainer}>
-          <Text style={styles.challengeIcon}>{challenge.icon}</Text>
+          <Ionicons
+            name={getIconName(challenge.icon)}
+            size={28}
+            color="#374151"
+            style={styles.challengeIcon}
+          />
         </View>
         <View style={styles.challengeInfo}>
           <View style={styles.challengeTitleContainer}>
@@ -137,14 +154,16 @@ const styles = StyleSheet.create({
   challengeIconContainer: {
     width: 60,
     height: 60,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8fafb',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   challengeIcon: {
-    fontSize: 24,
+    // 벡터 아이콘 스타일 (fontSize 제거)
   },
   challengeInfo: {
     flex: 1,

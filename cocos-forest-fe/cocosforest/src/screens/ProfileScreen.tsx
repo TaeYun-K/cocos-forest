@@ -1,17 +1,18 @@
 import * as React from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   Image,
   SafeAreaView,
   Modal,
   Alert,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '../config/env';
 import { commonStyles, colors } from '../styles/commonStyles';
@@ -160,11 +161,11 @@ const ProfileScreen = () => {
   );
 
   const settingsMenu = [
-    { id: 1, title: '알림 설정', icon: '🔔' },
-    { id: 2, title: '개인정보 보호', icon: '🛡️' },
-    { id: 3, title: '도움말', icon: '❓' },
-    { id: 4, title: '이용약관', icon: '📄' },
-    { id: 5, title: '로그아웃', icon: '🚪', isLogout: true }
+    { id: 1, title: '알림 설정', iconName: 'notifications-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 2, title: '개인정보 보호', iconName: 'shield-checkmark-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 3, title: '도움말', iconName: 'help-circle-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 4, title: '이용약관', iconName: 'document-text-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 5, title: '로그아웃', iconName: 'log-out-outline' as keyof typeof Ionicons.glyphMap, isLogout: true }
   ];
 
   const withdrawMenu = [
@@ -596,7 +597,7 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
               )}
               <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
-                <Text style={styles.settingsIconText}>⚙️</Text>
+                <Ionicons name="settings-outline" size={24} color="#666" />
               </TouchableOpacity>
             </>
           }
@@ -739,7 +740,12 @@ const ProfileScreen = () => {
               onPress={item.isLogout ? handleLogoutConfirm : undefined}
             >
               <View style={styles.settingLeft}>
-                <Text style={styles.settingIcon}>{item.icon}</Text>
+                <Ionicons
+                  name={item.iconName}
+                  size={20}
+                  color={item.isLogout ? '#EF4444' : '#666'}
+                  style={styles.settingIcon}
+                />
                 <Text style={[styles.settingText, item.isLogout && styles.logoutText]}>
                   {item.title}
                 </Text>
@@ -836,9 +842,6 @@ const styles = StyleSheet.create({
   },
   settingsIcon: {
     padding: 8,
-  },
-  settingsIconText: {
-    fontSize: 20,
   },
   profileCard: {
     backgroundColor: '#fff',
@@ -1008,7 +1011,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingIcon: {
-    fontSize: 20,
     marginRight: 12,
   },
   settingText: {
