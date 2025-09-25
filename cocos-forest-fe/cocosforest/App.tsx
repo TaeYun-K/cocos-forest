@@ -95,7 +95,6 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     'Hakgyoansim_EohangkkumigiOTFB': require('./assets/fonts/Hakgyoansim_EohangkkumigiOTFB.otf'),
     'Jalnan2': require('./assets/fonts/Jalnan2.otf'),
-    'Hakgyoansim_DunggeunmisoOTFB': require('./assets/fonts/Hakgyoansim Dunggeunmiso OTF B.otf'),
   });
 
   useEffect(() => {
@@ -172,9 +171,12 @@ const initializeNotifications = async () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
+      <View style={styles.container}>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+        <StatusBar style="light" />
+      </View>
     </QueryClientProvider>
   );
 }
