@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert, Image } from "react-native";
+import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert, Image, ScrollView } from "react-native";
 import { PinchGestureHandler, PanGestureHandler, State as GestureState } from "react-native-gesture-handler";
 import InfoBar from "../components/homescreen/InfoBar";
 import Coco from "../components/homescreen/Coco";
@@ -10,6 +10,7 @@ import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../util
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
 import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, type AssetDto } from "../api/home";
+import { getSpriteByKey } from "../assets/spriteMap";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
@@ -385,13 +386,14 @@ export default function HomeScreen() {
     actionLoading ? s.modalBtnDisabled : s.modalBtnWater
   ];
 
-  // Load assets (trees) when needed
+  // Load assets (all categories) when needed
   const loadAssetsForPlanting = useCallback(async () => {
     try {
       setAssetsLoading(true);
       const all = await listAssets();
-      const treeAssets = all.filter(a => a.categoryId === 1 || a.categoryId === 2);
-      setAssets(treeAssets);
+      // Include all active assets; backend may flag inactive ones.
+      const active = all.filter(a => a.active !== false);
+      setAssets(active);
     } catch (error) {
       console.error('Failed to load assets:', error);
     } finally {
@@ -547,31 +549,46 @@ export default function HomeScreen() {
             
             {!hasTreeData && (
               <View>
-                <Text style={s.modalHint}>나무 선택</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                  {assetsLoading && (
-                    <Text style={s.modalText}>불러오는 중...</Text>
-                  )}
-                  {!assetsLoading && assets.map((a) => (
-                    <Pressable
-                      key={a.id}
-                      onPress={() => setSelectedAssetId(a.id)}
-                      style={{
-                        paddingVertical: 8,
-                        paddingHorizontal: 12,
-                        borderRadius: 8,
-                        borderWidth: 2,
-                        borderColor: selectedAssetId === a.id ? '#2563EB' : '#CBD5E1',
-                        backgroundColor: selectedAssetId === a.id ? '#DBEAFE' : '#F1F5F9',
-                        marginRight: 8,
-                        marginBottom: 8,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: '#0F172A' }}>{a.name}</Text>
-                      <Text style={{ color: '#334155', marginTop: 2 }}>{(a.pricePoints ?? 0).toLocaleString()} P</Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <Text style={s.modalHint}>에셋 선택</Text>
+                <ScrollView style={{ marginTop: 8, maxHeight: 260 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {assetsLoading && (
+                      <Text style={s.modalText}>불러오는 중...</Text>
+                    )}
+                    {!assetsLoading && assets.map((a) => {
+                      const sprite = getSpriteByKey(a.spriteKey || undefined);
+                      const selected = selectedAssetId === a.id;
+                      return (
+                        <Pressable
+                          key={a.id}
+                          onPress={() => setSelectedAssetId(a.id)}
+                          style={{
+                            width: 88,
+                            height: 100,
+                            borderRadius: 10,
+                            borderWidth: 2,
+                            borderColor: selected ? '#2563EB' : '#CBD5E1',
+                            backgroundColor: selected ? '#DBEAFE' : '#F8FAFC',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 8,
+                            marginBottom: 8,
+                            padding: 6,
+                          }}
+                        >
+                          {sprite ? (
+                            <Image source={sprite} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+                          ) : (
+                            <Text style={{ fontWeight: '700', color: '#0F172A', textAlign: 'center' }}>{a.name}</Text>
+                          )}
+                          <Text style={{ color: '#334155', marginTop: 4, fontSize: 12 }}>
+                            {(a.pricePoints ?? 0).toLocaleString()} P
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
               </View>
             )}
 
