@@ -14,11 +14,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '../config/env';
 import { commonStyles, colors } from '../styles/commonStyles';
-import { 
-  fetchBanks, 
-  fetchAccountProducts, 
-  fetchUserAccounts, 
-  fetchCardProducts, 
+import {
+  fetchBanks,
+  fetchAccountProducts,
+  fetchUserAccounts,
+  fetchCardProducts,
   fetchUserCards,
   fetchUserProfile,
   connectUserCard,
@@ -31,11 +31,13 @@ import {
   type UserProfile,
   type ConnectCardRequest
 } from '../api/finance';
+import { fetchForestInfo, fetchPoints, type ForestInfoDto } from '../api/home';
 import { useAuthStore } from '../store/authStore';
 import BankSelectionModal from '../components/profile/BankSelectionModal';
 import AccountProductModal from '../components/profile/AccountProductModal';
 import AccountSelectionModal from '../components/profile/AccountSelectionModal';
 import AccountMenuModal from '../components/profile/AccountMenuModal';
+import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { getBankColor, getCardColor } from '../utils/bankUtils';
 import { getErrorMessage, handleApiError } from '../utils/errorUtils';
 
@@ -72,6 +74,10 @@ const ProfileScreen = () => {
   const [selectedCardForConnection, setSelectedCardForConnection] = React.useState<CardProduct | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
+
+  // 홈화면 API를 위한 상태 추가
+  const [forestInfo, setForestInfo] = React.useState<ForestInfoDto | null>(null);
+  const [points, setPoints] = React.useState<number>(0);
   
   const { user, isAuthenticated, logout } = useAuthStore();
   
@@ -105,7 +111,7 @@ const ProfileScreen = () => {
   const loadUserProfile = async () => {
   try {
     setIsLoadingProfile(true);
-    
+
     // GET /api/user/myprofile API 호출
     const response = await fetch('https://j13e205.p.ssafy.io/dev/api/user/myprofile', {
       method: 'GET',
@@ -114,13 +120,13 @@ const ProfileScreen = () => {
         'Authorization': `Bearer ${await AsyncStorage.getItem(ENV.AUTH_TOKEN_KEY)}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (data.isSuccess && data.result) {
       const profile = data.result;
       setUserProfile({
@@ -129,7 +135,7 @@ const ProfileScreen = () => {
         phoneNumber: '',
         email: ''
       });
-      
+
       setProfileData({
         name: profile.nickname,
         phone: '',
@@ -146,6 +152,21 @@ const ProfileScreen = () => {
     setIsLoadingProfile(false);
   }
 };
+
+  // 홈화면에서 사용하는 API를 이용한 데이터 로드 함수
+  const loadHomeData = async () => {
+    try {
+      const [forestData, pointsData] = await Promise.all([
+        fetchForestInfo(),
+        fetchPoints()
+      ]);
+
+      setForestInfo(forestData);
+      setPoints(pointsData);
+    } catch (error) {
+      console.error('홈 데이터 로드 실패:', error);
+    }
+  };
 
   React.useEffect(() => {
     loadUserCards();
@@ -348,10 +369,11 @@ const ProfileScreen = () => {
       await Promise.all([
         loadUserProfile(),
         loadUserAccounts(),
-        loadBanks()
+        loadBanks(),
+        loadHomeData()
       ]);
     };
-    
+
     initializeData();
   }, []);
 
@@ -601,7 +623,7 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.profileInfo}>
             {isLoadingProfile ? (
-              <ActivityIndicator size="small" color="#6366F1" />
+              <ActivityIndicator size="small" color="#15803d" />
             ) : (
               <>
                 <Text style={styles.userName}>
@@ -609,8 +631,8 @@ const ProfileScreen = () => {
                 </Text>
                 <Text style={styles.userTitle}>에코 워리어</Text>
                 <View style={styles.levelContainer}>
-                  <Text style={styles.levelText}>레벨 12</Text>
-                  <Text style={styles.pointsText}>{userProfile?.currentBalance || 0} P</Text>
+                  <Text style={styles.pointsText}>{points.toLocaleString()} P</Text>
+                  <Text style={styles.treeCountText}>나무 {forestInfo?.aliveTreeCount || 0}그루</Text>
                 </View>
               </>
             )}
@@ -624,7 +646,7 @@ const ProfileScreen = () => {
           
           {isLoading && userAccounts.length === 0 ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366F1" />
+              <ActivityIndicator size="large" color="#15803d" />
               <Text style={styles.loadingText}>계좌 정보를 불러오는 중...</Text>
             </View>
           ) : userAccounts.length === 0 ? (
@@ -793,6 +815,20 @@ const ProfileScreen = () => {
         userId={userId}
         banks={banks}
       />
+
+      <ProfileEditModal
+        visible={isEditModalVisible}
+        onClose={handleCloseModal}
+        profileData={profileData}
+        onInputChange={handleInputChange}
+        onNicknameCheck={handleNicknameCheck}
+        onEmailVerification={handleEmailVerification}
+        onSaveProfile={handleSaveProfile}
+        nicknameError={nicknameError}
+        nicknameChecked={nicknameChecked}
+        nicknameAvailable={nicknameAvailable}
+        emailVerificationSent={emailVerificationSent}
+      />
     </SafeAreaView>
   );
 };
@@ -876,12 +912,17 @@ const styles = StyleSheet.create({
   },
   levelText: {
     fontSize: 14,
-    color: '#6366F1',
+    color: '#15803d',
     fontWeight: '600',
   },
   pointsText: {
     fontSize: 14,
     color: '#10B981',
+    fontWeight: '600',
+  },
+  treeCountText: {
+    fontSize: 14,
+    color: '#059669',
     fontWeight: '600',
   },
   section: {
@@ -955,7 +996,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#6366F1',
+    backgroundColor: '#15803d',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -967,7 +1008,7 @@ const styles = StyleSheet.create({
   },
   addAccountText: {
     fontSize: 16,
-    color: '#6366F1',
+    color: '#15803d',
     fontWeight: '600',
   },
   cardsSection: {
@@ -1034,7 +1075,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     borderLeftWidth: 4,
-    borderLeftColor: '#6366F1',
+    borderLeftColor: '#15803d',
   },
   cardHeader: {
     flexDirection: 'row',

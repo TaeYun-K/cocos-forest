@@ -36,7 +36,7 @@ export const getBankIcon = (bankCode: string, bankName: string) => {
 };
 
 export const getCardColor = (index: number): string => {
-  const colors = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B'];
+  const colors = ['#15803d', '#059669', '#10B981', '#16A34A'];
   return colors[index % colors.length];
 };
 
