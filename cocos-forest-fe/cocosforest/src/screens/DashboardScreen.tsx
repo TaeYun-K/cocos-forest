@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboard } from '../hooks/useDashboard';
 import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
@@ -34,7 +34,6 @@ const DashboardScreen = memo(() => {
 
   return (
     <ErrorBoundary>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
         <View style={commonStyles.container}>
           <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
