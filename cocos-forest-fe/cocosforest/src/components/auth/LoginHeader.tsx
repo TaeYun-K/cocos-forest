@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 36,
     color: '#0F172A',
-    fontFamily: 'Jalnan2',
+    fontFamily: 'Hakgyoansim_DunggeunmisoOTFB',
     marginBottom: 12,
     letterSpacing: 1,
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
