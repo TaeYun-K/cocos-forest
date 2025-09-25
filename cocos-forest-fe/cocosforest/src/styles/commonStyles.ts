@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 // 공통 색상 팔레트
 export const colors = {
   // 기본 색상
-  background: '#fefdf8',
+  background: '#ededed',
   white: '#ffffff',
 
   // 텍스트 색상

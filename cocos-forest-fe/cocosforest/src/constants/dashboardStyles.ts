@@ -13,7 +13,7 @@ export const DASHBOARD_STYLE_CONSTANTS = {
   // 섹션 마진값들
   SECTION_MARGINS: {
     AI_ANALYSIS_BOTTOM: -155,
-    COCO_GIF_TOP: -25,
+    COCO_GIF_TOP: 0,
     TODAY_EMISSION_TOP: -180,
   },
 
