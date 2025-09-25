@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import React, { memo, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native';
 import { useDashboard } from '../hooks/useDashboard';
 import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
@@ -14,6 +15,8 @@ import {
 import { ErrorBoundary, UnifiedHeader } from '../components/common';
 
 const DashboardScreen = memo(() => {
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const {
     // 상태
     activeTab,
@@ -28,15 +31,22 @@ const DashboardScreen = memo(() => {
     handleTabChange,
   } = useDashboard();
 
+  // 탭이 포커스될 때 최상단으로 스크롤
+  useFocusEffect(
+    React.useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, [])
+  );
+
 
 
 
 
   return (
     <ErrorBoundary>
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
+      <SafeAreaView style={commonStyles.container}>
         <View style={commonStyles.container}>
-          <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
+          <ScrollView ref={scrollViewRef} style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
 
         <UnifiedHeader title="대시보드" />
 

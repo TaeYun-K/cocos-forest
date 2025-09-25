@@ -21,6 +21,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isInitializing: boolean;
   
   // 회원가입 임시 데이터
   signupData: {
@@ -59,6 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isLoading: false,
+  isInitializing: false,
   signupData: {},
 
   // 로그인
@@ -177,7 +179,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // 앱 시작 시 저장된 인증 정보 복원 (기존 코드 유지)
   initialize: async () => {
     try {
-      set({ isLoading: true });
+      set({ isInitializing: true });
 
       // 임시: 개발 중에는 항상 로그아웃 상태로 시작
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
@@ -200,7 +202,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
       await AsyncStorage.removeItem(AUTH_USER_KEY);
     } finally {
-      set({ isLoading: false });
+      set({ isInitializing: false });
     }
   },
 

@@ -46,10 +46,10 @@ export const useNotifications = () => {
     return () => {
       // 컴포넌트 언마운트 시 리스너 정리
       if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+        notificationListener.current.remove();
       }
       if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+        responseListener.current.remove();
       }
     };
   }, [setCurrentNotification]);

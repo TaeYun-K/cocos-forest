@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { ScrollView, SafeAreaView, Alert } from 'react-native';
@@ -20,6 +20,7 @@ import RewardModal from '../components/challenge/RewardModal';
 
 const ChallengeScreen = () => {
   const queryClient = useQueryClient();
+  const scrollViewRef = useRef<ScrollView>(null);
   const {
     challenges,
     todayChallenges,
@@ -83,12 +84,15 @@ const ChallengeScreen = () => {
     }, 500);
   }, []);
 
-  // 탭 진입(포커스) 시마다 오늘의 챌린지 새로고침 (한 번만 실행)
+  // 탭 진입(포커스) 시마다 오늘의 챌린지 새로고침 및 최상단 스크롤
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
       let hasExecuted = false; // 한 번만 실행되도록 플래그 추가
-      
+
+      // 최상단으로 스크롤
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+
       const refreshTodayChallenges = async () => {
         try {
           if (!isActive || hasExecuted) return;
@@ -457,13 +461,13 @@ const ChallengeScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container}>
-      <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
         <UnifiedHeader
           title="환경 챌린지"
-          showRefresh={true}
+          showRefresh={false}
           isRefreshing={isRefreshing}
           onRefresh={handleRefreshTransactions}
-          showEco={true}
+          showEco={false}
         />
         
         <ChallengeInfoCard />

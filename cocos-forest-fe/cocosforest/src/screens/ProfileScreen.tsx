@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { 
   View, 
   Text, 
@@ -43,6 +44,7 @@ import { getErrorMessage, handleApiError } from '../utils/errorUtils';
 import { UnifiedHeader } from '../components/common';
 
 const ProfileScreen = () => {
+  const scrollViewRef = React.useRef<ScrollView>(null);
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
   const [profileData, setProfileData] = React.useState({
   name: '',
@@ -172,6 +174,13 @@ const ProfileScreen = () => {
   React.useEffect(() => {
     loadUserCards();
   }, [userId]);
+
+  // 탭이 포커스될 때 최상단으로 스크롤
+  useFocusEffect(
+    React.useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, [])
+  );
 
   const settingsMenu = [
     { id: 1, title: '알림 설정', icon: '🔔' },
@@ -593,7 +602,7 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container}>
-      <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
         <UnifiedHeader
           title="프로필"
           rightContent={

@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 36,
     color: '#0F172A',
-    fontFamily: 'Hakgyoansim_DunggeunmisoOTFB',
+    fontFamily: 'Hakgyoansim_EohangkkumigiOTFB',
     marginBottom: 12,
     letterSpacing: 1,
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 17,
     color: '#374151',
-    fontFamily: 'Jalnan2',
+    fontFamily: 'Hakgyoansim_EohangkkumigiOTFB',
     fontWeight: '400',
     marginBottom: 6,
     letterSpacing: 0.5,
