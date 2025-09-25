@@ -31,6 +31,7 @@ export type ForestInfoDto = {
     deadHighlight: boolean;
     growthDays: number;
     growthStage: string;
+    spriteKey?: string | null;
     health: number;
     isDead: boolean;
     lastWateredDate: string | null;
@@ -40,6 +41,18 @@ export type ForestInfoDto = {
     waterCountToday: number;
     x: number;
     y: number;
+    assetId: number;
+  }>;
+  // Decorations placed in the forest (non-plant assets)
+  decorations?: Array<{
+    id: number;
+    forestId?: number;
+    assetId: number;
+    x: number;
+    y: number;
+    createdAt?: string;
+    updatedAt?: string;
+    spriteKey?: string | null;
   }>;
   updatedAt: string;
   userId: number;

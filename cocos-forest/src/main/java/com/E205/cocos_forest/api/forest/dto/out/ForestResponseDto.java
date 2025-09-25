@@ -1,11 +1,14 @@
-package com.E205.cocos_forest.domain.forest.dto;
+package com.E205.cocos_forest.api.forest.dto.out;
 
 import com.E205.cocos_forest.domain.forest.entity.Forest;
-import com.E205.cocos_forest.domain.forest.entity.Tree;
+import com.E205.cocos_forest.api.forest.dto.out.DecorationResponseDto;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.E205.cocos_forest.domain.forest.entity.Plants;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +17,7 @@ import java.util.stream.Collectors;
  */
 @Getter
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ForestResponseDto {
     
     private Long forestId;
@@ -24,6 +28,7 @@ public class ForestResponseDto {
     private Integer aliveTreeCount;
     private Integer deadHighlightCount;
     private List<TreeResponseDto> trees;
+    private List<DecorationResponseDto> decorations;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -34,10 +39,13 @@ public class ForestResponseDto {
                 .size(forest.getSize())
                 .pondX(forest.getPondX())
                 .pondY(forest.getPondY())
-                .aliveTreeCount((int) forest.getTrees().stream().filter(tree -> !tree.getIsDead()).count())
-                .deadHighlightCount((int) forest.getTrees().stream().filter(Tree::getDeadHighlight).count())
-                .trees(forest.getTrees().stream()
+                .aliveTreeCount((int) forest.getPlants().stream().filter(tree -> !tree.getIsDead()).count())
+                .deadHighlightCount((int) forest.getPlants().stream().filter(Plants::getDeadHighlight).count())
+                .trees(forest.getPlants().stream()
                         .map(TreeResponseDto::from)
+                        .collect(Collectors.toList()))
+                .decorations(forest.getDecorations().stream()
+                        .map(DecorationResponseDto::from)
                         .collect(Collectors.toList()))
                 .createdAt(forest.getCreatedAt())
                 .updatedAt(forest.getUpdatedAt())

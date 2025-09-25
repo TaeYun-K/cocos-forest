@@ -14,20 +14,24 @@ import {
 } from "../../utils/iso";
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
+import { getSpriteByKey } from "../../assets/spriteMap";
+import { listAssets, type AssetDto } from "../../api/home";
 
-const DIRT_IMG2 = require("../../../assets/tiles/grassdark.png");
-const DIRT_IMG = require("../../../assets/tiles/grassweeds.png");
-const DIRT_PLAIN_IMG = require("../../../assets/tiles/dirt.png");
-const GRASS_IMG = require("../../../assets/tiles/grass.png");
-const WATER_IMG = require("../../../assets/tiles/water.png");
-const MARKER_IMG = require("../../../assets/models/medium_tree.png");
+const GRASS_DARK = require("../../../assets/home/tiles/grassdark.png");
+const GRASS_WEEDS = require("../../../assets/home/tiles/grassweeds.png");
+const DIRT_PLAIN_IMG = require("../../../assets/home/tiles/dirt.png");
+const GRASS_IMG = require("../../../assets/home/tiles/grass.png");
+const WATER_IMG = require("../../../assets/home/tiles/water.png");
+const MARKER_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
-const SMALL_TREE_IMG = require("../../../assets/models/small_tree.png");
-const MEDIUM_TREE_IMG = require("../../../assets/models/medium_tree.png");
-const LARGE_TREE_IMG = require("../../../assets/models/medium_tree.png");
+const SMALL_TREE_IMG = require("../../../assets/home/decorations/tree/small_tree.png");
+const MEDIUM_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
+const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
 // dead tree asset
-const DEAD_TREE_WARNING_IMG = require("../../../assets/tiles/alert.png");
+const DEAD_TREE_WARNING_IMG = require("../../../assets/home/tiles/alert.png");
+
+// mapping by assetId not needed; use spriteKey from API assets
 
 // 나무 상태에 따른 에셋 선택 함수
 const getTreeAsset = (growthStage?: string, isDead?: boolean, health?: number, maxHealth?: number) => {
@@ -90,6 +94,27 @@ export default function Board({
   const forestSize = forestInfo?.size || 8;
   const pondX = forestInfo?.pondX || 3;
   const pondY = forestInfo?.pondY || 3;
+  // No global asset catalog here; each tree carries its spriteKey from API.
+  // For decorations, fetch asset catalog once to resolve sprite by assetId.
+  const [decoSpriteById, setDecoSpriteById] = React.useState<Record<number, any>>({});
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const all: AssetDto[] = await listAssets();
+        if (!mounted) return;
+        const map: Record<number, any> = {};
+        for (const a of all) {
+          const sprite = getSpriteByKey(a.spriteKey || undefined);
+          if (sprite) map[a.id] = sprite;
+        }
+        setDecoSpriteById(map);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   
   // 물 타일인지 확인 (pondX, pondY 기준으로 2x2 영역)
   const isWater = (c: Cell) => 
@@ -127,20 +152,35 @@ export default function Board({
     return (n >>> 0) / 0x100000000;
   };
 
-  // Background/dirt variant per tile
+  // Background/dirt variant per tile (previous randomizer - kept for reference)
   const getDirtImage = (x: number, z: number) => {
     const r = rand01(x, z);
     if (r < 0.05) return DIRT_PLAIN_IMG; // a few bare dirt tiles
-    if (r < 0.35) return DIRT_IMG2;      // patchy grass-dirt
-    if (r < 0.70) return DIRT_IMG;       // weeds
+    if (r < 0.35) return GRASS_DARK;      // patchy grass-dirt
+    if (r < 0.70) return GRASS_WEEDS;       // weeds
     return GRASS_IMG;                    // full grass
+  };
+
+  // Island-like concentric lines around plantable square
+  const getStripBackground = (x: number, z: number) => {
+    // Inside plantable area
+    if (x >= 0 && x < forestSize && z >= 0 && z < forestSize) {
+      return GRASS_IMG;
+    }
+    // Distance (in grid lines) outside the square
+    const dx = x < 0 ? -x : (x - (forestSize - 1));
+    const dz = z < 0 ? -z : (z - (forestSize - 1));
+    const outside = Math.max(dx, dz); // Chebyshev distance from boundary
+    if (outside === 1) return GRASS_DARK;     // first line
+    if (outside === 2) return DIRT_PLAIN_IMG;     // second line
+    return WATER_IMG;                              // beyond -> water
   };
 
   // Slight variation on grass top faces (non-water)
   const getGrassTopImage = (x: number, z: number) => {
     const r = rand01(x * 3, z * 3, 911);
-    if (r < 0.12) return DIRT_IMG;  // subtle weeds
-    if (r < 0.22) return DIRT_IMG2; // darker patch
+    if (r < 0.12) return GRASS_WEEDS;  // subtle weeds
+    if (r < 0.22) return GRASS_DARK; // darker patch
     return GRASS_IMG;
   };
 
@@ -312,9 +352,7 @@ export default function Board({
                 disabled={!isExpandable}
               >
                 <Image
-                  source={((actualX >= -1 && actualX <= forestSize) && (actualZ >= -1 && actualZ <= forestSize))
-                    ? GRASS_IMG
-                    : getDirtImage(actualX, actualZ)}
+                  source={getStripBackground(actualX, actualZ)}
                   style={{
                     width: SPRITE_W,
                     height: FOOT_H + WALL_H,
@@ -382,16 +420,43 @@ export default function Board({
         return (
           <Image
             key={`marker-${m.x}-${m.z}`}
-            source={getTreeAsset(
-              m.growthStage, 
-              treeInfo?.isDead, 
-              treeInfo?.health, 
-              treeInfo?.maxHealth
-            )}
+            source={(() => {
+              const sprite = getSpriteByKey(treeInfo?.spriteKey);
+              return sprite || getTreeAsset(
+                m.growthStage,
+                treeInfo?.isDead,
+                treeInfo?.health,
+                treeInfo?.maxHealth
+              );
+            })()}
             style={{
               position: "absolute",
               left: m.sx - MARKER_SIZE / 2,
               top: m.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+              width: MARKER_SIZE,
+              height: MARKER_SIZE,
+              resizeMode: "contain",
+              zIndex: 2,
+              elevation: 2,
+            }}
+            pointerEvents="none"
+          />
+        );
+      })}
+
+      {/* Layer 2b: Decorations */}
+      {forestInfo?.decorations?.map((deco) => {
+        const cell = cells.find(c => c.x === deco.x && c.z === deco.y);
+        if (!cell) return null;
+        const sprite = decoSpriteById[deco.assetId] || MARKER_IMG;
+        return (
+          <Image
+            key={`deco-${deco.id}-${deco.x}-${deco.y}`}
+            source={sprite}
+            style={{
+              position: "absolute",
+              left: cell.sx - MARKER_SIZE / 2,
+              top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
               width: MARKER_SIZE,
               height: MARKER_SIZE,
               resizeMode: "contain",

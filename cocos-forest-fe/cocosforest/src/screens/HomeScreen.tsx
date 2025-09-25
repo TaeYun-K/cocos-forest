@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
-import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert } from "react-native";
+import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert, Image, ScrollView } from "react-native";
 import { PinchGestureHandler, PanGestureHandler, State as GestureState } from "react-native-gesture-handler";
 import InfoBar from "../components/homescreen/InfoBar";
 import Coco from "../components/homescreen/Coco";
@@ -9,7 +9,8 @@ import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
-import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest } from "../api/home";
+import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, placeDecoration, type AssetDto } from "../api/home";
+import { getSpriteByKey } from "../assets/spriteMap";
 import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
@@ -36,6 +37,12 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [expandModalVisible, setExpandModalVisible] = useState(false);
   const [showCocoTip, setShowCocoTip] = useState(false);
+  // Asset catalog (for planting UI)
+  const [assets, setAssets] = useState<AssetDto[]>([]);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
+  const [installTab, setInstallTab] = useState<'PLANT' | 'DECO'>('PLANT');
+  const PLANT_CATEGORY_IDS = [1, 2];
 
   // Zoom state (+ / - controls)
   const [zoom, setZoom] = useState(1);
@@ -103,8 +110,9 @@ export default function HomeScreen() {
   const getPanLimits = (z: number) => {
     const contentW = computeBoardWidth(forestSize) * z;
     const contentH = computeBoardHeight(forestSize) * z;
-    // Allow more vertical slack so users can move up/down noticeably.
-    const extraX = layout.w * 0.15;  // 15% of screen width
+    // Allow more slack so users can move further, especially horizontally.
+    // Increase horizontal slack to make left/right panning feel roomier.
+    const extraX = Math.max(180, layout.w * 0.35);  // was 15%
     const extraY = Math.max(240, layout.h * 0.8); // at least 240px or 80% of screen height
     const maxX = Math.max(0, (contentW - layout.w) / 2 + extraX);
     const maxY = Math.max(0, (contentH - layout.h) / 2 + extraY);
@@ -125,7 +133,7 @@ export default function HomeScreen() {
   // 포인트/성장률 (API)
   const [points, setPoints] = useState("0");
   const [pointsNumber, setPointsNumber] = useState(0); // 숫자 형태로도 저장
-  const [growth, setGrowth] = useState(0);
+  const [growth, setGrowth] = useState<string | number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [expandLoading, setExpandLoading] = useState(false);
@@ -169,18 +177,18 @@ export default function HomeScreen() {
         x: tree.x,
         z: tree.y,
         growthStage: tree.growthStage,
+        assetId: tree.assetId,
       }));
       setOriginalMarkers(treeMarkers);
       
       // 나무 상세 정보 저장
       setTreeData(forestInfoData.trees);
 
-      // 성장률 계산 (살아있는 나무 / 전체 나무 * 100)
-      const growthRate =
-        forestInfoData.trees.length > 0
-          ? Math.round((forestInfoData.aliveTreeCount / forestInfoData.trees.length) * 100)
-          : 0;
-      setGrowth(growthRate);
+      // 나무 개수 표시 (살아있는 나무 개수/전체 나무 개수)
+      const aliveTreeCount = forestInfoData.aliveTreeCount || 0;
+      const totalTreeCount = forestInfoData.trees.length || 0;
+      const treeCountDisplay = `${aliveTreeCount}/${totalTreeCount}`;
+      setGrowth(treeCountDisplay);
 
       // 포인트 데이터 처리
       setPointsNumber(pointsData);
@@ -209,7 +217,16 @@ export default function HomeScreen() {
   const handleCellPress = useCallback((cell: Cell) => {
     setSelected(cell);
     setModalVisible(true);
-  }, []);
+    // If empty cell, prepare asset picker
+    const exists = treeData.find(tree => tree.x === cell.x && tree.y === cell.z);
+    if (!exists) {
+      setSelectedAssetId(null);
+      if (assets.length === 0) {
+        // load asset catalog lazily
+        loadAssetsForPlanting();
+      }
+    }
+  }, [treeData, assets.length, loadAssetsForPlanting]);
 
   // 확장 가능 영역 클릭 핸들러
   const handleExpandableAreaPress = useCallback(() => {
@@ -233,6 +250,7 @@ export default function HomeScreen() {
         x: tree.x,
         z: tree.y,
         growthStage: tree.growthStage,
+        assetId: tree.assetId,
       }));
       setOriginalMarkers(treeMarkers);
       setTreeData(expandedForestInfo.trees);
@@ -258,11 +276,15 @@ export default function HomeScreen() {
   // 나무 심기 핸들러
   const handlePlantTree = async () => {
     if (!selected || actionLoading) return;
+    if (!selectedAssetId) {
+      Alert.alert("안내", "심을 나무를 선택해 주세요.");
+      return;
+    }
     
     try {
       setActionLoading(true);
       
-      await plantTree(selected.x, selected.z);
+      await plantTree(selected.x, selected.z, selectedAssetId);
       await loadForestData();
       setModalVisible(false);
       
@@ -288,6 +310,27 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("물주기 실패:", error);
       alert("물주기에 실패했습니다. 포인트가 부족하거나 오늘 이미 충분히 물을 줬을 수 있습니다.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // 장식 설치 핸들러
+  const handlePlaceDecoration = async () => {
+    if (!selected || actionLoading) return;
+    if (!selectedAssetId) {
+      Alert.alert("알림", "설치할 아이템을 선택해 주세요.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await placeDecoration(selected.x, selected.z, selectedAssetId);
+      await loadForestData();
+      setModalVisible(false);
+    } catch (error) {
+      console.error("place decoration error:", error);
+      alert("구조물 설치에 실패했어요. 포인트가 부족하거나 이미 설치된 위치일 수 있어요.");
     } finally {
       setActionLoading(false);
     }
@@ -365,6 +408,21 @@ export default function HomeScreen() {
     actionLoading ? s.modalBtnDisabled : s.modalBtnWater
   ];
 
+  // Load assets (all categories) when needed
+  const loadAssetsForPlanting = useCallback(async () => {
+    try {
+      setAssetsLoading(true);
+      const all = await listAssets();
+      // Include all active assets; backend may flag inactive ones.
+      const active = all.filter(a => a.active !== false);
+      setAssets(active);
+    } catch (error) {
+      console.error('Failed to load assets:', error);
+    } finally {
+      setAssetsLoading(false);
+    }
+  }, []);
+
   return (
     <LinearGradient
       colors={["#87CEEB", "#E0F7FA"]}
@@ -372,6 +430,19 @@ export default function HomeScreen() {
       end={{ x: 0.5, y: 1 }}
       style={s.container}
     >
+      {/* Cloud layer (non-interactive) */}
+      <Image
+        source={require('../../assets/home/cloud/cloud1.png')}
+        pointerEvents="none"
+        resizeMode="contain"
+        style={{ position: 'absolute', top: 36, left: -24, width: 240, height: 130, opacity: 0.55 }}
+      />
+      <Image
+        source={require('../../assets/home/cloud/cloud2.png')}
+        pointerEvents="none"
+        resizeMode="contain"
+        style={{ position: 'absolute', top: 120, right: -28, width: 280, height: 150, opacity: 0.48 }}
+      />
       <InfoBar
         points={loading ? "로딩 중..." : points}
         growth={loading ? "0" : String(growth)}
@@ -498,8 +569,81 @@ export default function HomeScreen() {
               <Text style={s.modalHint}>나무심기</Text>
             )}
             
+            {!hasTreeData && (
+              <View>
+                <Text style={s.modalHint}>에셋 선택</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                  <Pressable
+                    onPress={() => { setInstallTab('PLANT'); setSelectedAssetId(null); }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: installTab === 'PLANT' ? '#16A34A' : '#374151',
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>식물</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setInstallTab('DECO'); setSelectedAssetId(null); }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: installTab === 'DECO' ? '#0EA5E9' : '#374151',
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>구조물</Text>
+                  </Pressable>
+                </View>
+                <ScrollView style={{ marginTop: 8, maxHeight: 260 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {assetsLoading && (
+                      <Text style={s.modalText}>불러오는 중...</Text>
+                    )}
+                    {!assetsLoading && assets
+                      .filter(a => installTab === 'PLANT' ? PLANT_CATEGORY_IDS.includes(a.categoryId) : !PLANT_CATEGORY_IDS.includes(a.categoryId))
+                      .map((a) => {
+                      const sprite = getSpriteByKey(a.spriteKey || undefined);
+                      const selected = selectedAssetId === a.id;
+                      return (
+                        <Pressable
+                          key={a.id}
+                          onPress={() => setSelectedAssetId(a.id)}
+                          style={{
+                            width: 88,
+                            height: 100,
+                            borderRadius: 10,
+                            borderWidth: 2,
+                            borderColor: selected ? '#2563EB' : '#CBD5E1',
+                            backgroundColor: selected ? '#DBEAFE' : '#F8FAFC',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 8,
+                            marginBottom: 8,
+                            padding: 6,
+                          }}
+                        >
+                          {sprite ? (
+                            <Image source={sprite} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+                          ) : (
+                            <Text style={{ fontWeight: '700', color: '#0F172A', textAlign: 'center' }}>{a.name}</Text>
+                          )}
+                          <Text style={{ color: '#334155', marginTop: 4, fontSize: 12 }}>
+                            {(a.pricePoints ?? 0).toLocaleString()} P
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              </View>
+            )}
+
             <View style={s.modalButtonRow}>
-              {!hasTreeData && (
+              {!hasTreeData && installTab === 'PLANT' && (
                 <Pressable
                   style={getPlantButtonStyle()}
                   onPress={handlePlantTree}
@@ -523,6 +667,18 @@ export default function HomeScreen() {
                 </Pressable>
               )}
               
+              {!hasTreeData && installTab === 'DECO' && (
+                <Pressable
+                  style={[s.modalBtn, s.modalButtonFlex, actionLoading ? s.modalBtnDisabled : { backgroundColor: '#0EA5E9' }]}
+                  onPress={handlePlaceDecoration}
+                  disabled={actionLoading}
+                >
+                  <Text style={s.modalBtnText}>
+                    {actionLoading ? "설치중..." : "구조물 설치"}
+                  </Text>
+                </Pressable>
+              )}
+
               {hasTreeData && selectedTree && selectedTree.isDead && (
                 <Pressable
                   style={[s.modalBtn, s.modalButtonFlex, { backgroundColor: "#DC2626" }]}

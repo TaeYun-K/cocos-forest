@@ -1,6 +1,7 @@
 package com.E205.cocos_forest.api.forest.controller;
 
-import com.E205.cocos_forest.domain.forest.dto.*;
+import com.E205.cocos_forest.api.forest.dto.out.ForestResponseDto;
+import com.E205.cocos_forest.api.forest.dto.in.MovePondRequestDto;
 import com.E205.cocos_forest.api.forest.service.ForestService;
 import com.E205.cocos_forest.api.forest.service.PointService;
 import com.E205.cocos_forest.global.config.security.CustomUserDetails;
@@ -8,7 +9,6 @@ import com.E205.cocos_forest.global.response.BaseResponse;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,66 +61,6 @@ public class ForestController {
         Long points = pointService.getCurrentPoints(userId);
 
         return ResponseEntity.ok(new BaseResponse<>(points));
-    }
-
-    /**
-     * 나무 심기
-     */
-    @PostMapping("/trees")
-    @Operation(summary = "나무 심기", description = "지정된 위치에 나무를 심습니다. (100포인트 차감)")
-    public ResponseEntity<BaseResponse<TreeResponseDto>> plantTree(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody PlantTreeRequestDto request) {
-
-        Long userId = userDetails.getUser().getId();
-        TreeResponseDto tree = forestService.plantTree(userId, request);
-
-        return ResponseEntity.ok(new BaseResponse<>(tree));
-    }
-
-    /**
-     * 물주기
-     */
-    @PostMapping("/trees/{treeId}/water")
-    @Operation(summary = "물주기", description = "나무에 물을 줍니다. (50포인트 차감, 하루 3회 한도)")
-    public ResponseEntity<BaseResponse<WaterTreeResponseDto>> waterTree(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "나무 ID") @PathVariable Long treeId) {
-
-        Long userId = userDetails.getUser().getId();
-        WaterTreeResponseDto result = forestService.waterTree(userId, treeId);
-
-        return ResponseEntity.ok(new BaseResponse<>(result));
-    }
-
-    /**
-     * 나무 위치 이동
-     */
-    @PutMapping("/trees/move")
-    @Operation(summary = "나무 위치 이동", description = "나무를 다른 위치로 이동합니다. (무료)")
-    public ResponseEntity<BaseResponse<TreeResponseDto>> moveTree(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody MoveTreeRequestDto request) {
-
-        Long userId = userDetails.getUser().getId();
-        TreeResponseDto tree = forestService.moveTree(userId, request);
-
-        return ResponseEntity.ok(new BaseResponse<>(tree));
-    }
-
-    /**
-     * 죽은 나무 제거 (영구 삭제)
-     */
-    @DeleteMapping("/trees/{treeId}/dead")
-    @Operation(summary = "죽은 나무 제거", description = "죽은 나무를 영구 삭제하여 숲을 정리합니다.")
-    public ResponseEntity<BaseResponse<Void>> removeDeadTree(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Parameter(description = "나무 ID") @PathVariable Long treeId) {
-
-        Long userId = userDetails.getUser().getId();
-        forestService.removeDeadTree(userId, treeId);
-
-        return ResponseEntity.ok(new BaseResponse<>());
     }
 
     /**
