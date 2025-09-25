@@ -43,6 +43,17 @@ export type ForestInfoDto = {
     y: number;
     assetId: number;
   }>;
+  // Decorations placed in the forest (non-plant assets)
+  decorations?: Array<{
+    id: number;
+    forestId?: number;
+    assetId: number;
+    x: number;
+    y: number;
+    createdAt?: string;
+    updatedAt?: string;
+    spriteKey?: string | null;
+  }>;
   updatedAt: string;
   userId: number;
 };

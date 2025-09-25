@@ -145,6 +145,24 @@ export async function updateStepCount(stepData: StepCountUpdateRequest): Promise
   }
 }
 
+/* 장식(Decoration) 배치 */
+export async function placeDecoration(x: number, y: number, assetId: number): Promise<void> {
+  try {
+    const response = await apiClient.post<BaseResponse<any>>("/api/forest/assets/decorations", {
+      x,
+      y,
+      assetId,
+    });
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "장식 배치에 실패했습니다.");
+    }
+    console.log("장식 배치 성공:", { x, y, assetId });
+  } catch (error) {
+    console.error("placeDecoration error:", error);
+    throw error;
+  }
+}
+
 // ========= Asset Catalog =========
 export interface AssetDto {
   id: number;

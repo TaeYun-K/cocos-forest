@@ -9,7 +9,7 @@ import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
-import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, type AssetDto } from "../api/home";
+import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, placeDecoration, type AssetDto } from "../api/home";
 import { getSpriteByKey } from "../assets/spriteMap";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -41,6 +41,8 @@ export default function HomeScreen() {
   const [assets, setAssets] = useState<AssetDto[]>([]);
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
+  const [installTab, setInstallTab] = useState<'PLANT' | 'DECO'>('PLANT');
+  const PLANT_CATEGORY_IDS = [1, 2];
 
   // Zoom state (+ / - controls)
   const [zoom, setZoom] = useState(1);
@@ -313,6 +315,27 @@ export default function HomeScreen() {
     }
   };
 
+  // 장식 설치 핸들러
+  const handlePlaceDecoration = async () => {
+    if (!selected || actionLoading) return;
+    if (!selectedAssetId) {
+      Alert.alert("알림", "설치할 아이템을 선택해 주세요.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      await placeDecoration(selected.x, selected.z, selectedAssetId);
+      await loadForestData();
+      setModalVisible(false);
+    } catch (error) {
+      console.error("place decoration error:", error);
+      alert("구조물 설치에 실패했어요. 포인트가 부족하거나 이미 설치된 위치일 수 있어요.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // 죽은 나무 클릭 핸들러
   const handleDeadTreePress = (treeId: number) => {
     Alert.alert(
@@ -549,12 +572,40 @@ export default function HomeScreen() {
             {!hasTreeData && (
               <View>
                 <Text style={s.modalHint}>에셋 선택</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                  <Pressable
+                    onPress={() => { setInstallTab('PLANT'); setSelectedAssetId(null); }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: installTab === 'PLANT' ? '#16A34A' : '#374151',
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>식물</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => { setInstallTab('DECO'); setSelectedAssetId(null); }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: installTab === 'DECO' ? '#0EA5E9' : '#374151',
+                      paddingVertical: 8,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>구조물</Text>
+                  </Pressable>
+                </View>
                 <ScrollView style={{ marginTop: 8, maxHeight: 260 }}>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                     {assetsLoading && (
                       <Text style={s.modalText}>불러오는 중...</Text>
                     )}
-                    {!assetsLoading && assets.map((a) => {
+                    {!assetsLoading && assets
+                      .filter(a => installTab === 'PLANT' ? PLANT_CATEGORY_IDS.includes(a.categoryId) : !PLANT_CATEGORY_IDS.includes(a.categoryId))
+                      .map((a) => {
                       const sprite = getSpriteByKey(a.spriteKey || undefined);
                       const selected = selectedAssetId === a.id;
                       return (
@@ -592,7 +643,7 @@ export default function HomeScreen() {
             )}
 
             <View style={s.modalButtonRow}>
-              {!hasTreeData && (
+              {!hasTreeData && installTab === 'PLANT' && (
                 <Pressable
                   style={getPlantButtonStyle()}
                   onPress={handlePlantTree}
@@ -616,6 +667,18 @@ export default function HomeScreen() {
                 </Pressable>
               )}
               
+              {!hasTreeData && installTab === 'DECO' && (
+                <Pressable
+                  style={[s.modalBtn, s.modalButtonFlex, actionLoading ? s.modalBtnDisabled : { backgroundColor: '#0EA5E9' }]}
+                  onPress={handlePlaceDecoration}
+                  disabled={actionLoading}
+                >
+                  <Text style={s.modalBtnText}>
+                    {actionLoading ? "설치중..." : "구조물 설치"}
+                  </Text>
+                </Pressable>
+              )}
+
               {hasTreeData && selectedTree && selectedTree.isDead && (
                 <Pressable
                   style={[s.modalBtn, s.modalButtonFlex, { backgroundColor: "#DC2626" }]}
