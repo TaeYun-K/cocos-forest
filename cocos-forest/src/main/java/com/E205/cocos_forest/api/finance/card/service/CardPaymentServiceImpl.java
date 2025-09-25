@@ -12,6 +12,7 @@ import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkageRepository;
 import com.E205.cocos_forest.global.exception.BaseException;
 import com.E205.cocos_forest.global.external.ssafy.SsafyGateway;
 import com.E205.cocos_forest.global.external.ssafy.dto.result.CreditCardTransactionCreateResult;
+import com.E205.cocos_forest.global.fcm.service.SimplePushService;
 import com.E205.cocos_forest.global.response.BaseResponseStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +33,7 @@ public class CardPaymentServiceImpl implements CardPaymentService {
 
     private final UserCardRepository userCardRepository;
     private final CardTransactionRepository cardTransactionRepository;
-    private final MerchantRepository merchantRepository;
+    private final SimplePushService simplePushService;
     private final SsafyLinkageRepository ssafyLinkageRepository;
     private final SsafyGateway ssafyGateway;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -111,6 +112,10 @@ public class CardPaymentServiceImpl implements CardPaymentService {
         tx.setUpdatedAt(now);
 
         CardTransaction saved = cardTransactionRepository.save(tx);
+
+        // 결제 알림 전송 - 하드코딩된 디바이스로만 전송하기
+        simplePushService.sendPaymentNotificationAsync(res.getMerchantName(),
+            Long.valueOf(res.getPaymentBalance()), res.getCategoryName());
 
         return CardPaymentOut.builder()
             .transactionUniqueNo(res.getTransactionUniqueNo())
