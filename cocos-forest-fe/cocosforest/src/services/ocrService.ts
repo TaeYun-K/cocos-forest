@@ -80,41 +80,78 @@ class OCRService {
   }
 
   /**
-   * 영수증 이미지에서 텀블러 사용을 확인합니다. (시뮬레이션 모드)
+   * 영수증 이미지에서 텀블러 사용을 확인합니다. (실제 API 호출)
    */
   async verifyTumblerFromReceipt(imageUri: string): Promise<OCRResult> {
     try {
-      // 백엔드 서버 연결 문제로 인해 시뮬레이션 모드로 동작
-      console.log('📤 텀블러 OCR 인증 시뮬레이션 모드:', imageUri);
-      
-      // 2초 대기 (실제 API 호출 시뮬레이션)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 80% 확률로 성공 (실제 환경에서는 백엔드 API 사용)
-      const isSuccess = Math.random() > 0.2;
-      
-      if (isSuccess) {
-        return {
-          success: true,
-          tumblerDetected: true,
-          awarded: true,
-          points: 400, // 텀블러 챌린지 포인트
-          userChallengeId: 'tumbler_' + Date.now(),
-          reason: '텀블러 사용이 확인되었습니다.',
-          text: '텀블러 사용이 확인되었습니다.',
-        };
+      console.log('📤 텀블러 OCR 인증 API 호출:', imageUri);
+
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'receipt.jpg',
+      } as any);
+
+      // API 호출
+      const response = await axiosInstance.post('/api/challenges/tumbler/verify', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('✅ 텀블러 OCR 인증 API 응답:', response.data);
+
+      if (response.data.isSuccess && response.data.result) {
+        const result = response.data.result;
+
+        if (result.success) {
+          return {
+            success: true,
+            tumblerDetected: true,
+            awarded: result.awarded,
+            points: result.points,
+            userChallengeId: result.userChallengeId,
+            reason: result.reason,
+            text: result.reason,
+          };
+        } else {
+          return {
+            success: false,
+            tumblerDetected: false,
+            error: result.reason || '텀블러가 감지되지 않았습니다. 텀블러가 포함된 영수증을 다시 촬영해주세요.',
+          };
+        }
       } else {
         return {
           success: false,
-          error: '텀블러가 감지되지 않았습니다. 텀블러가 포함된 영수증을 다시 촬영해주세요.',
+          error: response.data.message || '서버에서 오류가 발생했습니다.',
         };
       }
     } catch (error: any) {
       console.error('❌ 텀블러 OCR 인증 오류:', error);
-      return {
-        success: false,
-        error: '인증 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-      };
+
+      // 네트워크 오류 처리
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || '서버 오류가 발생했습니다.';
+
+        return {
+          success: false,
+          error: `서버 오류 (${status}): ${message}`,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: '네트워크 연결을 확인해주세요.',
+        };
+      } else {
+        return {
+          success: false,
+          error: '인증 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        };
+      }
     }
   }
 
