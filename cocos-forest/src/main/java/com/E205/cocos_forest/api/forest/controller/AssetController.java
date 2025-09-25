@@ -91,7 +91,7 @@ public class AssetController {
 
     // 장식 배치
     @PostMapping("/decorations")
-    @Operation(summary = "장식 배치", description = "자산을 장식으로 배치합니다. (식물 자산 제외)")
+    @Operation(summary = "장식 배치", description = "에셋을 장식으로 배치합니다. (식물 에셋 제외)")
     public ResponseEntity<BaseResponse<DecorationResponseDto>> placeDecoration(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody PlaceDecorationRequestDto request
@@ -99,5 +99,17 @@ public class AssetController {
         Long userId = userDetails.getUser().getId();
         DecorationResponseDto result = forestService.placeDecoration(userId, request);
         return ResponseEntity.ok(new BaseResponse<>(result));
+    }
+
+    // 데코레이션 에셋 삿제
+    @DeleteMapping("/decorations/{decorationId}")
+    @Operation(summary = "장식 삭제", description = "장식 에셋을 삭제합니다. (식물 에셋 제외)")
+    public ResponseEntity<BaseResponse<Void>> deleteDecoration(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "장식 id") @PathVariable Long decorationId
+    ) {
+        Long userId = userDetails.getUser().getId();
+        forestService.removeDecoration(userId, decorationId);
+        return ResponseEntity.ok(new BaseResponse<>());
     }
 }

@@ -29,7 +29,7 @@ const MEDIUM_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tr
 const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
 // dead tree asset
-const DEAD_TREE_WARNING_IMG = require("../../../assets/home/tiles/alert.png");
+const DEAD_TREE_WARNING_IMG = require("../../../assets/home/decorations/tree/dead_tree.png");
 
 // mapping by assetId not needed; use spriteKey from API assets
 
@@ -421,10 +421,12 @@ export default function Board({
           <Image
             key={`marker-${m.x}-${m.z}`}
             source={(() => {
+              const isDead = !!(treeInfo && (treeInfo.isDead || treeInfo.health === 0));
+              if (isDead) return DEAD_TREE_WARNING_IMG;
               const sprite = getSpriteByKey(treeInfo?.spriteKey);
               return sprite || getTreeAsset(
                 m.growthStage,
-                treeInfo?.isDead,
+                false,
                 treeInfo?.health,
                 treeInfo?.maxHealth
               );
@@ -464,6 +466,31 @@ export default function Board({
               elevation: 2,
             }}
             pointerEvents="none"
+          />
+        );
+      })}
+
+      {/* Layer 2b touch overlay: Decorations (for delete action) */}
+      {forestInfo?.decorations?.map((deco) => {
+        const cell = cells.find(c => c.x === deco.x && c.z === deco.y);
+        if (!cell) return null;
+        return (
+          <TouchableOpacity
+            key={`deco-touch-${deco.id}`}
+            style={{
+              position: "absolute",
+              left: cell.sx - MARKER_SIZE / 2,
+              top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+              width: MARKER_SIZE,
+              height: MARKER_SIZE,
+              zIndex: 2.5,
+              elevation: 2.5,
+            }}
+            onPress={() => {
+              // noop — handled in parent via onCellPress; overlay enables hit test
+              onCellPress(cell);
+            }}
+            activeOpacity={0.85}
           />
         );
       })}

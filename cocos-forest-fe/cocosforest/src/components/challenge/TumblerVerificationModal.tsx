@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { ocrService } from '../../services/ocrService';
+import { isDevice } from 'expo-device';
 
 interface TumblerVerificationModalProps {
   visible: boolean;
@@ -91,7 +92,7 @@ const TumblerVerificationModal: React.FC<TumblerVerificationModalProps> = ({
   const handleTakePhoto = async () => {
     try {
       // 에뮬레이터 환경 감지
-      const isEmulator = __DEV__ && Platform.OS === 'android';
+      const isEmulator = __DEV__ && Platform.OS === 'android' && !isDevice;
       
       if (isEmulator) {
         console.log('📱 에뮬레이터 환경에서 카메라 시뮬레이션');
