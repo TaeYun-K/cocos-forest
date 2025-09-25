@@ -29,7 +29,7 @@ const MEDIUM_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tr
 const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
 // dead tree asset
-const DEAD_TREE_WARNING_IMG = require("../../../assets/home/tiles/alert.png");
+const DEAD_TREE_WARNING_IMG = require("../../../assets/home/decorations/tree/dead_tree.png");
 
 // mapping by assetId not needed; use spriteKey from API assets
 
@@ -421,10 +421,12 @@ export default function Board({
           <Image
             key={`marker-${m.x}-${m.z}`}
             source={(() => {
+              const isDead = !!(treeInfo && (treeInfo.isDead || treeInfo.health === 0));
+              if (isDead) return DEAD_TREE_WARNING_IMG;
               const sprite = getSpriteByKey(treeInfo?.spriteKey);
               return sprite || getTreeAsset(
                 m.growthStage,
-                treeInfo?.isDead,
+                false,
                 treeInfo?.health,
                 treeInfo?.maxHealth
               );
