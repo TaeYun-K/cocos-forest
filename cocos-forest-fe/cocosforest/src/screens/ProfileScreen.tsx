@@ -40,6 +40,7 @@ import AccountMenuModal from '../components/profile/AccountMenuModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 import { getBankColor, getCardColor } from '../utils/bankUtils';
 import { getErrorMessage, handleApiError } from '../utils/errorUtils';
+import { UnifiedHeader } from '../components/common';
 
 const ProfileScreen = () => {
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
@@ -593,25 +594,27 @@ const ProfileScreen = () => {
   return (
     <SafeAreaView style={commonStyles.container}>
       <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>프로필</Text>
-          <View style={styles.headerRight}>
-            {!isAuthenticated && (
-              <TouchableOpacity 
-                style={styles.debugButton} 
-                onPress={() => {
-                  Alert.alert('디버깅', 'API가 변경되어 파라미터 없이 호출됩니다.\n계좌 목록을 새로고침합니다.');
-                  loadUserAccounts();
-                }}
-              >
-                <Text style={styles.debugButtonText}>새로고침</Text>
+        <UnifiedHeader
+          title="프로필"
+          rightContent={
+            <>
+              {!isAuthenticated && (
+                <TouchableOpacity
+                  style={styles.debugButton}
+                  onPress={() => {
+                    Alert.alert('디버깅', 'API가 변경되어 파라미터 없이 호출됩니다.\n계좌 목록을 새로고침합니다.');
+                    loadUserAccounts();
+                  }}
+                >
+                  <Text style={styles.debugButtonText}>새로고침</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
+                <Text style={styles.settingsIconText}>⚙️</Text>
               </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
-              <Text style={styles.settingsIconText}>⚙️</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </>
+          }
+        />
 
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
@@ -665,7 +668,7 @@ const ProfileScreen = () => {
                 
                 return (
                   <View key={account.accountId} style={styles.tempCard}>
-                    <View style={styles.cardHeader}>
+                    <View style={styles.accountCardHeader}>
                       <View style={styles.bankInfo}>
                         {bankLogo && (
                           <Image 
@@ -715,7 +718,7 @@ const ProfileScreen = () => {
         {userCards.map((card, index) => (
           <View key={card.userCardId} style={styles.cardItemContainer}>
             <View style={[styles.cardContainer, { backgroundColor: getCardColor(index) }]}>
-              <View style={styles.cardHeader}>
+              <View style={styles.creditCardHeader}>
                 <Text style={styles.cardTitle}>COCO</Text>
                 <TouchableOpacity 
                   style={styles.cardMenuButton}
@@ -834,24 +837,6 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   debugButton: {
     backgroundColor: '#FF6B6B',
     paddingHorizontal: 12,
@@ -1077,7 +1062,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#15803d',
   },
-  cardHeader: {
+  accountCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1149,7 +1134,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  cardHeader: {
+  creditCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

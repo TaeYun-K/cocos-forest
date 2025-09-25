@@ -427,12 +427,12 @@ const styles = StyleSheet.create({
   },
   imageText: {
     fontSize: 14,
-    color: '#4caf50',
+    color: '#15803d',
     fontWeight: '500',
     marginBottom: 10,
   },
   changeImageButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#15803d',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#15803d',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   verifyButton: {
-    backgroundColor: '#4caf50',
+    backgroundColor: '#15803d',
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.5)',
   },
   captureButtonInner: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#15803d',
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   },
   // 주요 버튼 스타일
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#15803d',
   },
   // 에뮬레이터 안내 스타일
   emulatorNotice: {
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   permissionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#15803d',
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 8,

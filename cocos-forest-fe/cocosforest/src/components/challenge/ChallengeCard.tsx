@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { Challenge } from '../../types/challenge';
 import type { Transaction } from '../../types/dashboard';
+import { colors } from '../../styles/commonStyles';
 import ChallengeSpecialSection from './ChallengeSpecialSection';
 
 interface ChallengeCardProps {
@@ -36,9 +37,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     <View 
       style={[
         styles.challengeCard,
-        { 
-          backgroundColor: challenge.status === 'completed' ? '#e8f5e8' : '#fff',
-          borderColor: challenge.status === 'completed' ? '#4caf50' : '#e0e0e0',
+        {
+          backgroundColor: challenge.status === 'completed' ? colors.greenLight : colors.white,
+          borderColor: challenge.status === 'completed' ? colors.primary : colors.gray200,
           borderWidth: challenge.status === 'completed' ? 2 : 1,
         }
       ]}
@@ -58,9 +59,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           </View>
           <View style={[
             styles.difficultyBadge, 
-            { 
-              backgroundColor: challenge.difficulty === 'easy' ? '#4caf50' : 
-                             challenge.difficulty === 'medium' ? '#ff9800' : '#f44336'
+            {
+              backgroundColor: challenge.difficulty === 'easy' ? colors.primary :
+                             challenge.difficulty === 'medium' ? colors.success : '#047857'
             }
           ]}>
             <Text style={styles.difficultyText}>
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   completedBadge: {
-    backgroundColor: '#4caf50',
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -200,18 +201,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   rewardTag: {
-    backgroundColor: '#fff3e0',
+    backgroundColor: colors.greenLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
   rewardText: {
     fontSize: 14,
-    color: '#e65100',
+    color: colors.primary,
     fontWeight: '600',
   },
   claimButton: {
-    backgroundColor: '#ff9800',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
   },
   claimedText: {
     fontSize: 12,
-    color: '#4caf50',
+    color: colors.primary,
     fontWeight: '500',
   },
 });

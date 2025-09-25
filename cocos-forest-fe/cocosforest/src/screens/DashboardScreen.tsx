@@ -11,7 +11,7 @@ import {
   CategoryReport,
   DayDetailCard
 } from '../components/dashboard';
-import { ErrorBoundary, PageHeader } from '../components/common';
+import { ErrorBoundary, UnifiedHeader } from '../components/common';
 
 const DashboardScreen = memo(() => {
   const {
@@ -38,7 +38,7 @@ const DashboardScreen = memo(() => {
         <View style={commonStyles.container}>
           <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
 
-        <PageHeader title="대시보드" />
+        <UnifiedHeader title="대시보드" />
 
         {/* AI 분석 결과 */}
         <View style={[commonStyles.section, { marginBottom: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.AI_ANALYSIS_BOTTOM }]}>

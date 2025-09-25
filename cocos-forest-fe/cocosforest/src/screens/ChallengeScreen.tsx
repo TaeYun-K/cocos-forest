@@ -12,7 +12,7 @@ import { healthService } from '../services/healthService';
 import TumblerVerificationModal from '../components/challenge/TumblerVerificationModal';
 import { challengeApi } from '../api/challenge';
 import { challengeDetectionService } from '../services/challengeDetectionService';
-import ChallengeHeader from '../components/challenge/ChallengeHeader';
+import { UnifiedHeader } from '../components/common';
 import ChallengeInfoCard from '../components/challenge/ChallengeInfoCard';
 import ChallengeTab from '../components/challenge/ChallengeTab';
 import ChallengeList from '../components/challenge/ChallengeList';
@@ -458,9 +458,12 @@ const ChallengeScreen = () => {
   return (
     <SafeAreaView style={commonStyles.container}>
       <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
-        <ChallengeHeader 
+        <UnifiedHeader
+          title="환경 챌린지"
+          showRefresh={true}
           isRefreshing={isRefreshing}
           onRefresh={handleRefreshTransactions}
+          showEco={true}
         />
         
         <ChallengeInfoCard />
