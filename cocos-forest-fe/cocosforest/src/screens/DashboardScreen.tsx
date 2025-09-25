@@ -1,9 +1,9 @@
 import { memo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDashboard } from '../hooks/useDashboard';
 import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
-import { commonStyles, tabStyles } from '../styles/dashboard';
+import { commonStyles, tabStyles } from '../styles/commonStyles';
 import {
   AIAnalysisCard,
   TodayEmissionStatus,
@@ -11,7 +11,7 @@ import {
   CategoryReport,
   DayDetailCard
 } from '../components/dashboard';
-import { ErrorBoundary } from '../components/common';
+import { ErrorBoundary, PageHeader } from '../components/common';
 
 const DashboardScreen = memo(() => {
   const {
@@ -34,9 +34,12 @@ const DashboardScreen = memo(() => {
 
   return (
     <ErrorBoundary>
-      <SafeAreaView style={commonStyles.container}>
-        <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#000000' }} edges={['top']}>
+        <View style={commonStyles.container}>
+          <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={commonStyles.scrollContent}>
 
+        <PageHeader title="대시보드" />
 
         {/* AI 분석 결과 */}
         <View style={[commonStyles.section, { marginBottom: DASHBOARD_STYLE_CONSTANTS.SECTION_MARGINS.AI_ANALYSIS_BOTTOM }]}>
@@ -102,12 +105,14 @@ const DashboardScreen = memo(() => {
         )}
 
         </ScrollView>
-
+        </View>
       </SafeAreaView>
     </ErrorBoundary>
   );
 });
 
 DashboardScreen.displayName = 'DashboardScreen';
+
+const styles = StyleSheet.create({});
 
 export default DashboardScreen;

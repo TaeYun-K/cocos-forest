@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Image,
   ActivityIndicator,
 } from 'react-native';
 import type { Bank, CardProduct } from '../../api/finance';
@@ -22,7 +21,6 @@ interface BankSelectionModalProps {
   onCardApplication: (card: CardProduct) => void;
   isLoading: boolean;
   getBankColor: (bankCode: string) => string;
-  getBankIcon: (bankCode: string, bankName: string) => any;
   getCardColor: (index: number) => string;
 }
 
@@ -37,7 +35,6 @@ const BankSelectionModal: React.FC<BankSelectionModalProps> = ({
   onCardApplication,
   isLoading,
   getBankColor,
-  getBankIcon,
   getCardColor,
 }) => {
   return (
@@ -122,15 +119,7 @@ const BankSelectionModal: React.FC<BankSelectionModalProps> = ({
                       onPress={() => onBankSelect(bank)}
                     >
                       <View style={[styles.bankLogoContainer, { backgroundColor: getBankColor(bank.bankCode) }]}>
-                        {getBankIcon(bank.bankCode, bank.bankName) ? (
-                          <Image 
-                            source={getBankIcon(bank.bankCode, bank.bankName)} 
-                            style={styles.bankLogoImage}
-                            resizeMode="contain"
-                          />
-                        ) : (
-                          <Text style={styles.bankIconText}>{bank.bankName.charAt(0)}</Text>
-                        )}
+                        <Text style={styles.bankIconText}>{bank.bankName.charAt(0)}</Text>
                       </View>
                       <Text style={styles.bankName}>{bank.bankName}</Text>
                     </TouchableOpacity>

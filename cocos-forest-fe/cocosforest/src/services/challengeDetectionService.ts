@@ -23,34 +23,21 @@ class ChallengeDetectionService {
 
   async detectTodayChallenges(): Promise<ChallengeDetectionResult> {
     try {
-      console.log('🔍 오늘의 챌린지 조건 감지 시작');
-      
       const todayData = await fetchTodayData();
-      const allTransactions = todayData.result?.transactions || [];
-
-      console.log(`📊 총 ${allTransactions.length}건의 거래 내역 분석`);
-
+      const allTransactions = todayData.transactions || [];
+      
       const transportResult = this.detectTransportUsage(allTransactions);
       const cafeResult = this.detectCafeUsage(allTransactions);
 
-      const result = {
+
+      return {
         transportUsed: transportResult.length > 0,
         cafeUsed: cafeResult.length > 0,
         transportTransactions: transportResult,
         cafeTransactions: cafeResult
       };
-
-      console.log('✅ 챌린지 감지 완료:', {
-        대중교통이용: result.transportUsed,
-        카페이용: result.cafeUsed,
-        대중교통거래수: result.transportTransactions.length,
-        카페거래수: result.cafeTransactions.length
-      });
-
-      return result;
     } catch (error) {
-      console.error('❌ 챌린지 감지 중 오류:', error);
-      
+      console.error('❌ 챌린지 감지 오류:', error);
       return {
         transportUsed: false,
         cafeUsed: false,
@@ -65,19 +52,16 @@ class ChallengeDetectionService {
       const merchantName = transaction.merchantName?.toLowerCase() || '';
       const categoryName = transaction.categoryName?.toLowerCase() || '';
       
-      return this.transportKeywords.some(keyword => 
-        merchantName.includes(keyword.toLowerCase()) || 
-        categoryName.includes(keyword.toLowerCase())
-      );
+      const isTransport = this.transportKeywords.some(keyword => {
+        const keywordLower = keyword.toLowerCase();
+        const merchantMatch = merchantName.includes(keywordLower);
+        const categoryMatch = categoryName.includes(keywordLower);
+        
+        return merchantMatch || categoryMatch;
+      });
+      
+      return isTransport;
     });
-
-    if (transportTransactions.length > 0) {
-      console.log('🚌 대중교통 이용 감지:', transportTransactions.map(t => ({
-        가맹점: t.merchantName,
-        카테고리: t.categoryName,
-        금액: t.amountKrw
-      })));
-    }
 
     return transportTransactions;
   }
@@ -87,56 +71,20 @@ class ChallengeDetectionService {
       const merchantName = transaction.merchantName?.toLowerCase() || '';
       const categoryName = transaction.categoryName?.toLowerCase() || '';
       
-      return this.cafeKeywords.some(keyword => 
-        merchantName.includes(keyword.toLowerCase()) || 
-        categoryName.includes(keyword.toLowerCase())
-      );
+      const isCafe = this.cafeKeywords.some(keyword => {
+        const keywordLower = keyword.toLowerCase();
+        const merchantMatch = merchantName.includes(keywordLower);
+        const categoryMatch = categoryName.includes(keywordLower);
+        
+        return merchantMatch || categoryMatch;
+      });
+      
+      return isCafe;
     });
-
-    if (cafeTransactions.length > 0) {
-      console.log('☕ 카페 이용 감지:', cafeTransactions.map(t => ({
-        가맹점: t.merchantName,
-        카테고리: t.categoryName,
-        금액: t.amountKrw
-      })));
-    }
 
     return cafeTransactions;
   }
 
-  isTransportTransaction(transaction: Transaction): boolean {
-    const merchantName = transaction.merchantName?.toLowerCase() || '';
-    const categoryName = transaction.categoryName?.toLowerCase() || '';
-    
-    return this.transportKeywords.some(keyword => 
-      merchantName.includes(keyword.toLowerCase()) || 
-      categoryName.includes(keyword.toLowerCase())
-    );
-  }
-
-  isCafeTransaction(transaction: Transaction): boolean {
-    const merchantName = transaction.merchantName?.toLowerCase() || '';
-    const categoryName = transaction.categoryName?.toLowerCase() || '';
-    
-    return this.cafeKeywords.some(keyword => 
-      merchantName.includes(keyword.toLowerCase()) || 
-      categoryName.includes(keyword.toLowerCase())
-    );
-  }
-
-  analyzeTransactionForChallenges(transaction: Transaction) {
-    const isTransport = this.isTransportTransaction(transaction);
-    const isCafe = this.isCafeTransaction(transaction);
-    
-    return {
-      isTransport,
-      isCafe,
-      merchantName: transaction.merchantName,
-      categoryName: transaction.categoryName,
-      amount: transaction.amountKrw,
-      date: transaction.txDate
-    };
-  }
 }
 
 export const challengeDetectionService = new ChallengeDetectionService();

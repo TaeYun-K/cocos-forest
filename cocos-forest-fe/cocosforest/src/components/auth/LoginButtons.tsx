@@ -4,14 +4,12 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'rea
 interface LoginButtonsProps {
   isLoading: boolean;
   onLogin: () => void;
-  onGoogleLogin: () => void;
   onSignup: () => void;
 }
 
 export const LoginButtons: React.FC<LoginButtonsProps> = ({
   isLoading,
   onLogin,
-  onGoogleLogin,
   onSignup,
 }) => {
   return (

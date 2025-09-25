@@ -108,7 +108,7 @@ const ChallengeSpecialSection: React.FC<ChallengeSpecialSectionProps> = ({
           ))}
         </View>
       )}
-      {challenge.status !== 'completed' && challengeDetectionResult.cafeUsed && (
+      {challenge.status !== 'completed' && challengeDetectionResult.cafeUsed && !challenge.rewardClaimed && (
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={onTumblerVerification}

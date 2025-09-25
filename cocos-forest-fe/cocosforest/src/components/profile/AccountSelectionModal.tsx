@@ -6,12 +6,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
   ActivityIndicator,
 } from 'react-native';
 import { fetchUserAccounts } from '../../api/finance';
 import type { Bank, CardProduct, UserAccount } from '../../api/finance';
-import { getBankColor, getBankIcon } from '../../utils/bankUtils';
+import { getBankColor } from '../../utils/bankUtils';
 
 interface AccountSelectionModalProps {
   visible: boolean;
@@ -117,17 +116,9 @@ const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
                     >
                       <View style={styles.accountSelectionInfo}>
                         <View style={[styles.accountIcon, { backgroundColor: getBankColor(account.bankCode) }]}>
-                          {getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행') ? (
-                            <Image 
-                              source={getBankIcon(account.bankCode, banks.find(b => b.bankCode === account.bankCode)?.bankName || '알 수 없는 은행')} 
-                              style={styles.bankLogoImage}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Text style={styles.accountIconText}>
-                              {banks.find(b => b.bankCode === account.bankCode)?.bankName?.charAt(0) || '?'}
-                            </Text>
-                          )}
+                          <Text style={styles.accountIconText}>
+                            {banks.find(b => b.bankCode === account.bankCode)?.bankName?.charAt(0) || '?'}
+                          </Text>
                         </View>
                         <View style={styles.accountDetails}>
                           <Text style={styles.accountName}>

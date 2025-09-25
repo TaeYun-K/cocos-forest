@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { ScrollView, SafeAreaView, Alert } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from '../styles/commonStyles';
 import type { Transaction } from '../types/dashboard';
 import { useChallengeStore } from '../store/challengeStore';
@@ -8,7 +12,6 @@ import { healthService } from '../services/healthService';
 import TumblerVerificationModal from '../components/challenge/TumblerVerificationModal';
 import { challengeApi } from '../api/challenge';
 import { challengeDetectionService } from '../services/challengeDetectionService';
-import { debugTokenStatus, testServerConnection } from '../api/axios';
 import ChallengeHeader from '../components/challenge/ChallengeHeader';
 import ChallengeInfoCard from '../components/challenge/ChallengeInfoCard';
 import ChallengeTab from '../components/challenge/ChallengeTab';
@@ -16,6 +19,7 @@ import ChallengeList from '../components/challenge/ChallengeList';
 import RewardModal from '../components/challenge/RewardModal';
 
 const ChallengeScreen = () => {
+  const queryClient = useQueryClient();
   const {
     challenges,
     todayChallenges,
@@ -24,6 +28,7 @@ const ChallengeScreen = () => {
     initializeChallenges,
     loadTodayChallenges,
     checkAttendance,
+    isAttendanceCheckedToday,
     updateSteps,
     checkTransportUsage,
     verifyTumbler,
@@ -65,14 +70,6 @@ const ChallengeScreen = () => {
   useEffect(() => {
     const loadChallengeStatus = async () => {
       try {
-        // 서버 연결 테스트
-        console.log('🔍 ChallengeScreen 로드 시작 - 서버 연결 테스트');
-        await testServerConnection();
-        
-        // 토큰 상태 디버깅
-        console.log('🔍 ChallengeScreen 로드 시작 - 토큰 상태 확인');
-        await debugTokenStatus();
-        
         await loadTodayChallenges();
       } catch (error) {
         console.error('챌린지 상태 로드 실패:', error);
@@ -85,6 +82,71 @@ const ChallengeScreen = () => {
       loadChallengeStatus();
     }, 500);
   }, []);
+
+  // 탭 진입(포커스) 시마다 오늘의 챌린지 새로고침 (한 번만 실행)
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      let hasExecuted = false; // 한 번만 실행되도록 플래그 추가
+      
+      const refreshTodayChallenges = async () => {
+        try {
+          if (!isActive || hasExecuted) return;
+          hasExecuted = true; // 실행 플래그 설정
+          await loadTodayChallenges();
+        } catch (e) {
+          console.error('포커스 시 오늘의 챌린지 로드 실패:', e);
+        }
+      };
+      refreshTodayChallenges();
+      return () => {
+        isActive = false;
+      };
+    }, []) // 의존성 배열 비우기
+  );
+
+  // 탭 진입(포커스) 시마다 결제내역 기반 챌린지 감지 갱신 (한 번만 실행)
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      let hasExecuted = false; // 한 번만 실행되도록 플래그 추가
+      
+      const detectOnFocus = async () => {
+        try {
+          if (!alive || hasExecuted) return;
+          hasExecuted = true; // 실행 플래그 설정
+          
+          const detectionResult = await challengeDetectionService.detectTodayChallenges();
+          setChallengeDetectionResult(detectionResult);
+
+          if (detectionResult.transportUsed) {
+            checkTransportUsage(true);
+            const transportChallenge = challenges.find(c => c.type === 'transport');
+            if (transportChallenge && transportChallenge.status !== 'completed') {
+              updateChallengeProgress('transport', 1);
+              completeChallenge('transport');
+              try {
+                const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
+                if (todayInstance) {
+                  await challengeApi.completeChallenge(todayInstance.instanceId);
+                }
+              } catch (syncErr) {
+                console.warn('대중교통 챌린지 완료 동기화 실패(포커스):', syncErr);
+              }
+            }
+          }
+
+          if (detectionResult.cafeUsed && tumblerVerificationFailed) {
+            setTumblerVerificationFailed(false);
+          }
+        } catch (e) {
+          console.error('포커스 시 챌린지 감지 실패:', e);
+        }
+      };
+      detectOnFocus();
+      return () => { alive = false; };
+    }, []) // 의존성 배열 비우기
+  );
 
   useEffect(() => {
     if (challenges.length === 0 && !isLoading) {
@@ -146,19 +208,23 @@ const ChallengeScreen = () => {
         setChallengeDetectionResult(detectionResult);
         
         if (detectionResult.transportUsed) {
-          console.log('🚌 대중교통 이용 감지됨');
           checkTransportUsage(true);
           
           const transportChallenge = challenges.find(c => c.type === 'transport');
-          console.log('🚌 대중교통 챌린지 상태:', transportChallenge);
           
           if (transportChallenge && transportChallenge.status !== 'completed') {
-            console.log('🚌 대중교통 챌린지 완료 처리 시작');
             updateChallengeProgress('transport', 1);
             completeChallenge('transport');
-            console.log('🚌 대중교통 챌린지 완료 처리 완료');
+            // 백엔드 동기화 (오늘의 챌린지 인스턴스가 있는 경우)
+            try {
+              const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
+              if (todayInstance) {
+                await challengeApi.completeChallenge(todayInstance.instanceId);
+              }
+            } catch (syncErr) {
+              console.warn('대중교통 챌린지 완료 동기화 실패:', syncErr);
+            }
           } else {
-            console.log('🚌 대중교통 챌린지가 이미 완료되었거나 찾을 수 없음');
           }
         }
         
@@ -174,89 +240,56 @@ const ChallengeScreen = () => {
     detectChallengesFromTransactions();
   }, []);
 
-  const handleAttendanceCheck = async (retryCount = 0) => {
+  const handleAttendanceCheck = async () => {
     setIsAttendanceLoading(true);
     try {
-      // 출석체크 전 토큰 상태 확인
-      console.log('🔍 출석체크 시작 - 토큰 상태 확인');
-      await debugTokenStatus();
-      
-      const response = await challengeApi.checkAttendance();
-      
-      if (response.success) {
-        checkAttendance();
-        Alert.alert(
-          '출석체크 완료! 🎉', 
-          `출석체크가 완료되었습니다!\n\n획득 포인트: ${response.pointsEarned || 100}P\n\n보상받기 버튼을 눌러 포인트를 수령하세요!`,
-          [{ text: '확인', style: 'default' }]
-        );
-      } else {
-        let errorTitle = '출석체크 실패';
-        let errorMessage = response.message || '출석체크 중 오류가 발생했습니다.';
-        let additionalInfo = '';
-        
-        if (response.message?.includes('서버 내부 오류')) {
-          errorTitle = '서버 오류';
-          errorMessage = '서버에서 일시적인 오류가 발생했습니다.';
-          additionalInfo = '\n\n가능한 원인:\n• 서버가 일시적으로 과부하 상태\n• 데이터베이스 연결 문제\n• 백엔드 서비스 점검 중\n\n잠시 후 다시 시도해주세요.';
-        } else if (response.message?.includes('이미 출석체크')) {
-          errorTitle = '이미 출석체크 완료';
-          errorMessage = '오늘은 이미 출석체크를 완료하셨습니다.';
-          additionalInfo = '\n\n내일 다시 출석체크해주세요!';
-        }
-        
-        Alert.alert(
-          errorTitle, 
-          errorMessage + additionalInfo,
-          [
-            { text: '확인', style: 'default' },
-            { text: '다시 시도', style: 'default', onPress: () => handleAttendanceCheck() }
-          ]
-        );
+      // 백엔드에서 출석체크 상태 확인
+      const attendanceChallenge = challenges.find(c => c.type === 'attendance');
+      if (attendanceChallenge?.status === 'completed') {
+        Alert.alert('알림', '이미 오늘 출석체크를 완료했습니다.');
+        return;
       }
-    } catch (error: any) {
-      let errorTitle = '출석체크 오류';
-      let errorMessage = '출석체크 중 오류가 발생했습니다.';
-      
-      if (error.message.includes('Network Error') || error.code === 'NETWORK_ERROR') {
-        errorTitle = '네트워크 오류';
-        errorMessage = '인터넷 연결을 확인해주세요.\n서버에 연결할 수 없습니다.';
-      } else if (error.response?.status === 404) {
-        errorTitle = 'API 오류';
-        errorMessage = '출석체크 서비스를 찾을 수 없습니다.\n개발팀에 문의해주세요.';
-      } else if (error.response?.status === 500) {
-        errorTitle = '서버 내부 오류';
-        errorMessage = '서버에서 일시적인 오류가 발생했습니다.\n\n가능한 원인:\n• 서버가 일시적으로 과부하 상태\n• 데이터베이스 연결 문제\n• 백엔드 서비스 점검 중\n\n잠시 후 다시 시도해주세요.';
-        
-        // 500 에러 시 재시도 로직 (최대 2번)
-        if (retryCount < 2) {
-          console.log(`🔄 500 에러 재시도 ${retryCount + 1}/2`);
-          setTimeout(() => {
-            handleAttendanceCheck(retryCount + 1);
-          }, 2000); // 2초 후 재시도
-          return;
-        } else {
-          // 재시도 실패 시 서버 상태 확인
-          console.log('🔍 서버 상태 확인 중...');
-          const healthCheck = await challengeApi.healthCheck();
-          console.log('🏥 서버 상태:', healthCheck);
+
+      // 오늘의 챌린지 목록에서 출석 인스턴스 찾기
+      const attendanceInstance = todayChallenges.find(c => c.challengeId === 'attendance');
+
+      // 백엔드에 완료 처리
+      if (attendanceInstance) {
+        const completeRes = await challengeApi.completeChallenge(attendanceInstance.instanceId);
+        if (!completeRes.success) {
+          console.warn('출석 완료 동기화 실패:', completeRes.message);
         }
-      } else if (error.response?.status === 403) {
-        errorTitle = '인증 오류';
-        errorMessage = '로그인이 필요합니다.\n로그인 후 다시 시도해주세요.';
-      } else if (error.response?.status >= 400) {
-        errorTitle = `서버 오류 (${error.response.status})`;
-        errorMessage = `서버에서 오류가 발생했습니다.\n\n오류 코드: ${error.response.status}\n${error.response.data?.message || '알 수 없는 오류'}`;
+      }
+
+      // 로컬 상태 업데이트
+      updateChallengeProgress('attendance', 1);
+      completeChallenge('attendance');
+      
+      // AsyncStorage에도 저장
+      const today = new Date().toISOString().split('T')[0];
+      try {
+        const attendanceData = JSON.parse(await AsyncStorage.getItem('attendanceData') || '{}');
+        attendanceData[today] = true;
+        await AsyncStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+        
+        // 출석체크 완료 시 보상도 자동 수령 처리
+        await claimReward('attendance');
+      } catch (error) {
+        console.warn('출석체크 상태 저장 실패:', error);
       }
       
       Alert.alert(
-        errorTitle,
-        `${errorMessage}\n\n오류 코드: ${error.response?.status || 'NETWORK_ERROR'}`,
-        [
-          { text: '확인', style: 'default' },
-          { text: '다시 시도', style: 'default', onPress: () => handleAttendanceCheck(0) }
-        ]
+        '출석체크 완료! 🎉',
+        '출석체크가 완료되었습니다!\n\n보상받기 버튼을 눌러 포인트를 수령하세요!',
+        [{ text: '확인', style: 'default' }]
       );
+    } catch (error: any) {
+      console.error('출석체크 처리 실패:', error);
+      const status = error?.response?.status;
+      const message = status === 403
+        ? '인증이 만료되었거나 로그인 정보가 없습니다. 다시 로그인 후 시도해주세요.'
+        : '출석체크 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      Alert.alert('오류', message);
     } finally {
       setIsAttendanceLoading(false);
     }
@@ -270,15 +303,13 @@ const ChallengeScreen = () => {
 
     setIsStepsLoading(true);
     try {
-      // 걸음수 업데이트 전 토큰 상태 확인
-      console.log('🔍 걸음수 업데이트 시작 - 토큰 상태 확인');
-      await debugTokenStatus();
       
       const stepData = await healthService.getTodaySteps();
       const response = await challengeApi.updateSteps(stepData.steps);
       
       if (response.success) {
         updateSteps(response.progress);
+        
         if (response.isCompleted) {
           Alert.alert('챌린지 완료!', `만보기 챌린지를 완료했습니다! ${response.pointsEarned}포인트를 획득했습니다!`);
         }
@@ -286,7 +317,7 @@ const ChallengeScreen = () => {
         Alert.alert('오류', response.message || '걸음수 업데이트 중 오류가 발생했습니다.');
       }
     } catch (error) {
-      console.log('Error fetching steps:', error);
+      console.error('걸음수 데이터 가져오기 실패:', error);
       Alert.alert('오류', '걸음수 데이터를 가져오는 중 오류가 발생했습니다.');
     } finally {
       setIsStepsLoading(false);
@@ -302,12 +333,12 @@ const ChallengeScreen = () => {
     if (selectedChallenge) {
       try {
         if (selectedChallenge.type === 'attendance') {
-          claimReward(selectedChallenge.id);
+          await claimReward(selectedChallenge.id);
           Alert.alert('보상 수령 완료!', `${selectedChallenge.points}포인트를 획득했습니다!`);
         } else {
           const challengeInstance = todayChallenges.find(c => c.challengeId === selectedChallenge.id);
           if (!challengeInstance) {
-            claimReward(selectedChallenge.id);
+            await claimReward(selectedChallenge.id);
             Alert.alert('보상 수령 완료!', `${selectedChallenge.points}포인트를 획득했습니다!`);
           } else {
             const success = await claimChallengeReward(challengeInstance.instanceId);
@@ -315,7 +346,7 @@ const ChallengeScreen = () => {
             if (success) {
               Alert.alert('보상 수령 완료!', `${selectedChallenge.points}포인트를 획득했습니다!`);
             } else {
-              claimReward(selectedChallenge.id);
+              await claimReward(selectedChallenge.id);
               Alert.alert('보상 수령 완료!', `${selectedChallenge.points}포인트를 획득했습니다!`);
             }
           }
@@ -372,6 +403,14 @@ const ChallengeScreen = () => {
   const handleRefreshTransactions = async () => {
     setIsRefreshing(true);
     try {
+      // 출석체크 상태 보존
+      const attendanceChallenge = challenges.find(c => c.type === 'attendance');
+      const wasAttendanceCompleted = attendanceChallenge?.status === 'completed';
+      
+      // React Query 캐시 무효화하여 새로운 데이터 받아오기
+      await queryClient.invalidateQueries({ queryKey: ['todayData'] });
+      await queryClient.invalidateQueries({ queryKey: ['dayDetails'] });
+      
       const detectionResult = await challengeDetectionService.detectTodayChallenges();
       setChallengeDetectionResult(detectionResult);
       
@@ -382,11 +421,28 @@ const ChallengeScreen = () => {
         if (transportChallenge && transportChallenge.status !== 'completed') {
           updateChallengeProgress('transport', 1);
           completeChallenge('transport');
+          try {
+            const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
+            if (todayInstance) {
+              await challengeApi.completeChallenge(todayInstance.instanceId);
+            }
+          } catch (syncErr) {
+            console.warn('대중교통 챌린지 완료 동기화 실패:', syncErr);
+          }
         }
       }
       
       if (detectionResult.cafeUsed && tumblerVerificationFailed) {
         setTumblerVerificationFailed(false);
+      }
+      
+      // 출석체크 상태 복원
+      if (wasAttendanceCompleted) {
+        const updatedAttendanceChallenge = challenges.find(c => c.type === 'attendance');
+        if (updatedAttendanceChallenge && updatedAttendanceChallenge.status !== 'completed') {
+          updateChallengeProgress('attendance', 1);
+          completeChallenge('attendance');
+        }
       }
       
       Alert.alert('새로고침 완료', '결제내역을 다시 확인했습니다.');
