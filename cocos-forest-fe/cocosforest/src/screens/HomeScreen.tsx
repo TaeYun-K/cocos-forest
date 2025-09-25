@@ -9,7 +9,7 @@ import { homeStyles as s } from "../styles/homeStyles";
 import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Cell, Marker, ForestInfoDto } from "../types/forest";
-import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, placeDecoration, type AssetDto } from "../api/home";
+import { fetchForestInfo, fetchPoints, plantTree, waterTree, removeDeadTree, expandForest, listAssets, placeDecoration, removeDecoration, type AssetDto } from "../api/home";
 import { getSpriteByKey } from "../assets/spriteMap";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -216,17 +216,52 @@ export default function HomeScreen() {
 
   const handleCellPress = useCallback((cell: Cell) => {
     setSelected(cell);
+
+    // If decoration exists at this cell, offer delete toggle
+    const deco = forestInfo?.decorations?.find(d => d.x === cell.x && d.y === cell.z);
+    if (deco) {
+      Alert.alert(
+        "장식 삭제",
+        "이 칸의 장식을 삭제하시겠습니까? (포인트 전액 환불)",
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "삭제",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setActionLoading(true);
+                await removeDecoration(deco.id);
+                await loadForestData();
+                // 포인트 갱신
+                const updatedPoints = await fetchPoints();
+                setPointsNumber(updatedPoints);
+                setPoints(updatedPoints.toLocaleString() + " P");
+                setModalVisible(false);
+                Alert.alert("완료", "장식을 삭제하고 환불되었습니다.");
+              } catch (err) {
+                console.error("remove decoration error:", err);
+                Alert.alert("오류", "장식 삭제 중 오류가 발생했습니다.");
+              } finally {
+                setActionLoading(false);
+              }
+            },
+          },
+        ]
+      );
+      return; // don't open modal
+    }
+
+    // If empty cell or tree, open modal for plant/water/deco install
     setModalVisible(true);
-    // If empty cell, prepare asset picker
     const exists = treeData.find(tree => tree.x === cell.x && tree.y === cell.z);
     if (!exists) {
       setSelectedAssetId(null);
       if (assets.length === 0) {
-        // load asset catalog lazily
         loadAssetsForPlanting();
       }
     }
-  }, [treeData, assets.length, loadAssetsForPlanting]);
+  }, [forestInfo?.decorations, treeData, assets.length, loadAssetsForPlanting]);
 
   // 확장 가능 영역 클릭 핸들러
   const handleExpandableAreaPress = useCallback(() => {
