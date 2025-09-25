@@ -29,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 숲 관련 비즈니스 로직을 처리하는 서비스
  */
+/**
+ * 숲 게임(포레스트) 도메인 로직을 처리하는 서비스
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -230,36 +233,35 @@ public class ForestService {
         return WaterTreeResponseDto.success(plants);
     }
 
-
     /**
-     * 
+     * decorationId에 해당하는 장식을 삭제합니다
      */
     @Transactional
     public void removeDecoration(Long userId, Long decorationId) {
-        
+        // 입력값 검증
         Decoration decoration = decorationRepository.findById(decorationId)
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "��� ã�� �� �����ϴ�."));
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "에셋 id가 유효하지 않습니다"));
 
-        
+        // user 의 forest id 검색
         Forest forest = forestRepository.findById(decoration.getForestId())
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
         if (!forest.getUserId().equals(userId)) {
             throw new BaseException(BaseResponseStatus.UNAUTHORIZED_FOREST_ACCESS);
         }
 
-        
+        // 해당 숲의 asset id 검색
         Asset asset = assetRepository.findById(decoration.getAssetId())
-                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "��ȿ���� ���� �ڻ��Դϴ�."));
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "해당 숲에 존재하지 않은 장식입니다."));
         int price = asset.getPricePoints() != null ? asset.getPricePoints() : 0;
 
-        
+        // point 전액 환불
         pointService.earnPoints(userId, price, "DECORATION_REFUND", decorationId,
-                String.format("��� ���� �Ⱦ� - %s", asset.getName()));
+                String.format("환불된 장식명 : ", asset.getName()));
 
-        
+        // decoration 삭ㅈ
         decorationRepository.delete(decoration);
 
-        log.info("����� {}�� ��� {}�� ����, {}����Ʈ�� �Ⱦ��Ͽ����ϴ�.", userId, decorationId, price);
+        log.info("user id : {}, decorationId :  {}, price : {}, 삭제 완료 ", userId, decorationId, price);
     }
 
     /**
