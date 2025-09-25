@@ -67,12 +67,6 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           validatePassword={validatePassword}
         />
       )}
-
-      {showForgotPassword && onForgotPassword && (
-        <TouchableOpacity onPress={onForgotPassword}>
-          <Text style={styles.forgotPassword}>비밀번호를 잊으셨나요?</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };

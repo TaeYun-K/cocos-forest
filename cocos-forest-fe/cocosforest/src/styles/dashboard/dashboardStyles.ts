@@ -42,7 +42,7 @@ export const commonStyles = StyleSheet.create({
   // 컨테이너 스타일
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#E8F5E9',
   },
 
   scrollView: {

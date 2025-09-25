@@ -66,17 +66,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
 
-      // 실제 API 호출
       const tokenInfo: TokenInfo = await authService.login(loginData);
 
-      // AsyncStorage에 토큰 저장
       await AsyncStorage.setItem(AUTH_TOKEN_KEY, tokenInfo.accessToken);
       await AsyncStorage.setItem(ENV.REFRESH_TOKEN_KEY, tokenInfo.refreshToken);
 
-      // 상태 업데이트 (사용자 정보는 별도 API 호출이 필요할 수 있음)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       set({
         isAuthenticated: true,
-        user: null, // 사용자 정보는 별도로 가져와야 함
+        user: null,
         token: tokenInfo.accessToken,
         isLoading: false,
       });
