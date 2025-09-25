@@ -131,7 +131,7 @@ export default function HomeScreen() {
   // 포인트/성장률 (API)
   const [points, setPoints] = useState("0");
   const [pointsNumber, setPointsNumber] = useState(0); // 숫자 형태로도 저장
-  const [growth, setGrowth] = useState(0);
+  const [growth, setGrowth] = useState<string | number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [expandLoading, setExpandLoading] = useState(false);
@@ -182,12 +182,11 @@ export default function HomeScreen() {
       // 나무 상세 정보 저장
       setTreeData(forestInfoData.trees);
 
-      // 성장률 계산 (살아있는 나무 / 전체 나무 * 100)
-      const growthRate =
-        forestInfoData.trees.length > 0
-          ? Math.round((forestInfoData.aliveTreeCount / forestInfoData.trees.length) * 100)
-          : 0;
-      setGrowth(growthRate);
+      // 나무 개수 표시 (살아있는 나무 개수/전체 나무 개수)
+      const aliveTreeCount = forestInfoData.aliveTreeCount || 0;
+      const totalTreeCount = forestInfoData.trees.length || 0;
+      const treeCountDisplay = `${aliveTreeCount}/${totalTreeCount}`;
+      setGrowth(treeCountDisplay);
 
       // 포인트 데이터 처리
       setPointsNumber(pointsData);
