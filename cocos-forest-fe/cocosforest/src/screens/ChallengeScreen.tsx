@@ -14,7 +14,6 @@ import { challengeApi } from '../api/challenge';
 import { challengeDetectionService } from '../services/challengeDetectionService';
 import { UnifiedHeader } from '../components/common';
 import ChallengeInfoCard from '../components/challenge/ChallengeInfoCard';
-import ChallengeTab from '../components/challenge/ChallengeTab';
 import ChallengeList from '../components/challenge/ChallengeList';
 import RewardModal from '../components/challenge/RewardModal';
 
@@ -471,9 +470,7 @@ const ChallengeScreen = () => {
         />
         
         <ChallengeInfoCard />
-        
-        <ChallengeTab currentDate={getCurrentDate()} />
-        
+
         <ChallengeList
           challenges={challenges}
           isLoading={isLoading}
