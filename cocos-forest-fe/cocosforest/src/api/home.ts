@@ -163,6 +163,20 @@ export async function placeDecoration(x: number, y: number, assetId: number): Pr
   }
 }
 
+/* 장식(Decoration) 삭제 */
+export async function removeDecoration(decorationId: number): Promise<void> {
+  try {
+    const response = await apiClient.delete<BaseResponse<any>>(`/api/forest/assets/decorations/${decorationId}`);
+    if (!response.data?.isSuccess) {
+      throw new Error(response.data?.message || "삭제에 실패하였습니다");
+    }
+    console.log("삭제 완료되었습니다 :", { decorationId });
+  } catch (error) {
+    console.error("removeDecoration error:", error);
+    throw error;
+  }
+}
+
 // ========= Asset Catalog =========
 export interface AssetDto {
   id: number;

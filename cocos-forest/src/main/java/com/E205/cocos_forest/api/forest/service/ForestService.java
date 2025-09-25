@@ -45,10 +45,10 @@ public class ForestService {
 
     /**
      * 사용자의 숲 생성 (최초 1회)
-     */
+    */
     @Transactional
     public ForestResponseDto createForest(Long userId) {
-        // 이미 숲이 있는지 확인
+        // 이미 생성되어 있는지 확인 (중복 방지)
         if (forestRepository.existsByUserId(userId)) {
             throw new BaseException(BaseResponseStatus.FOREST_ALREADY_EXISTS);
         }
@@ -228,6 +228,38 @@ public class ForestService {
             userId, plantId, plants.getHealth(), plants.getMaxHealth());
 
         return WaterTreeResponseDto.success(plants);
+    }
+
+
+    /**
+     * 
+     */
+    @Transactional
+    public void removeDecoration(Long userId, Long decorationId) {
+        
+        Decoration decoration = decorationRepository.findById(decorationId)
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "��� ã�� �� �����ϴ�."));
+
+        
+        Forest forest = forestRepository.findById(decoration.getForestId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.FOREST_NOT_FOUND));
+        if (!forest.getUserId().equals(userId)) {
+            throw new BaseException(BaseResponseStatus.UNAUTHORIZED_FOREST_ACCESS);
+        }
+
+        
+        Asset asset = assetRepository.findById(decoration.getAssetId())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE, "��ȿ���� ���� �ڻ��Դϴ�."));
+        int price = asset.getPricePoints() != null ? asset.getPricePoints() : 0;
+
+        
+        pointService.earnPoints(userId, price, "DECORATION_REFUND", decorationId,
+                String.format("��� ���� �Ⱦ� - %s", asset.getName()));
+
+        
+        decorationRepository.delete(decoration);
+
+        log.info("����� {}�� ��� {}�� ����, {}����Ʈ�� �Ⱦ��Ͽ����ϴ�.", userId, decorationId, price);
     }
 
     /**
