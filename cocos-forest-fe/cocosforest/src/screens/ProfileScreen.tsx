@@ -9,7 +9,6 @@ import {
   SafeAreaView,
   Modal,
   Alert,
-  BackHandler,
   ActivityIndicator
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -74,7 +73,7 @@ const ProfileScreen = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = React.useState(false);
   
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   
   const userId = Number(user?.id) || 1;
 
@@ -237,25 +236,25 @@ const ProfileScreen = () => {
         {
           text: '로그아웃',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
               setIsLogoutModalVisible(false);
-              
-              setTimeout(() => {
-                Alert.alert(
-                  '로그아웃 완료',
-                  '성공적으로 로그아웃되었습니다.\n앱을 종료합니다.',
-                  [
-                    {
-                      text: '확인',
-                      onPress: () => {
-                        BackHandler.exitApp();
-                      }
-                    }
-                  ]
-                );
-              }, 500);
+
+              // authStore의 logout 메서드 호출
+              await logout();
+
+              Alert.alert(
+                '로그아웃 완료',
+                '성공적으로 로그아웃되었습니다.',
+                [{ text: '확인' }]
+              );
             } catch (error) {
+              console.error('로그아웃 실패:', error);
+              Alert.alert(
+                '로그아웃 실패',
+                '로그아웃 중 오류가 발생했습니다.',
+                [{ text: '확인' }]
+              );
             }
           }
         }
@@ -726,7 +725,7 @@ const ProfileScreen = () => {
             <TouchableOpacity 
               key={item.id} 
               style={[styles.settingItem, item.isLogout && styles.logoutItem]}
-              onPress={item.isLogout ? handleLogoutPress : undefined}
+              onPress={item.isLogout ? handleLogoutConfirm : undefined}
             >
               <View style={styles.settingLeft}>
                 <Text style={styles.settingIcon}>{item.icon}</Text>
