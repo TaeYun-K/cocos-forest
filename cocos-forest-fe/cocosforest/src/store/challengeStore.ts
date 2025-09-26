@@ -57,7 +57,7 @@ const initialChallenges: Challenge[] = [
   {
     id: 'transport',
     type: 'transport',
-    title: '대중교통이용하기',
+    title: '대중교통 이용하기',
     description: '대중교통을 이용하여 환경을 보호하세요',
     icon: '🚌',
     difficulty: 'medium',
