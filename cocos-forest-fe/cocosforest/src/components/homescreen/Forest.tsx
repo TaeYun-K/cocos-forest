@@ -152,28 +152,6 @@ export default function Board({
     
     return isAdjacentToGrass;
   };
-  
-  // 선택된 셀인지 확인하는 함수
-  const isSelectedCell = (cell: Cell) => {
-    return selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z;
-  };
-
-  // Deterministic pseudo-random (0..1) based on tile coords
-  const rand01 = (x: number, z: number, seed = 1337) => {
-    let n = (x | 0) * 374761393 + ((z | 0) * 668265263) + seed;
-    n = (n ^ (n >>> 13)) >>> 0;
-    n = (n * 1274126177) >>> 0;
-    return (n >>> 0) / 0x100000000;
-  };
-
-  // Background/dirt variant per tile (previous randomizer - kept for reference)
-  const getDirtImage = (x: number, z: number) => {
-    const r = rand01(x, z);
-    if (r < 0.05) return DIRT_PLAIN_IMG; // a few bare dirt tiles
-    if (r < 0.35) return GRASS_DARK;      // patchy grass-dirt
-    if (r < 0.70) return GRASS_WEEDS;       // weeds
-    return GRASS_IMG;                    // full grass
-  };
 
   // Island-like concentric lines around plantable square
   const getStripBackground = (x: number, z: number) => {
@@ -190,29 +168,19 @@ export default function Board({
     return WATER_IMG;                              // beyond -> water
   };
 
-  // Slight variation on grass top faces (non-water)
-  const getGrassTopImage = (x: number, z: number) => {
-    const r = rand01(x * 3, z * 3, 911);
-    if (r < 0.12) return GRASS_WEEDS;  // subtle weeds
-    if (r < 0.22) return GRASS_DARK; // darker patch
-    return GRASS_IMG;
-  };
-
-  // 죽은 나무인지 확인하는 함수
-  const getDeadTreeAt = (x: number, z: number) => {
-    if (!forestInfo?.trees) return null;
-    
-    return forestInfo.trees.find(tree => 
-      tree.x === x && 
-      tree.y === z && 
-      (tree.health === 0 || tree.isDead)
-    );
-  };
-
   // 기존 스텝 벡터/중심 추정 로직
   const c00 = cells.find((c) => c.x === 0 && c.z === 0);
   const c10 = cells.find((c) => c.x === 1 && c.z === 0);
   const c01 = cells.find((c) => c.x === 0 && c.z === 1);
+
+  // 숲의 논리적 중심 (forestSize 기준)
+  const forestLogicalCenterX = (forestSize - 1) / 2;
+  const forestLogicalCenterZ = (forestSize - 1) / 2;
+
+  // 해당 좌표의 스크린 위치
+  const centerCell = cellsByCoord.get(
+    `${Math.floor(forestLogicalCenterX)},${Math.floor(forestLogicalCenterZ)}`
+  );
 
   const stepX =
     c00 && c10
@@ -291,29 +259,13 @@ export default function Board({
     return { minX, minY, maxX, maxY };
   })();
 
-  const contentCenterX = (bounds.minX + bounds.maxX) / 2;
-  const contentCenterY = (bounds.minY + bounds.maxY) / 2;
-  const baseDX = containerCenterX - contentCenterX;
-  const baseDY = containerCenterY - contentCenterY;
-
-  // 보드의 상단면 중심(Y)의 평균으로 시각적 중앙을 계산
-  const avgTopFaceCenterY = (() => {
-    if (!cells?.length) return center.sy;
-    let sum = 0;
-    for (const c of cells) {
-      const verts = getTopFaceVertices(c.sx, c.sy);
-      const topFaceY = (verts[0][1] + verts[2][1]) / 2;
-      sum += topFaceY;
-    }
-    return sum / cells.length;
-  })();
-
-  const boardCenterX = center.sx;
-  const boardCenterY = avgTopFaceCenterY;
-  
-  // 최종 보드가 위치할 중심점
-  const finalCenterX = containerCenterX;
-  const finalCenterY = containerCenterY;
+  const baseDX = centerCell 
+    ? containerCenterX - centerCell.sx
+    : containerCenterX - center.sx;
+    
+  const baseDY = centerCell
+    ? containerCenterY - centerCell.sy  
+    : containerCenterY - center.sy;
 
   return (
     <View style={s.board} pointerEvents="box-none">
@@ -332,9 +284,9 @@ export default function Board({
             { translateY: baseDY },
           ],
         }}
-        renderToHardwareTextureAndroid={true}
-        shouldRasterizeIOS={true}
-        removeClippedSubviews={true}
+        // renderToHardwareTextureAndroid={true}
+        // shouldRasterizeIOS={true}
+        // removeClippedSubviews={true}
       >
       {/* Layer 0: 바닥층 dirt (동적 크기) */}
       {dirtRange.map((ix) =>
