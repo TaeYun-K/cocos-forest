@@ -91,6 +91,20 @@ export default function Board({
   onDeadTreePress,
   onExpandableAreaPress,
 }: Props) {
+  // Build coordinate maps once per change to avoid O(n^2) finds in render
+  const cellsByCoord = React.useMemo(() => {
+    const map = new Map<string, Cell>();
+    for (const c of cells) map.set(`${c.x},${c.z}`, c);
+    return map;
+  }, [cells]);
+
+  const treesByCoord = React.useMemo(() => {
+    const map = new Map<string, NonNullable<ForestInfoDto["trees"]>[number]>();
+    if (forestInfo?.trees) {
+      for (const t of forestInfo.trees) map.set(`${t.x},${t.y}`, t);
+    }
+    return map;
+  }, [forestInfo?.trees]);
   const forestSize = forestInfo?.size || 8;
   const pondX = forestInfo?.pondX || 3;
   const pondY = forestInfo?.pondY || 3;
@@ -220,7 +234,7 @@ export default function Board({
 
   // 동적 흙 타일 범위 (잔디 크기의 2배)
   const dirtSize = forestSize * 2;
-  const dirtRange = Array.from({ length: dirtSize }, (_, i) => i);
+  const dirtRange = React.useMemo(() => Array.from({ length: dirtSize }, (_, i) => i), [dirtSize]);
 
   // Container center (for aligning board center to view center)
   const containerCenterX = layoutW > 0 ? layoutW / 2 : center.sx;
@@ -318,6 +332,9 @@ export default function Board({
             { translateY: baseDY },
           ],
         }}
+        renderToHardwareTextureAndroid={true}
+        shouldRasterizeIOS={true}
+        removeClippedSubviews={true}
       >
       {/* Layer 0: 바닥층 dirt (동적 크기) */}
       {dirtRange.map((ix) =>
@@ -415,22 +432,17 @@ export default function Board({
       {/* Layer 2: 마커 (모든 나무 - 죽은 나무는 다른 에셋으로 표시) */}
       {markers.map((m) => {
         // 해당 위치의 나무 정보 찾기
-        const treeInfo = forestInfo?.trees?.find(tree => tree.x === m.x && tree.y === m.z);
+        const treeInfo = treesByCoord.get(`${m.x},${m.z}`);
+        const isDead = !!(treeInfo && (treeInfo.isDead || treeInfo.health === 0));
+        const sprite = isDead
+          ? DEAD_TREE_WARNING_IMG
+          : getSpriteByKey(treeInfo?.spriteKey) ||
+            getTreeAsset(m.growthStage, false, treeInfo?.health, treeInfo?.maxHealth);
         
         return (
           <Image
             key={`marker-${m.x}-${m.z}`}
-            source={(() => {
-              const isDead = !!(treeInfo && (treeInfo.isDead || treeInfo.health === 0));
-              if (isDead) return DEAD_TREE_WARNING_IMG;
-              const sprite = getSpriteByKey(treeInfo?.spriteKey);
-              return sprite || getTreeAsset(
-                m.growthStage,
-                false,
-                treeInfo?.health,
-                treeInfo?.maxHealth
-              );
-            })()}
+            source={sprite}
             style={{
               position: "absolute",
               left: m.sx - MARKER_SIZE / 2,
@@ -447,26 +459,35 @@ export default function Board({
       })}
 
       {/* Layer 2b: Decorations */}
-      {forestInfo?.decorations?.map((deco) => {
-        const cell = cells.find(c => c.x === deco.x && c.z === deco.y);
+      {null && forestInfo?.decorations?.map((deco) => {
+        const cell = cellsByCoord.get(`${deco.x},${deco.y}`);
         if (!cell) return null;
         const sprite = decoSpriteById[deco.assetId] || MARKER_IMG;
         return (
-          <Image
+          <TouchableOpacity
             key={`deco-${deco.id}-${deco.x}-${deco.y}`}
-            source={sprite}
             style={{
               position: "absolute",
               left: cell.sx - MARKER_SIZE / 2,
               top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
               width: MARKER_SIZE,
               height: MARKER_SIZE,
-              resizeMode: "contain",
-              zIndex: 2,
-              elevation: 2,
+              zIndex: 2.5,
+              elevation: 2.5,
             }}
-            pointerEvents="none"
-          />
+            onPress={() => onCellPress(cell)}
+            activeOpacity={0.85}
+          >
+            <Image
+              source={sprite}
+              style={{
+                width: MARKER_SIZE,
+                height: MARKER_SIZE,
+                resizeMode: "contain",
+              }}
+              pointerEvents="none"
+            />
+          </TouchableOpacity>
         );
       })}
 
@@ -499,7 +520,7 @@ export default function Board({
       {forestInfo?.trees
         ?.filter(tree => tree.health === 0 || tree.isDead)
         ?.map((tree) => {
-          const cell = cells.find(c => c.x === tree.x && c.z === tree.y);
+          const cell = cellsByCoord.get(`${tree.x},${tree.y}`);
           if (!cell) return null;
           
           return (
@@ -522,25 +543,21 @@ export default function Board({
       {/* Layer 3: 히트박스 + 하이라이트 (잔디 영역만) */}
       {layoutW > 0 && (
         <>
-          <Svg
-            style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
-            pointerEvents="none"
-          >
-            {cells.map((c) => {
-              const isSelected = isSelectedCell(c);
-              return (
-                <Path
-                  key={`path-${c.x}-${c.z}`}
-                  d={c.path}
-                  fill={isSelected ? "rgba(255, 215, 0, 0.6)" : "#00FF00"}
-                  fillOpacity={isSelected ? 0.6 : 0}
-                  stroke={isSelected ? "#FFD700" : "#000"}
-                  strokeOpacity={isSelected ? 1 : 0}
-                  strokeWidth={isSelected ? 3 : 1}
-                />
-              );
-            })}
-          </Svg>
+          {selectedCell && (
+            <Svg
+              style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
+              pointerEvents="none"
+            >
+              <Path
+                d={selectedCell.path}
+                fill="rgba(255, 215, 0, 0.6)"
+                fillOpacity={0.6}
+                stroke="#FFD700"
+                strokeOpacity={1}
+                strokeWidth={3}
+              />
+            </Svg>
+          )}
 
           {cells.map((c) => (
             <TouchableOpacity
