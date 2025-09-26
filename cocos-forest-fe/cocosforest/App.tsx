@@ -143,10 +143,10 @@ const initializeNotifications = async () => {
             console.log('✅ 토큰이 서버에 성공적으로 전송됨');
             console.log('📤 서버 응답:', responseData);
           } else {
-            console.error('❌ 서버 응답 에러:', response.status, response.statusText);
+            console.log('❌ 서버 응답 에러:', response.status, response.statusText);
           }
         } catch (error) {
-          console.error('❌ 토큰 전송 실패:', error);
+          console.log('❌ 토큰 전송 실패:', error);
         }
       };
 
