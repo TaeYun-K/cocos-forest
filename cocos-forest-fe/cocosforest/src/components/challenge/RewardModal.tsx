@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { Challenge } from '../../types/challenge';
+import { colors } from '../../styles/commonStyles';
 
 interface RewardModalProps {
   visible: boolean;
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modalConfirmButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
   },
   modalConfirmButtonText: {
     color: '#fff',

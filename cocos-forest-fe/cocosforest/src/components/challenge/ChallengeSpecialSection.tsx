@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { Challenge } from '../../types/challenge';
 import type { Transaction } from '../../types/dashboard';
+import { colors } from '../../styles/commonStyles';
 
 interface ChallengeSpecialSectionProps {
   challenge: Challenge;
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   actionButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
   refreshButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -204,15 +205,15 @@ const styles = StyleSheet.create({
   detectedTransactions: {
     marginTop: 8,
     padding: 8,
-    backgroundColor: '#f0f8ff',
+    backgroundColor: colors.greenLight,
     borderRadius: 6,
     borderLeftWidth: 3,
-    borderLeftColor: '#007AFF',
+    borderLeftColor: colors.primary,
   },
   detectedTransactionsTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#007AFF',
+    color: colors.primary,
     marginBottom: 4,
   },
   detectedTransactionItem: {

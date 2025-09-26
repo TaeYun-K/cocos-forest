@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
-import { ScrollView, SafeAreaView, Alert } from 'react-native';
+import { ScrollView, SafeAreaView, Alert, RefreshControl } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { commonStyles } from '../styles/commonStyles';
@@ -12,14 +12,14 @@ import { healthService } from '../services/healthService';
 import TumblerVerificationModal from '../components/challenge/TumblerVerificationModal';
 import { challengeApi } from '../api/challenge';
 import { challengeDetectionService } from '../services/challengeDetectionService';
-import ChallengeHeader from '../components/challenge/ChallengeHeader';
+import { UnifiedHeader } from '../components/common';
 import ChallengeInfoCard from '../components/challenge/ChallengeInfoCard';
-import ChallengeTab from '../components/challenge/ChallengeTab';
 import ChallengeList from '../components/challenge/ChallengeList';
 import RewardModal from '../components/challenge/RewardModal';
 
 const ChallengeScreen = () => {
   const queryClient = useQueryClient();
+  const scrollViewRef = useRef<ScrollView>(null);
   const {
     challenges,
     todayChallenges,
@@ -45,6 +45,7 @@ const ChallengeScreen = () => {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [showTumblerModal, setShowTumblerModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   
   const getCurrentDate = () => {
@@ -83,12 +84,15 @@ const ChallengeScreen = () => {
     }, 500);
   }, []);
 
-  // 탭 진입(포커스) 시마다 오늘의 챌린지 새로고침 (한 번만 실행)
+  // 탭 진입(포커스) 시마다 오늘의 챌린지 새로고침 및 최상단 스크롤
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
       let hasExecuted = false; // 한 번만 실행되도록 플래그 추가
-      
+
+      // 최상단으로 스크롤
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+
       const refreshTodayChallenges = async () => {
         try {
           if (!isActive || hasExecuted) return;
@@ -153,6 +157,49 @@ const ChallengeScreen = () => {
       initializeChallenges();
     }
   }, [challenges.length, isLoading]);
+
+  // Pull-to-refresh 함수
+  const onPullRefresh = useCallback(async () => {
+    setIsPullRefreshing(true);
+    try {
+      // React Query 캐시 무효화하여 새로운 데이터 받아오기
+      await queryClient.invalidateQueries({ queryKey: ['todayData'] });
+      await queryClient.invalidateQueries({ queryKey: ['dayDetails'] });
+
+      // 챌린지 상태 새로고침
+      await loadTodayChallenges();
+
+      // 챌린지 감지 서비스 재실행
+      const detectionResult = await challengeDetectionService.detectTodayChallenges();
+      setChallengeDetectionResult(detectionResult);
+
+      if (detectionResult.transportUsed) {
+        checkTransportUsage(true);
+        const transportChallenge = challenges.find(c => c.type === 'transport');
+        if (transportChallenge && transportChallenge.status !== 'completed') {
+          updateChallengeProgress('transport', 1);
+          completeChallenge('transport');
+        }
+      }
+
+      if (detectionResult.cafeUsed && tumblerVerificationFailed) {
+        setTumblerVerificationFailed(false);
+      }
+    } catch (error) {
+      console.error('Pull refresh error:', error);
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }, [
+    queryClient,
+    loadTodayChallenges,
+    challenges,
+    checkTransportUsage,
+    updateChallengeProgress,
+    completeChallenge,
+    tumblerVerificationFailed,
+    setTumblerVerificationFailed
+  ]);
 
   useEffect(() => {
     const checkHealthAvailability = async () => {
@@ -457,16 +504,29 @@ const ChallengeScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container}>
-      <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
-        <ChallengeHeader 
+      <ScrollView
+        ref={scrollViewRef}
+        style={commonStyles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isPullRefreshing}
+            onRefresh={onPullRefresh}
+            tintColor="#15803d"
+            colors={['#15803d']}
+          />
+        }
+      >
+        <UnifiedHeader
+          title="환경 챌린지"
+          showRefresh={false}
           isRefreshing={isRefreshing}
           onRefresh={handleRefreshTransactions}
+          showEco={false}
         />
         
         <ChallengeInfoCard />
-        
-        <ChallengeTab currentDate={getCurrentDate()} />
-        
+
         <ChallengeList
           challenges={challenges}
           isLoading={isLoading}

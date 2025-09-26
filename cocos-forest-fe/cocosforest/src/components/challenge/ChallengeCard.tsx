@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Challenge } from '../../types/challenge';
 import type { Transaction } from '../../types/dashboard';
+import { colors } from '../../styles/commonStyles';
 import ChallengeSpecialSection from './ChallengeSpecialSection';
 
 interface ChallengeCardProps {
@@ -21,6 +23,17 @@ interface ChallengeCardProps {
   onClaimReward: (challenge: Challenge) => void;
 }
 
+// 이모지를 벡터 아이콘으로 매핑
+const getIconName = (emoji: string): keyof typeof Ionicons.glyphMap => {
+  const iconMap: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+    '📅': 'calendar-outline',
+    '🚶‍♂️': 'walk-outline',
+    '🚌': 'bus-outline',
+    '☕': 'cafe-outline',
+  };
+  return iconMap[emoji] || 'help-circle-outline';
+};
+
 const ChallengeCard: React.FC<ChallengeCardProps> = ({
   challenge,
   challengeDetectionResult,
@@ -36,16 +49,21 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
     <View 
       style={[
         styles.challengeCard,
-        { 
-          backgroundColor: challenge.status === 'completed' ? '#e8f5e8' : '#fff',
-          borderColor: challenge.status === 'completed' ? '#4caf50' : '#e0e0e0',
+        {
+          backgroundColor: challenge.status === 'completed' ? colors.greenLight : colors.white,
+          borderColor: challenge.status === 'completed' ? colors.primary : colors.gray200,
           borderWidth: challenge.status === 'completed' ? 2 : 1,
         }
       ]}
     >
       <View style={styles.challengeHeader}>
         <View style={styles.challengeIconContainer}>
-          <Text style={styles.challengeIcon}>{challenge.icon}</Text>
+          <Ionicons
+            name={getIconName(challenge.icon)}
+            size={28}
+            color="#374151"
+            style={styles.challengeIcon}
+          />
         </View>
         <View style={styles.challengeInfo}>
           <View style={styles.challengeTitleContainer}>
@@ -58,9 +76,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           </View>
           <View style={[
             styles.difficultyBadge, 
-            { 
-              backgroundColor: challenge.difficulty === 'easy' ? '#4caf50' : 
-                             challenge.difficulty === 'medium' ? '#ff9800' : '#f44336'
+            {
+              backgroundColor: challenge.difficulty === 'easy' ? colors.primary :
+                             challenge.difficulty === 'medium' ? colors.success : '#047857'
             }
           ]}>
             <Text style={styles.difficultyText}>
@@ -136,14 +154,16 @@ const styles = StyleSheet.create({
   challengeIconContainer: {
     width: 60,
     height: 60,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8fafb',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   challengeIcon: {
-    fontSize: 24,
+    // 벡터 아이콘 스타일 (fontSize 제거)
   },
   challengeInfo: {
     flex: 1,
@@ -161,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   completedBadge: {
-    backgroundColor: '#4caf50',
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -200,18 +220,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   rewardTag: {
-    backgroundColor: '#fff3e0',
+    backgroundColor: colors.greenLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
   rewardText: {
     fontSize: 14,
-    color: '#e65100',
+    color: colors.primary,
     fontWeight: '600',
   },
   claimButton: {
-    backgroundColor: '#ff9800',
+    backgroundColor: colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -232,7 +252,7 @@ const styles = StyleSheet.create({
   },
   claimedText: {
     fontSize: 12,
-    color: '#4caf50',
+    color: colors.primary,
     fontWeight: '500',
   },
 });

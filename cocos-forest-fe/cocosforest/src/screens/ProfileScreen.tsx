@@ -1,16 +1,18 @@
 import * as React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   Image,
   SafeAreaView,
   Modal,
   Alert,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '../config/env';
 import { commonStyles, colors } from '../styles/commonStyles';
@@ -38,10 +40,12 @@ import AccountProductModal from '../components/profile/AccountProductModal';
 import AccountSelectionModal from '../components/profile/AccountSelectionModal';
 import AccountMenuModal from '../components/profile/AccountMenuModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
-import { getBankColor, getCardColor } from '../utils/bankUtils';
+import { getBankColor, getCardColor, getBankIcon } from '../utils/bankUtils';
 import { getErrorMessage, handleApiError } from '../utils/errorUtils';
+import { UnifiedHeader } from '../components/common';
 
 const ProfileScreen = () => {
+  const scrollViewRef = React.useRef<ScrollView>(null);
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
   const [profileData, setProfileData] = React.useState({
   name: '',
@@ -83,30 +87,7 @@ const ProfileScreen = () => {
   
   const userId = Number(user?.id) || 1;
 
-  // 은행 로고 가져오기 함수
-  const getBankLogo = (bankCode: string) => {
-    const logoMap: { [key: string]: any } = {
-      '001': require('../../assets/bank-logos/bok.png'),
-      '002': require('../../assets/bank-logos/kdb.png'),
-      '003': require('../../assets/bank-logos/ibk.png'),
-      '004': require('../../assets/bank-logos/kb.png'),
-      '011': require('../../assets/bank-logos/nh.png'),
-      '020': require('../../assets/bank-logos/woori.png'),
-      '023': require('../../assets/bank-logos/sc.png'),
-      '027': require('../../assets/bank-logos/citi.png'),
-      '032': require('../../assets/bank-logos/dgb.png'),
-      '034': require('../../assets/bank-logos/kjb.png'),
-      '035': require('../../assets/bank-logos/jb.png'),
-      '037': require('../../assets/bank-logos/jbbank.png'),
-      '039': require('../../assets/bank-logos/knb.png'),
-      '045': require('../../assets/bank-logos/kfcc.png'),
-      '081': require('../../assets/bank-logos/hana.png'),
-      '088': require('../../assets/bank-logos/shinhan.png'),
-      '090': require('../../assets/bank-logos/kakao.png'),
-      '999': require('../../assets/bank-logos/ssafy-bank.png')
-    };
-    return logoMap[bankCode] || null;
-  };
+  // 유틸 함수 사용으로 코드 일관성 확보
 
   const loadUserProfile = async () => {
   try {
@@ -172,12 +153,19 @@ const ProfileScreen = () => {
     loadUserCards();
   }, [userId]);
 
+  // 탭이 포커스될 때 최상단으로 스크롤
+  useFocusEffect(
+    React.useCallback(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    }, [])
+  );
+
   const settingsMenu = [
-    { id: 1, title: '알림 설정', icon: '🔔' },
-    { id: 2, title: '개인정보 보호', icon: '🛡️' },
-    { id: 3, title: '도움말', icon: '❓' },
-    { id: 4, title: '이용약관', icon: '📄' },
-    { id: 5, title: '로그아웃', icon: '🚪', isLogout: true }
+    { id: 1, title: '알림 설정', iconName: 'notifications-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 2, title: '개인정보 보호', iconName: 'shield-checkmark-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 3, title: '도움말', iconName: 'help-circle-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 4, title: '이용약관', iconName: 'document-text-outline' as keyof typeof Ionicons.glyphMap },
+    { id: 5, title: '로그아웃', iconName: 'log-out-outline' as keyof typeof Ionicons.glyphMap, isLogout: true }
   ];
 
   const withdrawMenu = [
@@ -592,26 +580,28 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container}>
-      <ScrollView style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>프로필</Text>
-          <View style={styles.headerRight}>
-            {!isAuthenticated && (
-              <TouchableOpacity 
-                style={styles.debugButton} 
-                onPress={() => {
-                  Alert.alert('디버깅', 'API가 변경되어 파라미터 없이 호출됩니다.\n계좌 목록을 새로고침합니다.');
-                  loadUserAccounts();
-                }}
-              >
-                <Text style={styles.debugButtonText}>새로고침</Text>
+      <ScrollView ref={scrollViewRef} style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
+        <UnifiedHeader
+          title="프로필"
+          rightContent={
+            <>
+              {!isAuthenticated && (
+                <TouchableOpacity
+                  style={styles.debugButton}
+                  onPress={() => {
+                    Alert.alert('디버깅', 'API가 변경되어 파라미터 없이 호출됩니다.\n계좌 목록을 새로고침합니다.');
+                    loadUserAccounts();
+                  }}
+                >
+                  <Text style={styles.debugButtonText}>새로고침</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
+                <Ionicons name="settings-outline" size={24} color="#666" />
               </TouchableOpacity>
-            )}
-            <TouchableOpacity style={styles.settingsIcon} onPress={handleEditProfile}>
-              <Text style={styles.settingsIconText}>⚙️</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </>
+          }
+        />
 
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
@@ -661,11 +651,11 @@ const ProfileScreen = () => {
               {userAccounts.map((account) => {
                 const bank = banks.find(b => b.bankCode === account.bankCode);
                 const bankName = bank?.bankName || `은행 ${account.bankCode}`;
-                const bankLogo = getBankLogo(account.bankCode);
+                const bankLogo = getBankIcon(account.bankCode, bankName);
                 
                 return (
                   <View key={account.accountId} style={styles.tempCard}>
-                    <View style={styles.cardHeader}>
+                    <View style={styles.accountCardHeader}>
                       <View style={styles.bankInfo}>
                         {bankLogo && (
                           <Image 
@@ -715,7 +705,7 @@ const ProfileScreen = () => {
         {userCards.map((card, index) => (
           <View key={card.userCardId} style={styles.cardItemContainer}>
             <View style={[styles.cardContainer, { backgroundColor: getCardColor(index) }]}>
-              <View style={styles.cardHeader}>
+              <View style={styles.creditCardHeader}>
                 <Text style={styles.cardTitle}>COCO</Text>
                 <TouchableOpacity 
                   style={styles.cardMenuButton}
@@ -750,7 +740,12 @@ const ProfileScreen = () => {
               onPress={item.isLogout ? handleLogoutConfirm : undefined}
             >
               <View style={styles.settingLeft}>
-                <Text style={styles.settingIcon}>{item.icon}</Text>
+                <Ionicons
+                  name={item.iconName}
+                  size={20}
+                  color={item.isLogout ? '#EF4444' : '#666'}
+                  style={styles.settingIcon}
+                />
                 <Text style={[styles.settingText, item.isLogout && styles.logoutText]}>
                   {item.title}
                 </Text>
@@ -834,24 +829,6 @@ const ProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   debugButton: {
     backgroundColor: '#FF6B6B',
     paddingHorizontal: 12,
@@ -865,9 +842,6 @@ const styles = StyleSheet.create({
   },
   settingsIcon: {
     padding: 8,
-  },
-  settingsIconText: {
-    fontSize: 20,
   },
   profileCard: {
     backgroundColor: '#fff',
@@ -1037,7 +1011,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingIcon: {
-    fontSize: 20,
     marginRight: 12,
   },
   settingText: {
@@ -1077,7 +1050,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#15803d',
   },
-  cardHeader: {
+  accountCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1149,7 +1122,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  cardHeader: {
+  creditCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
