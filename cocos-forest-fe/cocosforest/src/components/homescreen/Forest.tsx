@@ -410,66 +410,38 @@ export default function Board({
         );
       })}
 
-      {/* Layer 2b: Decorations */}
-      {forestInfo?.decorations?.map((deco) => {
-        const cell = cellsByCoord.get(`${deco.x},${deco.y}`);
-        if (!cell) return null;
-        const sprite =
-          decoSpriteById[deco.assetId] ||
-          getSpriteByKey(deco.spriteKey || undefined) ||
-          MARKER_IMG;
-        return (
-          <TouchableOpacity
-            key={`deco-${deco.id}-${deco.x}-${deco.y}`}
-            style={{
-              position: "absolute",
-              left: cell.sx - MARKER_SIZE / 2,
-              top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
-              width: MARKER_SIZE,
-              height: MARKER_SIZE,
-              zIndex: 2.5,
-              elevation: 2.5,
-            }}
-            onPress={() => onCellPress(cell)}
-            activeOpacity={0.85}
-          >
-            <Image
-              source={sprite}
-              style={{
-                width: MARKER_SIZE,
-                height: MARKER_SIZE,
-                resizeMode: "contain",
-              }}
-              pointerEvents="none"
-            />
-          </TouchableOpacity>
-        );
-      })}
+     {forestInfo?.decorations?.map((deco) => {
+      const cell = cellsByCoord.get(`${deco.x},${deco.y}`);
+      if (!cell) return null;
 
-      {/* Layer 2b touch overlay: Decorations (for delete action) */}
-      {forestInfo?.decorations?.map((deco) => {
-        const cell = cells.find(c => c.x === deco.x && c.z === deco.y);
-        if (!cell) return null;
-        return (
-          <TouchableOpacity
-            key={`deco-touch-${deco.id}`}
-            style={{
-              position: "absolute",
-              left: cell.sx - MARKER_SIZE / 2,
-              top: cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
-              width: MARKER_SIZE,
-              height: MARKER_SIZE,
-              zIndex: 2.5,
-              elevation: 2.5,
-            }}
-            onPress={() => {
-              // noop — handled in parent via onCellPress; overlay enables hit test
-              onCellPress(cell);
-            }}
-            activeOpacity={0.85}
+      const sprite =
+        decoSpriteById[deco.assetId] ||
+        getSpriteByKey(deco.spriteKey || undefined) ||
+        MARKER_IMG;
+
+      return (
+        <TouchableOpacity
+          key={`deco-${deco.id}-${deco.x}-${deco.y}`}
+          style={{
+            position: "absolute",
+            left: cell.sx - MARKER_SIZE / 2,
+            top:  cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+            width: MARKER_SIZE,
+            height: MARKER_SIZE,
+            zIndex: 3,        // ↑ 나무(2) 보다 위
+            elevation: 3,
+          }}
+          onPress={() => onCellPress(cell)}
+          activeOpacity={0.85}
+        >
+          <Image
+            source={sprite}
+            style={{ width: MARKER_SIZE, height: MARKER_SIZE, resizeMode: "contain" }}
+            onError={(e) => console.log('deco image error', deco, e.nativeEvent)}
           />
-        );
-      })}
+        </TouchableOpacity>
+      );
+    })}
 
       {/* Layer 2.5: 죽은 나무에 대한 별도 터치 영역 */}
       {forestInfo?.trees
