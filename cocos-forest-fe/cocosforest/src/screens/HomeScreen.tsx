@@ -169,6 +169,7 @@ export default function HomeScreen() {
       console.log("🌳 받아온 숲 정보:", forestInfoData);
       console.log("🌳 나무 개수:", forestInfoData.trees.length);
       console.log("🌳 숲 크기:", forestInfoData.size);
+      console.log('deco coords', forestInfo?.decorations?.slice(0,5));
 
       // 숲 정보 전체 저장
       setForestInfo(forestInfoData);
@@ -556,10 +557,10 @@ export default function HomeScreen() {
       >
         <View style={s.modalBackdrop}>
           <View style={s.modalCard}>
-            <Text style={s.modalTitle}>셀 정보</Text>
-            <Text style={s.modalText}>
+            <Text style={s.modalTitle}>땅 정보</Text>
+            {/* <Text style={s.modalText}>
               좌표: x = {selected?.x}, z = {selected?.z}
-            </Text>
+            </Text> */}
             
             {hasTreeData ? (
               <View style={s.treeInfoSection}>
@@ -601,7 +602,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             ) : (
-              <Text style={s.modalHint}>나무심기</Text>
+              <Text style={s.modalHint}></Text>
             )}
             
             {!hasTreeData && (
@@ -634,13 +635,15 @@ export default function HomeScreen() {
                   </Pressable>
                 </View>
                 <ScrollView style={{ marginTop: 8, maxHeight: 260 }}>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {assetsLoading && (
-                      <Text style={s.modalText}>불러오는 중...</Text>
-                    )}
-                    {!assetsLoading && assets
-                      .filter(a => installTab === 'PLANT' ? PLANT_CATEGORY_IDS.includes(a.categoryId) : !PLANT_CATEGORY_IDS.includes(a.categoryId))
-                      .map((a) => {
+                <View style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between', // ✅ 왼쪽 쏠림 방지
+                  paddingHorizontal: 8,            // 좌우 여백
+                }}>
+                  {!assetsLoading && assets
+                    .filter(a => installTab === 'PLANT' ? PLANT_CATEGORY_IDS.includes(a.categoryId) : !PLANT_CATEGORY_IDS.includes(a.categoryId))
+                    .map((a) => {
                       const sprite = getSpriteByKey(a.spriteKey || undefined);
                       const selected = selectedAssetId === a.id;
                       return (
@@ -648,7 +651,7 @@ export default function HomeScreen() {
                           key={a.id}
                           onPress={() => setSelectedAssetId(a.id)}
                           style={{
-                            width: 88,
+                            width: '48%',          // ✅ 2열 균등
                             height: 100,
                             borderRadius: 10,
                             borderWidth: 2,
@@ -656,8 +659,7 @@ export default function HomeScreen() {
                             backgroundColor: selected ? '#DBEAFE' : '#F8FAFC',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            marginRight: 8,
-                            marginBottom: 8,
+                            marginBottom: 8,       // 아래 간격만
                             padding: 6,
                           }}
                         >
@@ -672,8 +674,8 @@ export default function HomeScreen() {
                         </Pressable>
                       );
                     })}
-                  </View>
-                </ScrollView>
+                </View>
+              </ScrollView>
               </View>
             )}
 
