@@ -411,10 +411,13 @@ export default function Board({
       })}
 
       {/* Layer 2b: Decorations */}
-      {null && forestInfo?.decorations?.map((deco) => {
+      {forestInfo?.decorations?.map((deco) => {
         const cell = cellsByCoord.get(`${deco.x},${deco.y}`);
         if (!cell) return null;
-        const sprite = decoSpriteById[deco.assetId] || MARKER_IMG;
+        const sprite =
+          decoSpriteById[deco.assetId] ||
+          getSpriteByKey(deco.spriteKey || undefined) ||
+          MARKER_IMG;
         return (
           <TouchableOpacity
             key={`deco-${deco.id}-${deco.x}-${deco.y}`}
