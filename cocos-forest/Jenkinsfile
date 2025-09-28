@@ -117,6 +117,7 @@ pipeline {
                                   string(credentialsId: 'KEY_PASSWORD', variable: 'ALIAS_PASS')
                               ]) {
                                   dir("${RN_APP_PATH}/android") {
+                                      sh 'chmod +x ./gradlew'
                                       sh 'echo "MYAPP_RELEASE_STORE_FILE=${KEYSTORE_FILE}" >> gradle.properties'
                                       sh 'echo "MYAPP_RELEASE_STORE_PASSWORD=${STORE_PASS}" >> gradle.properties'
                                       sh 'echo "MYAPP_RELEASE_KEY_ALIAS=${ALIAS_NAME}" >> gradle.properties'
