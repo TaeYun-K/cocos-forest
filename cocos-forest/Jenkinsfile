@@ -96,8 +96,7 @@ pipeline {
                       stage('Install Dependencies') {
                           steps {
                             dir(RN_APP_PATH) {
-                              sh 'mkdir -p .npm-cache'
-                              sh 'npm install --cache .npm-cache'
+                               sh 'npm ci'
                             }
                           }
                       }
