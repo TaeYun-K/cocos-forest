@@ -13,6 +13,7 @@ import {
   SignupResponseDto,
 } from "../types/auth";
 import { authService } from "../services/authService";
+// Mock API import 제거
 
 interface AuthState {
   // 기본 인증 상태
