@@ -2,8 +2,6 @@ package com.E205.cocos_forest.global.config.security;
 
 import com.E205.cocos_forest.global.jwt.JwtAuthenticationFilter;
 import com.E205.cocos_forest.global.jwt.JwtTokenProvider;
-import java.util.Arrays;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +16,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -45,6 +46,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/email/**",
                     "/api/user/**").permitAll()
+
+                            // ✅ 푸시 토큰 등록용 API도 인증 없이 접근 허용
+                            .requestMatchers(HttpMethod.POST, "/dev/api/push-token").permitAll()
 
                 // 그 외 모든 API는 인증 필요
                 .requestMatchers("/api/**").authenticated()
