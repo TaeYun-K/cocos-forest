@@ -10,7 +10,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/dev/api")
+@RequestMapping("/api")
 public class PushTokenController {
     private static final Logger log = LoggerFactory.getLogger(PushTokenController.class);
 
