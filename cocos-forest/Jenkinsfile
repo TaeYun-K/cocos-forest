@@ -127,12 +127,30 @@ pipeline {
                           }
                       }
                       stage('Upload APK to GCS') {
-                          steps {
-                              withCredentials([file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')]) {
-                                  sh "gcloud auth activate-service-account --key-file=$GCP_CREDENTIALS_FILE"
-                                  sh "gsutil cp ${RN_APP_PATH}/android/app/build/outputs/apk/release/app-release.apk gs://${GCS_BUCKET_NAME}/app-release.apk"
-                              }
-                          }
+                        agent { // Google Cloud SDK가 설치된 전용 에이전트
+                            docker { image 'google/cloud-sdk:latest' }
+                        }
+                        steps {
+                            // stash에 저장된 APK 파일을 현재 작업 공간으로 가져오기
+                            unstash 'apk'
+                            withCredentials([file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')]) {
+                                sh "gcloud auth activate-service-account --key-file=${GCP_CREDENTIALS_FILE}"
+                                // unstash하면 파일이 최상위 경로에 위치하므로 경로를 단순하게 변경
+                                sh "gsutil cp app-release.apk gs://${GCS_BUCKET_NAME}/app-release.apk"
+                            }
+                        }
+                        post {
+                            success {
+                                // 업로드 성공 시 Mattermost 알림
+                                withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+                                    sh '''
+                                      APK_URL="https://storage.googleapis.com/${GCS_BUCKET_NAME}/app-release.apk"
+                                      JSON=$(printf '{"text":"📱 **새로운 안드로이드 앱이 빌드되었습니다!**\\n🔗 [테스트 버전 APK 다운로드](%s)"}' "$APK_URL")
+                                      curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
+                                    '''
+                                }
+                            }
+                        }
                       }
                   }
                   post {
