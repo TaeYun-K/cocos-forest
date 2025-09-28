@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { ScrollView, SafeAreaView, Alert, RefreshControl } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,9 +16,12 @@ import { UnifiedHeader } from '../components/common';
 import ChallengeInfoCard from '../components/challenge/ChallengeInfoCard';
 import ChallengeList from '../components/challenge/ChallengeList';
 import RewardModal from '../components/challenge/RewardModal';
+import { redirectToAccountLinking, isAccountLinkingError } from '../utils/accountLinkingUtils';
+import { useTodayData } from '../hooks/useDashboardQueries';
 
 const ChallengeScreen = () => {
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
   const {
     challenges,
@@ -47,7 +50,11 @@ const ChallengeScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
-  
+  const [hasShownAccountError, setHasShownAccountError] = useState(false);
+
+  // 챌린지 화면에서도 데이터 에러 감지를 위해 쿼리 구독
+  const { error: todayDataError } = useTodayData();
+
   const getCurrentDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -187,6 +194,11 @@ const ChallengeScreen = () => {
       }
     } catch (error) {
       console.error('Pull refresh error:', error);
+
+      // 계좌 연결 관련 에러인지 확인하고 프로필 화면으로 안내
+      if (isAccountLinkingError(error)) {
+        redirectToAccountLinking(navigation, '챌린지 데이터를 불러오는데 실패했습니다.\n\n계좌 연결 후 다시 시도해주세요.');
+      }
     } finally {
       setIsPullRefreshing(false);
     }
@@ -198,7 +210,8 @@ const ChallengeScreen = () => {
     updateChallengeProgress,
     completeChallenge,
     tumblerVerificationFailed,
-    setTumblerVerificationFailed
+    setTumblerVerificationFailed,
+    navigation
   ]);
 
   useEffect(() => {
@@ -213,6 +226,17 @@ const ChallengeScreen = () => {
 
     checkHealthAvailability();
   }, []);
+
+  // 400 에러 감지 시 계좌 연결 안내 (즉시 실행)
+  useEffect(() => {
+    if (hasShownAccountError || !todayDataError) return;
+
+    if (isAccountLinkingError(todayDataError)) {
+      console.log('🚀 빠른 에러 감지: 계좌 연결 필요');
+      setHasShownAccountError(true);
+      redirectToAccountLinking(navigation, '챌린지 데이터를 불러오는데 실패했습니다.\n\n계좌 연결 후 다시 시도해주세요.');
+    }
+  }, [todayDataError, navigation, hasShownAccountError]);
 
   useEffect(() => {
     const fetchTodaySteps = async () => {
@@ -332,8 +356,17 @@ const ChallengeScreen = () => {
       );
     } catch (error: any) {
       console.error('출석체크 처리 실패:', error);
+
+      // 계좌 연결 관련 에러인지 확인
+      if (isAccountLinkingError(error)) {
+        redirectToAccountLinking(navigation, '출석체크를 위해 계좌 연결이 필요합니다.');
+        return;
+      }
+
       const status = error?.response?.status;
-      const message = status === 403
+      const message = status === 400
+        ? '계좌 정보가 필요합니다. 계좌 연결 후 다시 시도해주세요.'
+        : status === 403
         ? '인증이 만료되었거나 로그인 정보가 없습니다. 다시 로그인 후 시도해주세요.'
         : '출석체크 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
       Alert.alert('오류', message);
@@ -503,7 +536,7 @@ const ChallengeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={commonStyles.container}>
+    <SafeAreaView style={commonStyles.safeContainer}>
       <ScrollView
         ref={scrollViewRef}
         style={commonStyles.scrollView}

@@ -22,7 +22,11 @@ export const useMonthlyReport = (year: number, month: number) => {
     queryFn: () => fetchMonthlyReport(yearMonth),
     ...QUERY_CONFIG.MONTHLY_REPORT,
     ...QUERY_CONFIG.BACKGROUND_REFETCH,
-    ...QUERY_CONFIG.ERROR_HANDLING,
+    retry: (failureCount: number, error: any) => {
+      // 400 에러는 즉시 실패
+      if (error.response?.status === 400) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -37,7 +41,11 @@ export const useDayDetails = (year: number, month: number, day: number, enabled:
     enabled,
     ...cacheConfig,
     ...QUERY_CONFIG.BACKGROUND_REFETCH,
-    ...QUERY_CONFIG.ERROR_HANDLING,
+    retry: (failureCount: number, error: any) => {
+      // 400 에러는 즉시 실패
+      if (error.response?.status === 400) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -48,7 +56,11 @@ export const useTodayData = () => {
     queryFn: fetchTodayData,
     ...QUERY_CONFIG.TODAY_DATA,
     ...QUERY_CONFIG.BACKGROUND_REFETCH,
-    ...QUERY_CONFIG.ERROR_HANDLING,
+    retry: (failureCount: number, error: any) => {
+      // 400 에러는 즉시 실패
+      if (error.response?.status === 400) return false;
+      return failureCount < 3;
+    },
   });
 };
 

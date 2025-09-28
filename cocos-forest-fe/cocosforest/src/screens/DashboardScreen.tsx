@@ -1,10 +1,10 @@
-import React, { memo, useRef, useState, useCallback } from 'react';
+import React, { memo, useRef, useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, RefreshControl } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native';
 import { useDashboard } from '../hooks/useDashboard';
 import { useQueryClient } from '@tanstack/react-query';
-import { dashboardQueryKeys } from '../hooks/useDashboardQueries';
+import { dashboardQueryKeys, useTodayData, useMonthlyReport } from '../hooks/useDashboardQueries';
 import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
 import { commonStyles, tabStyles } from '../styles/commonStyles';
 import {
@@ -15,11 +15,14 @@ import {
   DayDetailCard
 } from '../components/dashboard';
 import { ErrorBoundary, UnifiedHeader } from '../components/common';
+import { redirectToAccountLinking, isAccountLinkingError } from '../utils/accountLinkingUtils';
 
 const DashboardScreen = memo(() => {
   const scrollViewRef = useRef<ScrollView>(null);
   const queryClient = useQueryClient();
+  const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
+  const [hasShownAccountError, setHasShownAccountError] = useState(false);
 
   const {
     // 상태
@@ -36,6 +39,10 @@ const DashboardScreen = memo(() => {
     // 액션
     handleTabChange,
   } = useDashboard();
+
+  // 대시보드 데이터 쿼리들을 직접 구독해서 에러 감지
+  const { error: todayDataError } = useTodayData();
+  const { error: monthlyReportError } = useMonthlyReport(selectedYear, selectedMonth);
 
   // 새로고침 함수
   const onRefresh = useCallback(async () => {
@@ -54,10 +61,15 @@ const DashboardScreen = memo(() => {
       ].filter(Boolean));
     } catch (error) {
       console.error('Dashboard refresh error:', error);
+
+      // 계좌 연결 관련 에러인지 확인하고 프로필 화면으로 안내
+      if (isAccountLinkingError(error)) {
+        redirectToAccountLinking(navigation, '대시보드 데이터를 불러오는데 실패했습니다.\n\n계좌 연결 후 다시 시도해주세요.');
+      }
     } finally {
       setRefreshing(false);
     }
-  }, [queryClient, selectedYear, selectedMonth, selectedDay]);
+  }, [queryClient, selectedYear, selectedMonth, selectedDay, navigation]);
 
   // 탭이 포커스될 때 최상단으로 스크롤
   useFocusEffect(
@@ -66,14 +78,27 @@ const DashboardScreen = memo(() => {
     }, [])
   );
 
+  // 400 에러 감지 시 계좌 연결 안내 (즉시 실행)
+  useEffect(() => {
+    if (hasShownAccountError) return;
+
+    // 하나의 에러만 감지되어도 즉시 처리
+    const firstError = todayDataError || monthlyReportError;
+
+    if (firstError && isAccountLinkingError(firstError)) {
+      console.log('🚀 빠른 에러 감지: 계좌 연결 필요');
+      setHasShownAccountError(true);
+      redirectToAccountLinking(navigation, '대시보드 데이터를 불러오는데 실패했습니다.\n\n계좌 연결 후 다시 시도해주세요.');
+    }
+  }, [todayDataError, monthlyReportError, navigation, hasShownAccountError]);
+
 
 
 
 
   return (
     <ErrorBoundary>
-      <SafeAreaView style={commonStyles.container}>
-        <View style={commonStyles.container}>
+      <SafeAreaView style={commonStyles.safeContainer}>
           <ScrollView
             ref={scrollViewRef}
             style={commonStyles.scrollView}
@@ -155,7 +180,6 @@ const DashboardScreen = memo(() => {
         )}
 
         </ScrollView>
-        </View>
       </SafeAreaView>
     </ErrorBoundary>
   );

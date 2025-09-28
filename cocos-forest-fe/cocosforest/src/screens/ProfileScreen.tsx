@@ -44,7 +44,15 @@ import { getBankColor, getCardColor, getBankIcon } from '../utils/bankUtils';
 import { getErrorMessage, handleApiError } from '../utils/errorUtils';
 import { UnifiedHeader } from '../components/common';
 
-const ProfileScreen = () => {
+interface ProfileScreenProps {
+  route?: {
+    params?: {
+      openAccountModal?: boolean;
+    };
+  };
+}
+
+const ProfileScreen = ({ route }: ProfileScreenProps) => {
   const scrollViewRef = React.useRef<ScrollView>(null);
   const [isEditModalVisible, setIsEditModalVisible] = React.useState(false);
   const [profileData, setProfileData] = React.useState({
@@ -365,6 +373,18 @@ const ProfileScreen = () => {
     initializeData();
   }, []);
 
+  // 다른 화면에서 계좌 연결 모달을 열도록 요청한 경우
+  React.useEffect(() => {
+    if (route?.params?.openAccountModal) {
+      // 잠깐 지연 후 모달 열기 (화면 전환 완료 후)
+      const timer = setTimeout(() => {
+        handleAddAccount();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [route?.params?.openAccountModal]);
+
   const handleAddAccount = async () => {
     setIsBankSelectionModalVisible(true);
     
@@ -579,7 +599,7 @@ const ProfileScreen = () => {
   };
 
   return (
-    <SafeAreaView style={commonStyles.container}>
+    <SafeAreaView style={commonStyles.safeContainer}>
       <ScrollView ref={scrollViewRef} style={commonStyles.scrollView} showsVerticalScrollIndicator={false}>
         <UnifiedHeader
           title="프로필"
