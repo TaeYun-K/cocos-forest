@@ -48,7 +48,7 @@ public class SecurityConfig {
                     "/api/user/**").permitAll()
 
                             // ✅ 푸시 토큰 등록용 API도 인증 없이 접근 허용
-                            .requestMatchers(HttpMethod.POST, "/dev/api/push-token").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/push-token").permitAll()
 
                 // 그 외 모든 API는 인증 필요
                 .requestMatchers("/api/**").authenticated()
