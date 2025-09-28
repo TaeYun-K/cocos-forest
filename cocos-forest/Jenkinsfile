@@ -117,12 +117,17 @@ pipeline {
                                   string(credentialsId: 'KEY_PASSWORD', variable: 'ALIAS_PASS')
                               ]) {
                                   dir("${RN_APP_PATH}/android") {
-                                      sh 'chmod +x ./gradlew'
-                                      sh 'echo "MYAPP_RELEASE_STORE_FILE=${KEYSTORE_FILE}" >> gradle.properties'
-                                      sh 'echo "MYAPP_RELEASE_STORE_PASSWORD=${STORE_PASS}" >> gradle.properties'
-                                      sh 'echo "MYAPP_RELEASE_KEY_ALIAS=${ALIAS_NAME}" >> gradle.properties'
-                                      sh 'echo "MYAPP_RELEASE_KEY_PASSWORD=${ALIAS_PASS}" >> gradle.properties'
-                                      sh './gradlew assembleRelease'
+                                      // [수정] CCACHE_DIR 환경 변수를 설정하여 ccache 권한 문제를 해결합니다.
+                                      // pwd()는 현재 디렉터리 경로를 의미합니다.
+                                      withEnv(['CCACHE_DIR=' + pwd() + '/.ccache']) {
+                                          sh 'chmod +x ./gradlew'
+                                          sh 'echo "MYAPP_RELEASE_STORE_FILE=${KEYSTORE_FILE}" >> gradle.properties'
+                                          sh 'echo "MYAPP_RELEASE_STORE_PASSWORD=${STORE_PASS}" >> gradle.properties'
+                                          sh 'echo "MYAPP_RELEASE_KEY_ALIAS=${ALIAS_NAME}" >> gradle.properties'
+                                          sh 'echo "MYAPP_RELEASE_KEY_PASSWORD=${ALIAS_PASS}" >> gradle.properties'
+
+                                          sh './gradlew assembleRelease'
+                                      }
                                   }
                               }
                           }
