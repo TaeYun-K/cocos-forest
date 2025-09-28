@@ -96,7 +96,9 @@ pipeline {
                       stage('Install Dependencies') {
                           steps {
                             dir(RN_APP_PATH) {
-                               sh 'npm ci'
+                               // [수정] npm ci 에도 --cache 옵션을 추가하여 캐시 권한 문제를 해결합니다.
+                               sh 'mkdir -p .npm-cache'
+                               sh 'npm ci --cache .npm-cache'
                             }
                           }
                       }
