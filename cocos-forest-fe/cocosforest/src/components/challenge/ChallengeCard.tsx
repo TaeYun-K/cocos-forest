@@ -106,8 +106,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
           <View style={styles.rewardTag}>
             <Text style={styles.rewardText}>{challenge.points}포인트</Text>
           </View>
-          {!challenge.rewardClaimed && (
-            <TouchableOpacity 
+          {/* 텀블러 챌린지는 영수증 인증 성공 시 자동으로 보상이 지급되므로 보상받기 버튼 제외 */}
+          {challenge.type !== 'tumbler' && !challenge.rewardClaimed && (
+            <TouchableOpacity
               style={[
                 styles.claimButton,
                 challenge.status !== 'completed' && styles.claimButtonDisabled
@@ -123,8 +124,11 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
               </Text>
             </TouchableOpacity>
           )}
-          {challenge.rewardClaimed && (
+          {challenge.type !== 'tumbler' && challenge.rewardClaimed && (
             <Text style={styles.claimedText}>보상 수령 완료</Text>
+          )}
+          {challenge.type === 'tumbler' && challenge.status === 'completed' && (
+            <Text style={styles.claimedText}>보상 지급 완료</Text>
           )}
         </View>
       </View>

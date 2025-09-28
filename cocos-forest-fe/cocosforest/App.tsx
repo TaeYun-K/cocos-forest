@@ -175,7 +175,7 @@ const initializeNotifications = async () => {
         <NavigationContainer>
           <RootNavigator />
         </NavigationContainer>
-        <StatusBar style="light" />
+        <StatusBar style="dark" backgroundColor="#000000" />
       </View>
     </QueryClientProvider>
   );

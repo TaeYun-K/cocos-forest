@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { View, Text, Modal, Pressable, LayoutChangeEvent, Alert, Image, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { PinchGestureHandler, PanGestureHandler, State as GestureState } from "react-native-gesture-handler";
 import InfoBar from "../components/homescreen/InfoBar";
 import Coco from "../components/homescreen/Coco";
@@ -207,6 +209,14 @@ export default function HomeScreen() {
   useEffect(() => {
     loadForestData();
   }, []);
+
+  // 홈탭을 누를 때마다 데이터 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      console.log("🏠 홈탭 포커스 - 데이터 새로고침");
+      loadForestData();
+    }, [])
+  );
 
   // 레이아웃 변경 시 마커 위치 재투영
   useEffect(() => {
@@ -460,12 +470,13 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <LinearGradient
-      colors={["#87CEEB", "#E0F7FA"]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
-      style={s.container}
-    >
+    <SafeAreaView style={{ flex: 1 }}>
+      <LinearGradient
+        colors={["#87CEEB", "#E0F7FA"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={s.container}
+      >
       {/* Cloud layer (non-interactive) */}
       <Image
         source={require('../../assets/home/cloud/cloud1.png')}
@@ -751,5 +762,6 @@ export default function HomeScreen() {
         loading={expandLoading}
       />
     </LinearGradient>
+    </SafeAreaView>
   );
 }
