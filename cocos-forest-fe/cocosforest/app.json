@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "cocosforest",
+    "name": "코코의 숲",
     "slug": "cocosforest",
     "version": "1.0.0",
+    "main": "index.ts",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,18 +14,48 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "걸음수를 측정하여 탄소 발자국을 추적하고 포인트를 획득하기 위해 사용됩니다.",
+        "NSHealthUpdateUsageDescription": "걸음수 데이터를 동기화하여 포인트를 획득하기 위해 사용됩니다.",
+        "NSCameraUsageDescription": "텀블러 인증을 위해 영수증을 촬영하기 위해 사용됩니다."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "package": "com.yourcompany.cocosforest",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "텀블러 인증을 위해 영수증을 촬영하기 위해 사용됩니다."
+        }
+      ],
+      "@react-native-firebase/app"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "019eed11-10ee-43e1-bad0-2d788a586ff6"
+      }
     }
   }
 }

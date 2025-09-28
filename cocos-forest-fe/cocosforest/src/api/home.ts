@@ -1,0 +1,201 @@
+// api/forest.ts
+import apiClient, { mock } from "./axios";
+import type { ForestInfoDto } from "../types/forest";
+
+// BaseResponse 타입 정의
+interface BaseResponse<T> {
+  httpStatus: string;
+  isSuccess: boolean;
+  message: string;
+  code: number;
+  result: T;
+}
+
+export type PointsDto = number; // 숫자가 바로 반환됨
+
+/* 내 숲 정보 조회 */
+export async function fetchForestInfo(): Promise<ForestInfoDto> {
+  try {
+    const response = await apiClient.get<BaseResponse<ForestInfoDto>>("/api/forest");
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "숲 정보 조회에 실패했습니다.");
+    }
+    
+    console.log("my forest info:", response.data.result);
+    return response.data.result;
+  } catch (error) {
+    console.error("fetchForestInfo error:", error);
+    throw error;
+  }
+}
+
+/* 내 포인트 조회 */
+export async function fetchPoints(): Promise<PointsDto> {
+  try {
+    const response = await apiClient.get<BaseResponse<PointsDto>>("/api/forest/points");
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "포인트 조회에 실패했습니다.");
+    }
+    
+    console.log("my points:", response.data.result);
+    return response.data.result;
+  } catch (error) {
+    console.error("fetchPoints error:", error);
+    throw error;
+  }
+}
+
+/* 나무 심기 */
+export async function plantTree(x: number, y: number, assetId: number = 1): Promise<void> {
+  try {
+    const response = await apiClient.post<BaseResponse<any>>("/api/forest/assets/plants", {
+      x,
+      y,
+      assetId,
+    });
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "나무 심기에 실패했습니다.");
+    }
+    
+    console.log("나무 심기 성공:", { x, y });
+  } catch (error) {
+    console.error("plantTree error:", error);
+    throw error;
+  }
+}
+
+/* 물주기 */
+export async function waterTree(treeId: number): Promise<void> {
+  try {
+    const response = await apiClient.post<BaseResponse<any>>(`/api/forest/assets/plants/${treeId}/water`);
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "물주기에 실패했습니다.");
+    }
+    
+    console.log("물주기 성공:", { treeId });
+  } catch (error) {
+    console.error("waterTree error:", error);
+    throw error;
+  }
+}
+
+/* 죽은 나무 제거 */
+export async function removeDeadTree(treeId: number): Promise<void> {
+  try {
+    const response = await apiClient.delete<BaseResponse<any>>(`/api/forest/assets/plants/${treeId}`);
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "죽은 나무 제거에 실패했습니다.");
+    }
+    
+    console.log("죽은 나무 제거 성공:", { treeId });
+  } catch (error) {
+    console.error("removeDeadTree error:", error);
+    throw error;
+  }
+}
+
+/* 숲 확장 (1000 포인트 소모) */
+export async function expandForest(): Promise<ForestInfoDto> {
+  try {
+    const response = await apiClient.post<BaseResponse<ForestInfoDto>>("/api/forest/expand");
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "숲 확장에 실패했습니다.");
+    }
+    
+    console.log("숲 확장 성공:", response.data.result);
+    return response.data.result;
+  } catch (error) {
+    console.error("expandForest error:", error);
+    throw error;
+  }
+}
+
+/* 걸음수 갱신 */
+export interface StepCountUpdateRequest {
+  steps: number;
+  date: string;
+}
+
+export interface StepCountUpdateResponse {
+  success: boolean;
+  message: string;
+  pointsEarned?: number;
+  totalPoints?: number;
+}
+
+export async function updateStepCount(stepData: StepCountUpdateRequest): Promise<StepCountUpdateResponse> {
+  try {
+    const response = await apiClient.post<BaseResponse<StepCountUpdateResponse>>("/api/forest/steps", stepData);
+    
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "걸음수 갱신에 실패했습니다.");
+    }
+    
+    console.log("걸음수 갱신 성공:", response.data.result);
+    return response.data.result;
+  } catch (error) {
+    console.error("updateStepCount error:", error);
+    throw error;
+  }
+}
+
+/* 장식(Decoration) 배치 */
+export async function placeDecoration(x: number, y: number, assetId: number): Promise<void> {
+  try {
+    const response = await apiClient.post<BaseResponse<any>>("/api/forest/assets/decorations", {
+      x,
+      y,
+      assetId,
+    });
+    if (!response.data.isSuccess) {
+      throw new Error(response.data.message || "장식 배치에 실패했습니다.");
+    }
+    console.log("장식 배치 성공:", { x, y, assetId });
+  } catch (error) {
+    console.error("placeDecoration error:", error);
+    throw error;
+  }
+}
+
+/* 장식(Decoration) 삭제 */
+export async function removeDecoration(decorationId: number): Promise<void> {
+  try {
+    const response = await apiClient.delete<BaseResponse<any>>(`/api/forest/assets/decorations/${decorationId}`);
+    if (!response.data?.isSuccess) {
+      throw new Error(response.data?.message || "삭제에 실패하였습니다");
+    }
+    console.log("삭제 완료되었습니다 :", { decorationId });
+  } catch (error) {
+    console.error("removeDecoration error:", error);
+    throw error;
+  }
+}
+
+// ========= Asset Catalog =========
+export interface AssetDto {
+  id: number;
+  name: string;
+  categoryId: number;
+  categoryCode?: string | null;
+  categoryName?: string | null;
+  pricePoints?: number | null;
+  spriteKey?: string | null;
+  active?: boolean | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function listAssets(categoryId?: number): Promise<AssetDto[]> {
+  const url = categoryId != null ? `/api/forest/assets?categoryId=${categoryId}` : "/api/forest/assets";
+  const response = await apiClient.get<BaseResponse<AssetDto[]>>(url);
+  if (!response.data.isSuccess) {
+    throw new Error(response.data.message || "자산 목록 조회에 실패했습니다.");
+  }
+  return response.data.result;
+}

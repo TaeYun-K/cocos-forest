@@ -1,6 +1,5 @@
 package com.E205.cocos_forest.api.finance.ssafy.linkage.service;
 
-import com.E205.cocos_forest.api.finance.ssafy.linkage.dto.in.SsafyLinkageCreateIn;
 import com.E205.cocos_forest.api.finance.ssafy.linkage.dto.out.SsafyLinkageOut;
 import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkage;
 import com.E205.cocos_forest.domain.finance.ssafy.SsafyLinkageRepository;
@@ -30,18 +29,16 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
      * @param in     userEmail만 포함한 DTO
      */
     @Override
-    public SsafyLinkageOut registerByEmail(SsafyLinkageCreateIn in) {
-        if (in == null || in.getUserEmail() == null || in.getUserEmail().isBlank()) {
+    public SsafyLinkageOut registerByEmail(Long userId, String email) {
+        if (email == null || email.isBlank()) {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
 
         // 1) SSAFY 외부 API 호출 → userKey 획득
-        String userKey = ssafyGateway.registerAndGetUserKey(in.getUserEmail());
+        String userKey = ssafyGateway.registerAndGetUserKey(email);
         if (userKey == null || userKey.isBlank()) {
             throw new BaseException(BaseResponseStatus.EXTERNAL_API_ERROR);
         }
-
-        Long userId = 1L; // 추후에 authService.getCurrentUserId(); 로 변경
 
         // 2) linkage upsert
         SsafyLinkage entity = repository.findByUserId(userId)
@@ -64,20 +61,20 @@ public class SsafyLinkageServiceImpl implements SsafyLinkageService {
     }
 
     @Override
-    public boolean searchUserByEmail(SsafyLinkageCreateIn in) {
-        if (in == null || in.getUserEmail() == null || in.getUserEmail().isBlank()) {
+    public boolean searchUserByEmail(String email) {
+        if (email == null || email.isBlank()) {
             throw new BaseException(BaseResponseStatus.INVALID_INPUT_VALUE);
         }
 
         // SSAFY 외부 API 호출 → 사용자 존재 여부 확인
-        return ssafyGateway.searchUser(in.getUserEmail());
+        return ssafyGateway.searchUser(email);
     }
 
     @Override
     @Transactional(readOnly = true)
     public SsafyLinkageOut getByUserId(Long userId) {
         SsafyLinkage s = repository.findByUserId(userId)
-            .orElseThrow(() -> new BaseException(BaseResponseStatus.USER_NOT_FOUND));
+            .orElseThrow(() -> new BaseException(BaseResponseStatus.LINKAGE_NOT_FOUND));
 
         return SsafyLinkageOut.builder()
             .linkageId(s.getId())

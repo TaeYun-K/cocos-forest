@@ -1,5 +1,6 @@
 package com.E205.cocos_forest.api.finance.account.service;
 
+import com.E205.cocos_forest.api.finance.account.dto.out.UserAccountOut;
 import com.E205.cocos_forest.domain.finance.account.UserAccount;
 import com.E205.cocos_forest.domain.finance.account.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,12 @@ public class UserAccountServiceImpl implements UserAccountService {
     }
 
     @Override
+    public List<UserAccountOut> findByUserId(String userId) {
+        return List.of();
+    }
+
     @Transactional(readOnly = true)
+    @Override
     public List<UserAccount> findByUserId(Long userId) {
         return userAccountRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }

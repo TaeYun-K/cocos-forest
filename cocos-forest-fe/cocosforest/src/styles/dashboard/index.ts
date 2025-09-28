@@ -1,0 +1,1 @@
+export { colors, commonStyles, tabStyles } from './dashboardStyles';
