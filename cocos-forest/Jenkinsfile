@@ -102,9 +102,10 @@ pipeline {
                   stages {
                       stage('Install Dependencies') {
                           steps {
-                              dir(RN_APP_PATH) {
-                                  sh 'npm install'
-                              }
+                            dir(RN_APP_PATH) {
+                              sh 'mkdir -p .npm-cache'
+                              sh 'npm install --cache .npm-cache'
+                            }
                           }
                       }
                       stage('Build APK') {
