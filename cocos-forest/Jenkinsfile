@@ -1,3 +1,4 @@
+// 통합 Jenkinsfile
 pipeline {
   agent any
 
