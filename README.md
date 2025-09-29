@@ -125,6 +125,8 @@
 - WearOS 연동 기록: 걸음 수 → 탄소 절약 지표 반영
   <img src="images/mypage.gif" width="300"/>
 
+---
+
 ## 🏗 시스템 아키텍처
 
 - **CI/CD**: Jenkins를 활용해 자동화된 빌드 및 배포 파이프라인 구축
@@ -134,4 +136,4 @@
   - Nginx Reverse Proxy + SSL 인증서 적용
   - Docker 기반 컨테이너화로 일관된 실행 환경 확보
   - Redis 세션 캐싱을 통해 인증 및 챌린지 처리 성능 최적화
-    <img src="images/architecture.png" />
+  <img src="images/architecture.png" />
