@@ -11,7 +11,7 @@
    > 
    > 소비 내역 → 탄소 발자국 → 챌린지 → 포인트 → 숲 성장으로 이어지는 선순환 구조를 통해, 사용자가 꾸준히 환경 보호 습관을 만들 수 있도록 돕습니다.
    > 
-   - **개발 기간** : 2025.08.25 ~ -2025.09.29
+   - **개발 기간** : 2025.08.25 ~ 2025.09.29
    - **플랫폼** : Mobile (React Native), Android SDK 기반 네이티브 앱
    - **개발 인원** : 6명
    
@@ -57,8 +57,6 @@
 <img src="https://img.shields.io/badge/vertex%20ai-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white">
 <br/>
 </div>
-
-## 🛠 기술 스펙
 
 ### 백엔드
 
