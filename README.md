@@ -28,81 +28,99 @@
 | 정원준        | 백엔드             | 홈화면 아이소메트릭 큐브 구현, 숲 관련 DB 및 API 설계, FCM 알림 서비스                                                                           |
 | 박진주        | 디자인/프론트 지원 | 코코 디자인 및 아트 에셋 제작, 챌린지 API 연동, SSAFY 금융 API 연동 지원                                                                         |
 
-    ---
+---
 
-    ## 🧰 기술 스택
+## 🧰 기술 스택
 
-    <div align="center">
-    <!-- Core -->
-    <img src="https://img.shields.io/badge/java-EA2D2E?style=for-the-badge&logo=java&logoColor=white">
-    <img src="https://img.shields.io/badge/spring%20boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
-    <img src="https://img.shields.io/badge/jpa-59666C?style=for-the-badge&logo=hibernate&logoColor=white">
-    <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
-    <br/>
+<div align="center">
+<!-- Core -->
+<img src="https://img.shields.io/badge/java-EA2D2E?style=for-the-badge&logo=java&logoColor=white">
+<img src="https://img.shields.io/badge/spring%20boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
+<img src="https://img.shields.io/badge/jpa-59666C?style=for-the-badge&logo=hibernate&logoColor=white">
+<img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+<br/>
 
-    <!-- Frontend -->
-    <img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">
-    <img src="https://img.shields.io/badge/react%20native-61DAFB?style=for-the-badge&logo=react&logoColor=black">
-    <img src="https://img.shields.io/badge/figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white">
-    <img src="https://img.shields.io/badge/svg-FFB13B?style=for-the-badge&logoColor=white">
-    <br/>
+<!-- Frontend -->
+<img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">
+<img src="https://img.shields.io/badge/react%20native-61DAFB?style=for-the-badge&logo=react&logoColor=black">
+<img src="https://img.shields.io/badge/figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white">
+<img src="https://img.shields.io/badge/svg-FFB13B?style=for-the-badge&logoColor=white">
+<br/>
 
-    <!-- DevOps / Cloud -->
-    <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
-    <img src="https://img.shields.io/badge/jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">
-    <img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
-    <img src="https://img.shields.io/badge/redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
-    <img src="https://img.shields.io/badge/vertex%20ai-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white">
-    <br/>
-    </div>
+<!-- DevOps / Cloud -->
+<img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+<img src="https://img.shields.io/badge/jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">
+<img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
+<img src="https://img.shields.io/badge/redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
+<img src="https://img.shields.io/badge/vertex%20ai-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white">
+<br/>
+</div>
 
-    ## 🛠 기술 스펙
+## 🛠 기술 스펙
 
-    ### 백엔드
-    - **언어**: Java 17
-    - **프레임워크**: Spring Boot 3.x
-    - **데이터베이스**: MySQL 8.0.x (InnoDB, utf8mb4)
-    - **ORM**: JPA (Spring Data JPA)
-    - **캐싱**: Redis 7.x (세션 관리 및 챌린지 캐싱)
-    - **실시간 통신**: FCM (Firebase Cloud Messaging) 알림 서비스
-    - **서버**: Nginx (Reverse Proxy, SSL 인증서 적용)
-    - **배포/CI/CD**: Docker, Jenkins, GitLab
-    - **클라우드**: AWS EC2, Google Cloud Platform (Vertex AI 일부 연동)
-    - **외부 API**: SSAFY 금융망 API (계좌/카드 내역, 카테고리), Clova OCR (영수증 인증)
+### 백엔드
 
-    ### 프론트엔드
-    - **언어**: React Native (Android), JavaScript
-    - **프레임워크**: Android SDK (Native)
-    - **상태 관리**: React Hooks, Context API
-    - **UI/스타일링**: XML Layout, Figma 디자인 반영
-    - **차트/통계**: Custom Canvas 기반 달력 & 탄소 절감 리포트
-    - **게임화 요소**: 2D 아이소메트릭 큐브 맵, 코코 캐릭터 랜더링
-    - **API 연동**: Retrofit (Android), Axios (React Native)
-    - **Wearable**: WearOS 연동 (걸음수 기반 챌린지)
+- **언어**: Java 17
+- **프레임워크**: Spring Boot 3.x
+- **데이터베이스**: MySQL 8.0.x (InnoDB, utf8mb4)
+- **ORM**: JPA (Spring Data JPA)
+- **캐싱**: Redis 7.x (세션 관리 및 챌린지 캐싱)
+- **실시간 통신**: FCM (Firebase Cloud Messaging) 알림 서비스
+- **서버**: Nginx (Reverse Proxy, SSL 인증서 적용)
+- **배포/CI/CD**: Docker, Jenkins, GitLab
+- **클라우드**: AWS EC2, Google Cloud Platform (Vertex AI 일부 연동)
+- **외부 API**: SSAFY 금융망 API (계좌/카드 내역, 카테고리), Clova OCR (영수증 인증)
 
-    ---
+### 프론트엔드
 
-    ## ✨ 주요 기능
+- **언어**: React Native (Android), JavaScript
+- **프레임워크**: Android SDK (Native)
+- **상태 관리**: React Hooks, Context API
+- **UI/스타일링**: XML Layout, Figma 디자인 반영
+- **차트/통계**: Custom Canvas 기반 달력 & 탄소 절감 리포트
+- **게임화 요소**: 2D 아이소메트릭 큐브 맵, 코코 캐릭터 랜더링
+- **API 연동**: Retrofit (Android), Axios (React Native)
+- **Wearable**: WearOS 연동 (걸음수 기반 챌린지)
 
-    1. **아이소메트릭 큐브 맵 기반 숲 꾸미기**
-    - 2D 아이소메트릭 큐브 필드에서 **나무(사과/벚꽃/오렌지)**와 **장식(횃불 등)**을 설치
-    - 포인트를 활용해 숲을 꾸미고, 일정 조건 달성 시 **숲 확장** 가능
-    <img src = "images/home.gif" width = "300"/>
+---
 
-    2. **탄소 달력 (월별 리포트)**
-    - 월별 소비 내역을 기반으로 **탄소 배출량을 시각화**
-    - 하루 단위 달성 여부를 캘린더 형태로 확인 가능 → 꾸준한 행동 동기부여
-    <img src = "images/dashboard.gif" width = "300"/>
+## ✨ 주요 기능
 
-    3. **Vertex AI 기반 분석 피드백**
-    - 사용자의 소비 패턴을 분석하여 **코코 말풍선으로 피드백 제공**
-    - “이번 달 교통 소비가 줄었어요!”, “탄소 감축 목표에 근접했어요!”와 같은 메시지 전달
+### 🏡 홈 (숲 꾸미기)
 
-    4. **OCR 영수증 인증 챌린지**
-    - **Clova OCR**을 활용해 텀블러 사용, 친환경 소비 등의 **영수증 인증 챌린지** 진행
-    - 인증 성공 시 포인트 지급 → 숲 성장에 사용
+- 2D **아이소메트릭 큐브 맵** 기반의 숲 구현
+- 포인트를 활용해 **나무(사과/벚꽃/오렌지)** 및 **장식(횃불 등)** 설치
+- 숲 확장 기능: 일정 조건 달성 시 새로운 땅 개방
+- 나무 HP 시스템: 물주기·탄소 절약 성공 시 회복, 미참여 시 시듦 → 고사 단계
+- 실시간 피드백(토스트/메시지)으로 사용자 행동과 숲 상태 연결  
+  <img src="images/home.gif" width="300"/>
 
-    5. **금융 연동 (계좌 & 카드)**
-    - **SSAFY 금융망 API** 기반 계좌/카드 내역 연동
-    - 거래 내역을 카테고리별로 저장 후, **탄소 배출량으로 자동 환산**
-    - 챌린지와 연결되어 소비 절약 → 탄소 감축 → 포인트 보상으로 이어짐
+---
+
+### 📊 대시보드 (탄소 리포트)
+
+- 월별/주별/일별 **탄소 배출량 통계** 제공
+- **탄소 달력**: 하루 단위 절약/초과 여부를 달력 형태로 시각화
+- 소비 카테고리별 배출 비율 및 감축 현황 비교
+- **Vertex AI 분석**: 사용자의 소비 패턴을 학습 → “이번 달 교통 소비가 줄었어요!” 같은 코코 말풍선 피드백  
+  <img src="images/dashboard.gif" width="300"/>
+
+---
+
+### 🏆 챌린지
+
+- **OCR 영수증 인증**: Clova OCR로 텀블러 사용, 친환경 소비 인증
+- **금융 연동 챌린지**: SSAFY 금융망 API 기반 계좌/카드 내역 → 탄소 배출량 자동 환산
+- 걸음 수 / 출석 / 소비 절약 등 다양한 일일 챌린지
+- 성공 시 포인트 적립 → 숲 꾸미기/물주기에 사용
+- 실패 시 숲 HP 감소로 사용자 행동에 직접적인 피드백 반영
+
+---
+
+### 👤 마이페이지
+
+- **회원 정보 관리**: 로그인/회원가입, 프로필 수정
+- 개인별 **누적 포인트·탄소 감축 기록** 확인
+- **챌린지 참여 내역** 및 성공/실패 히스토리 제공
+- WearOS 연동 기록: 걸음 수 → 탄소 절약 지표 반영
+  <img src="images/mypage.gif" width="300"/>
