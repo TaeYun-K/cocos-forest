@@ -123,7 +123,7 @@
 - 개인별 **누적 포인트·탄소 감축 기록** 확인
 - **챌린지 참여 내역** 및 성공/실패 히스토리 제공
 - WearOS 연동 기록: 걸음 수 → 탄소 절약 지표 반영
-  <img src="images/mypage.gif" width="300"/>
+- <img src="images/mypage.gif" width="300"/>
 
 ---
 
@@ -136,4 +136,4 @@
   - Nginx Reverse Proxy + SSL 인증서 적용
   - Docker 기반 컨테이너화로 일관된 실행 환경 확보
   - Redis 세션 캐싱을 통해 인증 및 챌린지 처리 성능 최적화
-- <img src="images/architecture.png" />
+    <img src="images/architecture.png" />
