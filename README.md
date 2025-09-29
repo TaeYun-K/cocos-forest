@@ -136,4 +136,4 @@
   - Nginx Reverse Proxy + SSL 인증서 적용
   - Docker 기반 컨테이너화로 일관된 실행 환경 확보
   - Redis 세션 캐싱을 통해 인증 및 챌린지 처리 성능 최적화
-    <img src="images/architecture.png" />
+- <img src="images/architecture.png" />
