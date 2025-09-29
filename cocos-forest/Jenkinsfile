@@ -136,7 +136,7 @@ pipeline {
           set -eu
           COMMIT7=$(printf "%s" "${GIT_COMMIT}" | cut -c1-7)
           TARGET="${gitlabTargetBranch:-dev}"
-          JSON=$(printf '{"text":":fire: **배포 실패!** :boom:\\n- **Job**: %s\\n- **Build**: #%s\\n- **Branch**: %s\\n🔗 [에러 로그 확인](%s)\\n@here"}' \
+          JSON=$(printf '{"text":":boom: **배포 실패!** :boom:\\n- **Job**: %s\\n- **Build**: #%s\\n- **Branch**: %s\\n🔗 [에러 로그 확인](%s)\\n@here"}' \
                 "$JOB_NAME" "$BUILD_NUMBER" "$TARGET" "$BUILD_URL")
           curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
         '''
@@ -147,7 +147,7 @@ pipeline {
       withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
         sh '''#!/usr/bin/env sh
           set -eu
-          JSON=$(printf '{"text":":warning: **빌드 불안정!**\\n- **Job**: %s\\n- **Build**: #%s\\n🔗 [자세히 보기](%s)"}' \
+          JSON=$(printf '{"text":":warning: **빌드 불안정!** :warning:\\n- **Job**: %s\\n- **Build**: #%s\\n🔗 [자세히 보기](%s)"}' \
                 "$JOB_NAME" "$BUILD_NUMBER" "$BUILD_URL")
           curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
         '''
