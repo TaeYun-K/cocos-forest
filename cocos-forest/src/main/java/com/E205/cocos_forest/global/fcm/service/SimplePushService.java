@@ -25,7 +25,7 @@ public class SimplePushService {
     // 하드코딩된 푸시 토큰들 (실제 토큰으로 교체하세요)
     private static final List<String> HARDCODED_PUSH_TOKENS = Arrays.asList(
         "ExponentPushToken[BvbSxZK4V_4QvcOx2n67y7]",
-        "ExponentPushToken[bKSyTHLEB31DPzLZNBNr_X]"
+        "ExponentPushToken[KqOOYXNv2nENp2IDduHvTW]"
     );
     private static final String EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
