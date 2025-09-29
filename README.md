@@ -1,6 +1,8 @@
- - README
+ - ### README
  
     # 🌴 코코의 숲 (Coco’s Forest)
+
+    <img src = "images/login.gif" width = "300"/>
     
     ## 탄소 절약 챌린지 × 금융 소비 분석 × 게임화
     
@@ -16,81 +18,90 @@
     ---
     
     ## 👥 팀원
-    
+
     | 이름 | 역할 |
     | --- | --- |
-    | 김태윤 (팀장) | 백엔드, DB 설계, 금융 API 연동 |
-    | 권인 | 프론트엔드, React Native, UI 구현 |
-    | 김민주 | 프론트엔드, 챌린지/랭킹 화면 구현 |
-    | 정원준 | 백엔드, 챌린지/보상 API |
-    | 박민수 | 인프라, CI/CD, 배포 관리 |
-    | 박진주 | 디자이너, 코코/숲 아트 에셋 제작 |
+    | 김태윤 (팀장) | 전반적인 **백엔드 총괄**, 금융 API 연동, 챌린지 시스템, OCR 구현, 프론트 최적화 작업 |
+    | 권인 | **대시보드/탄소 달력** 구현, 화면 디자인, 영상 포트폴리오 제작, 코코 GIF 디자인 |
+    | 김민주 | **프론트엔드 (로그인/회원가입)**, 챌린지·랭킹 화면 구현, **WearOS 연동** |
+    | 박민수 | **인프라·CI/CD**: Docker/Jenkins 파이프라인, 시크릿/환경변수 관리, Nginx 리버스 프록시·SSL, 보안 헤더/레이트 리밋/헬스체크 운영, GCP AI 파이프라인 구축|
+    | 정원준 | 홈화면 **아이소메트릭 큐브 구현**, 숲 관련 DB·API 설계, **FCM 알림 서비스** |
+    | 박진주 | **코코 디자인/아트 에셋 제작**, 챌린지 API 연결, SSAFY 금융 API 연동 지원 |
+
     
     ---
     
     ## 🧰 기술 스택
     
     <div align="center">  
-      <!-- Core -->  
-      <img src="https://img.shields.io/badge/kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white">  
-      <img src="https://img.shields.io/badge/java-EA2D2E?style=for-the-badge&logo=java&logoColor=white">  
-      <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">  
-      <br/>  
-      <!-- Frontend -->  
-      <img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">  
-      <img src="https://img.shields.io/badge/figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white">  
-      <img src="https://img.shields.io/badge/svg-FFB13B?style=for-the-badge&logoColor=white">  
-      <br/>  
-      <!-- DevOps / Cloud -->  
-      <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">  
-      <img src="https://img.shields.io/badge/jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">  
-      <img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">  
-      <br/>  
+    <!-- Core -->   
+    <img src="https://img.shields.io/badge/java-EA2D2E?style=for-the-badge&logo=java&logoColor=white">  
+    <img src="https://img.shields.io/badge/spring%20boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">  
+    <img src="https://img.shields.io/badge/jpa-59666C?style=for-the-badge&logo=hibernate&logoColor=white">
+    <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">  
+    <br/>  
+
+    <!-- Frontend -->  
+    <img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">  
+    <img src="https://img.shields.io/badge/react%20native-61DAFB?style=for-the-badge&logo=react&logoColor=black">  
+    <img src="https://img.shields.io/badge/figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white">  
+    <img src="https://img.shields.io/badge/svg-FFB13B?style=for-the-badge&logoColor=white">  
+    <br/>  
+
+    <!-- DevOps / Cloud -->  
+    <img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">  
+    <img src="https://img.shields.io/badge/jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">  
+    <img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">  
+    <img src="https://img.shields.io/badge/redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">  
+    <img src="https://img.shields.io/badge/vertex%20ai-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white">  
+    <br/>  
     </div>
-    
-    ---
-    
-    ## 🌐 메인화면 기능
-    
-    1. **아이소메트릭 필드**
-        - 숲을 2D 아이소메트릭 뷰로 표현
-    2. **나무 종류 1개 (초기 버전)**
-        - 이후 다양한 나무와 숲 꾸미기 요소 확장
-    3. **챌린지 성공 → 포인트 사용법**
-        - 🌱 나무 심기
-        - 💧 물주기
-    4. **나무 상태 관리 (HP 시스템)**
-        - **+ 요인** : 물주기, 하루 평균 탄소 절약 성공
-        - **요인** : 물 미지급, 탄소 목표 초과
-        - HP 단계별 3단계 시각화 (건강 → 약간 시듦 → 심하게 시듦)
-    5. **코코 캐릭터**
-        - 기본 위치: 왼쪽 상단 (랜덤 위치 확장 가능)
-        - 이벤트 발생 시 말풍선으로 피드백
-    
+
+    ## 🛠 기술 스펙
+
+    ### 백엔드
+    - **언어**: Java 17, Kotlin
+    - **프레임워크**: Spring Boot 3.x
+    - **데이터베이스**: MySQL 8.0.x (InnoDB, utf8mb4)
+    - **ORM**: JPA (Spring Data JPA)
+    - **캐싱**: Redis 7.x (세션 관리 및 챌린지 캐싱)
+    - **실시간 통신**: FCM (Firebase Cloud Messaging) 알림 서비스
+    - **서버**: Nginx (Reverse Proxy, SSL 인증서 적용)
+    - **배포/CI/CD**: Docker, Jenkins, GitLab
+    - **클라우드**: AWS EC2, Google Cloud Platform (Vertex AI 일부 연동)
+    - **외부 API**: SSAFY 금융망 API (계좌/카드 내역, 카테고리), Clova OCR (영수증 인증)
+
+    ### 프론트엔드
+    - **언어**: Kotlin (Android), JavaScript
+    - **프레임워크**: Android SDK (Native), React Native
+    - **상태 관리**: React Hooks, Context API
+    - **UI/스타일링**: XML Layout, Figma 디자인 반영
+    - **차트/통계**: Custom Canvas 기반 달력 & 탄소 절감 리포트
+    - **게임화 요소**: 2D 아이소메트릭 큐브 맵, 코코 캐릭터 랜더링
+    - **API 연동**: Retrofit (Android), Axios (React Native)
+    - **Wearable**: WearOS 연동 (걸음수 기반 챌린지)
+
     ---
     
     ## ✨ 주요 기능
-    
-    ### 🔑 금융 연동 & 소비 분석
-    
-    - **SSAFY 금융 API** 연동
-        - 계좌 거래 내역 조회
-        - 카드 결제 내역/카테고리 조회
-    - 소비 내역을 탄소 배출량으로 환산
-    
-    ### 🏆 챌린지 & 보상
-    
-    - 개인/그룹 챌린지 생성 및 참여
-    - 달성 시 포인트 & 뱃지 획득
-    - 포인트 → 숲 성장(심기/물주기)
-    
-    ### 📊 탄소 발자국 리포트
-    
-    - 일/주/월 단위 통계
-    - 전주 대비 탄소 절감량 비교
-    
-    ### ⌚ 스마트워치 연동
-    
-    - 코코 캐릭터를 워치 페이스로 표시
-    - 걸음 수 → 절약량 환산
-    - 탄소 점수 위젯
+
+    1. **아이소메트릭 큐브 맵 기반 숲 꾸미기**
+    - 2D 아이소메트릭 큐브 필드에서 **나무(사과/벚꽃/오렌지)**와 **장식(횃불 등)**을 설치  
+    - 포인트를 활용해 숲을 꾸미고, 일정 조건 달성 시 **숲 확장** 가능  
+
+    2. **탄소 달력 (월별 리포트)**
+    - 월별 소비 내역을 기반으로 **탄소 배출량을 시각화**  
+    - 하루 단위 달성 여부를 캘린더 형태로 확인 가능 → 꾸준한 행동 동기부여  
+
+    3. **Vertex AI 기반 분석 피드백**
+    - 사용자의 소비 패턴을 분석하여 **코코 말풍선으로 피드백 제공**  
+    - “이번 달 교통 소비가 줄었어요!”, “탄소 감축 목표에 근접했어요!”와 같은 메시지 전달  
+
+    4. **OCR 영수증 인증 챌린지**
+    - **Clova OCR**을 활용해 텀블러 사용, 친환경 소비 등의 **영수증 인증 챌린지** 진행  
+    - 인증 성공 시 포인트 지급 → 숲 성장에 사용  
+
+    5. **금융 연동 (계좌 & 카드)**
+    - **SSAFY 금융망 API** 기반 계좌/카드 내역 연동  
+    - 거래 내역을 카테고리별로 저장 후, **탄소 배출량으로 자동 환산**  
+    - 챌린지와 연결되어 소비 절약 → 탄소 감축 → 포인트 보상으로 이어짐  
