@@ -14,18 +14,24 @@ import {
 } from "../../utils/iso";
 import type { Cell, Marker } from "../../types/forest";
 import type { ForestInfoDto } from "../../types/forest";
+import { getSpriteByKey } from "../../assets/spriteMap";
+import { listAssets, type AssetDto } from "../../api/home";
 
-const DIRT_IMG = require("../../../assets/tiles/dirt.png");
-const GRASS_IMG = require("../../../assets/tiles/grass.png");
-const WATER_IMG = require("../../../assets/tiles/water.png");
-const MARKER_IMG = require("../../../assets/models/medium_tree.png");
+const GRASS_DARK = require("../../../assets/home/tiles/grassdark.png");
+const GRASS_WEEDS = require("../../../assets/home/tiles/grassweeds.png");
+const DIRT_PLAIN_IMG = require("../../../assets/home/tiles/dirt.png");
+const GRASS_IMG = require("../../../assets/home/tiles/grass.png");
+const WATER_IMG = require("../../../assets/home/tiles/water.png");
+const MARKER_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
-const SMALL_TREE_IMG = require("../../../assets/models/small_tree.png");
-const MEDIUM_TREE_IMG = require("../../../assets/models/medium_tree.png");
-const LARGE_TREE_IMG = require("../../../assets/models/medium_tree.png");
+const SMALL_TREE_IMG = require("../../../assets/home/decorations/tree/small_tree.png");
+const MEDIUM_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
+const LARGE_TREE_IMG = require("../../../assets/home/decorations/tree/medium_tree.png");
 
 // dead tree asset
-const DEAD_TREE_WARNING_IMG = require("../../../assets/tiles/alert.png");
+const DEAD_TREE_WARNING_IMG = require("../../../assets/home/decorations/tree/dead_tree.png");
+
+// mapping by assetId not needed; use spriteKey from API assets
 
 // 나무 상태에 따른 에셋 선택 함수
 const getTreeAsset = (growthStage?: string, isDead?: boolean, health?: number, maxHealth?: number) => {
@@ -60,7 +66,10 @@ type Props = {
   cells: Cell[];
   markers: Marker[];
   layoutW: number;
-  showHitbox: boolean;
+  layoutH?: number;
+  zoom?: number;
+  panX?: number;
+  panY?: number;
   onCellPress: (cell: Cell) => void;
   selectedCell?: Cell | null;
   forestInfo?: ForestInfoDto;
@@ -72,16 +81,54 @@ export default function Board({
   cells,
   markers,
   layoutW,
-  showHitbox,
+  layoutH,
+  zoom = 1,
+  panX = 0,
+  panY = 0,
   onCellPress,
   selectedCell,
   forestInfo,
   onDeadTreePress,
   onExpandableAreaPress,
 }: Props) {
+  // Build coordinate maps once per change to avoid O(n^2) finds in render
+  const cellsByCoord = React.useMemo(() => {
+    const map = new Map<string, Cell>();
+    for (const c of cells) map.set(`${c.x},${c.z}`, c);
+    return map;
+  }, [cells]);
+
+  const treesByCoord = React.useMemo(() => {
+    const map = new Map<string, NonNullable<ForestInfoDto["trees"]>[number]>();
+    if (forestInfo?.trees) {
+      for (const t of forestInfo.trees) map.set(`${t.x},${t.y}`, t);
+    }
+    return map;
+  }, [forestInfo?.trees]);
   const forestSize = forestInfo?.size || 8;
   const pondX = forestInfo?.pondX || 3;
   const pondY = forestInfo?.pondY || 3;
+  // No global asset catalog here; each tree carries its spriteKey from API.
+  // For decorations, fetch asset catalog once to resolve sprite by assetId.
+  const [decoSpriteById, setDecoSpriteById] = React.useState<Record<number, any>>({});
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const all: AssetDto[] = await listAssets();
+        if (!mounted) return;
+        const map: Record<number, any> = {};
+        for (const a of all) {
+          const sprite = getSpriteByKey(a.spriteKey || undefined);
+          if (sprite) map[a.id] = sprite;
+        }
+        setDecoSpriteById(map);
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   
   // 물 타일인지 확인 (pondX, pondY 기준으로 2x2 영역)
   const isWater = (c: Cell) => 
@@ -105,27 +152,35 @@ export default function Board({
     
     return isAdjacentToGrass;
   };
-  
-  // 선택된 셀인지 확인하는 함수
-  const isSelectedCell = (cell: Cell) => {
-    return selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z;
-  };
 
-  // 죽은 나무인지 확인하는 함수
-  const getDeadTreeAt = (x: number, z: number) => {
-    if (!forestInfo?.trees) return null;
-    
-    return forestInfo.trees.find(tree => 
-      tree.x === x && 
-      tree.y === z && 
-      (tree.health === 0 || tree.isDead)
-    );
+  // Island-like concentric lines around plantable square
+  const getStripBackground = (x: number, z: number) => {
+    // Inside plantable area
+    if (x >= 0 && x < forestSize && z >= 0 && z < forestSize) {
+      return GRASS_IMG;
+    }
+    // Distance (in grid lines) outside the square
+    const dx = x < 0 ? -x : (x - (forestSize - 1));
+    const dz = z < 0 ? -z : (z - (forestSize - 1));
+    const outside = Math.max(dx, dz); // Chebyshev distance from boundary
+    if (outside === 1) return GRASS_DARK;     // first line
+    if (outside === 2) return DIRT_PLAIN_IMG;     // second line
+    return WATER_IMG;                              // beyond -> water
   };
 
   // 기존 스텝 벡터/중심 추정 로직
   const c00 = cells.find((c) => c.x === 0 && c.z === 0);
   const c10 = cells.find((c) => c.x === 1 && c.z === 0);
   const c01 = cells.find((c) => c.x === 0 && c.z === 1);
+
+  // 숲의 논리적 중심 (forestSize 기준)
+  const forestLogicalCenterX = (forestSize - 1) / 2;
+  const forestLogicalCenterZ = (forestSize - 1) / 2;
+
+  // 해당 좌표의 스크린 위치
+  const centerCell = cellsByCoord.get(
+    `${Math.floor(forestLogicalCenterX)},${Math.floor(forestLogicalCenterZ)}`
+  );
 
   const stepX =
     c00 && c10
@@ -147,10 +202,92 @@ export default function Board({
 
   // 동적 흙 타일 범위 (잔디 크기의 2배)
   const dirtSize = forestSize * 2;
-  const dirtRange = Array.from({ length: dirtSize }, (_, i) => i);
+  const dirtRange = React.useMemo(() => Array.from({ length: dirtSize }, (_, i) => i), [dirtSize]);
+
+  // Container center (for aligning board center to view center)
+  const containerCenterX = layoutW > 0 ? layoutW / 2 : center.sx;
+  const containerCenterY = layoutH && layoutH > 0 ? layoutH / 2 : center.sy;
+
+  // 전체(잔디 + 외곽 흙) 타일 이미지의 경계 박스를 계산해 시각적 중심을 구한다
+  const bounds = (() => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    // 잔디/물 셀들 (Layer 1)
+    for (const c of cells) {
+      const left = c.sx - SPRITE_W / 2;
+      const top = c.sy - FOOT_H / 2 - WALL_H - TOP_FACE_H / 2;
+      const right = left + SPRITE_W;
+      const bottom = top + (FOOT_H + WALL_H);
+      if (left < minX) minX = left;
+      if (top < minY) minY = top;
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+    // 외곽 흙 타일들 (Layer 0)
+    const size = dirtSize;
+    for (let ix = 0; ix < size; ix++) {
+      for (let iz = 0; iz < size; iz++) {
+        const rx = ix - (size / 2 - 0.5);
+        const rz = iz - (size / 2 - 0.5);
+        const sx = center.sx + rx * stepX.dx + rz * stepZ.dx;
+        const sy = center.sy + rx * stepX.dy + rz * stepZ.dy;
+        const actualX = ix - size / 2 + forestSize / 2;
+        const actualZ = iz - size / 2 + forestSize / 2;
+        const expandable = isExpandableArea(actualX, actualZ);
+        const left = sx - SPRITE_W / 2;
+        const top = expandable
+          ? sy - FOOT_H / 2 - WALL_H
+          : sy - FOOT_H / 2 - WALL_H + TOP_FACE_H / 2;
+        const right = left + SPRITE_W;
+        const bottom = top + (FOOT_H + WALL_H);
+        if (left < minX) minX = left;
+        if (top < minY) minY = top;
+        if (right > maxX) maxX = right;
+        if (bottom > maxY) maxY = bottom;
+      }
+    }
+    // 3) 마커(나무) 이미지까지 포함하면 확대/축소 기준의 체감 중심이 더 안정적
+    for (const m of markers) {
+      const left = m.sx - MARKER_SIZE / 2;
+      const top = m.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2;
+      const right = left + MARKER_SIZE;
+      const bottom = top + MARKER_SIZE;
+      if (left < minX) minX = left;
+      if (top < minY) minY = top;
+      if (right > maxX) maxX = right;
+      if (bottom > maxY) maxY = bottom;
+    }
+    return { minX, minY, maxX, maxY };
+  })();
+
+  const baseDX = centerCell 
+    ? containerCenterX - centerCell.sx
+    : containerCenterX - center.sx;
+    
+  const baseDY = centerCell
+    ? containerCenterY - centerCell.sy  
+    : containerCenterY - center.sy;
 
   return (
     <View style={s.board} pointerEvents="box-none">
+      <View
+        style={{
+          flex: 1,
+          transform: [
+            // 컨테이너 중앙 기준으로 스케일
+            { translateX: -containerCenterX },
+            { translateY: -containerCenterY },
+            { scale: zoom },
+            { translateX: containerCenterX },
+            { translateY: containerCenterY },
+            // 전체(잔디+흙) 경계 박스 중심을 컨테이너 중앙에 정렬 (스케일 영향 없음)
+            { translateX: baseDX },
+            { translateY: baseDY },
+          ],
+        }}
+        // renderToHardwareTextureAndroid={true}
+        // shouldRasterizeIOS={true}
+        // removeClippedSubviews={true}
+      >
       {/* Layer 0: 바닥층 dirt (동적 크기) */}
       {dirtRange.map((ix) =>
         dirtRange.map((iz) => {
@@ -167,7 +304,7 @@ export default function Board({
 
           return (
             <View key={`base-container-${ix}-${iz}`}>
-              <TouchableOpacity
+              <TouchableOpacity pointerEvents="none"
                 style={{
                   position: "absolute",
                   left: sx - SPRITE_W / 2,
@@ -184,7 +321,7 @@ export default function Board({
                 disabled={!isExpandable}
               >
                 <Image
-                  source={DIRT_IMG}
+                  source={getStripBackground(actualX, actualZ)}
                   style={{
                     width: SPRITE_W,
                     height: FOOT_H + WALL_H,
@@ -247,17 +384,17 @@ export default function Board({
       {/* Layer 2: 마커 (모든 나무 - 죽은 나무는 다른 에셋으로 표시) */}
       {markers.map((m) => {
         // 해당 위치의 나무 정보 찾기
-        const treeInfo = forestInfo?.trees?.find(tree => tree.x === m.x && tree.y === m.z);
+        const treeInfo = treesByCoord.get(`${m.x},${m.z}`);
+        const isDead = !!(treeInfo && (treeInfo.isDead || treeInfo.health === 0));
+        const sprite = isDead
+          ? DEAD_TREE_WARNING_IMG
+          : getSpriteByKey(treeInfo?.spriteKey) ||
+            getTreeAsset(m.growthStage, false, treeInfo?.health, treeInfo?.maxHealth);
         
         return (
           <Image
             key={`marker-${m.x}-${m.z}`}
-            source={getTreeAsset(
-              m.growthStage, 
-              treeInfo?.isDead, 
-              treeInfo?.health, 
-              treeInfo?.maxHealth
-            )}
+            source={sprite}
             style={{
               position: "absolute",
               left: m.sx - MARKER_SIZE / 2,
@@ -273,11 +410,44 @@ export default function Board({
         );
       })}
 
+     {forestInfo?.decorations?.map((deco) => {
+      const cell = cellsByCoord.get(`${deco.x},${deco.y}`);
+      if (!cell) return null;
+
+      const sprite =
+        decoSpriteById[deco.assetId] ||
+        getSpriteByKey(deco.spriteKey || undefined) ||
+        MARKER_IMG;
+
+      return (
+        <TouchableOpacity
+          key={`deco-${deco.id}-${deco.x}-${deco.y}`}
+          style={{
+            position: "absolute",
+            left: cell.sx - MARKER_SIZE / 2,
+            top:  cell.sy - FOOT_H / 2 - WALL_H - MARKER_SIZE / 2 - 2,
+            width: MARKER_SIZE,
+            height: MARKER_SIZE,
+            zIndex: 3,        // ↑ 나무(2) 보다 위
+            elevation: 3,
+          }}
+          onPress={() => onCellPress(cell)}
+          activeOpacity={0.85}
+        >
+          <Image
+            source={sprite}
+            style={{ width: MARKER_SIZE, height: MARKER_SIZE, resizeMode: "contain" }}
+            onError={(e) => console.log('deco image error', deco, e.nativeEvent)}
+          />
+        </TouchableOpacity>
+      );
+    })}
+
       {/* Layer 2.5: 죽은 나무에 대한 별도 터치 영역 */}
       {forestInfo?.trees
         ?.filter(tree => tree.health === 0 || tree.isDead)
         ?.map((tree) => {
-          const cell = cells.find(c => c.x === tree.x && c.z === tree.y);
+          const cell = cellsByCoord.get(`${tree.x},${tree.y}`);
           if (!cell) return null;
           
           return (
@@ -299,52 +469,41 @@ export default function Board({
 
       {/* Layer 3: 히트박스 + 하이라이트 (잔디 영역만) */}
       {layoutW > 0 && (
-        <Svg
-          style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
-          pointerEvents="box-none"
-        >
-          {cells.map((c) => {
-            const isSelected = isSelectedCell(c);
-            
-            return (
+        <>
+          {selectedCell && (
+            <Svg
+              style={[StyleSheet.absoluteFill, { zIndex: 3, elevation: 3 }]}
+              pointerEvents="none"
+            >
               <Path
-                key={`path-${c.x}-${c.z}`}
-                d={c.path}
-                fill={
-                  isSelected 
-                    ? "rgba(255, 215, 0, 0.6)"
-                    : showHitbox 
-                      ? "rgba(0,255,0,0.3)" 
-                      : "#00FF00"
-                }
-                fillOpacity={
-                  isSelected 
-                    ? 0.6
-                    : showHitbox 
-                      ? 0.3 
-                      : 0
-                }
-                stroke={
-                  isSelected 
-                    ? "#FFD700"
-                    : showHitbox 
-                      ? "blue" 
-                      : "#000"
-                }
-                strokeOpacity={
-                  isSelected 
-                    ? 1
-                    : showHitbox 
-                      ? 1 
-                      : 0
-                }
-                strokeWidth={isSelected ? 3 : 1}
-                onPress={() => onCellPress(c)}
+                d={selectedCell.path}
+                fill="rgba(255, 215, 0, 0.6)"
+                fillOpacity={0.6}
+                stroke="#FFD700"
+                strokeOpacity={1}
+                strokeWidth={3}
               />
-            );
-          })}
-        </Svg>
+            </Svg>
+          )}
+
+          {cells.map((c) => (
+            <TouchableOpacity
+              key={`cell-touch-${c.x}-${c.z}`}
+              style={{
+                position: "absolute",
+                left: c.sx - SPRITE_W / 2,
+                top: c.sy - FOOT_H / 2 - WALL_H - TOP_FACE_H / 2,
+                width: SPRITE_W,
+                height: FOOT_H + WALL_H,
+                zIndex: 4,
+              }}
+              onPress={() => onCellPress(c)}
+              activeOpacity={1}
+            />
+          ))}
+        </>
       )}
+      </View>
     </View>
   );
 }

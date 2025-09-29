@@ -67,12 +67,6 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           validatePassword={validatePassword}
         />
       )}
-
-      {showForgotPassword && onForgotPassword && (
-        <TouchableOpacity onPress={onForgotPassword}>
-          <Text style={styles.forgotPassword}>비밀번호를 잊으셨나요?</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -100,6 +94,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 16,
+    color: '#333333',
   },
   eyeButton: {
     paddingHorizontal: 15,
@@ -116,7 +111,7 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     fontSize: 14,
-    color: '#7CB342',
+    color: '#15803d',
     textAlign: 'right',
     marginTop: 8,
   },

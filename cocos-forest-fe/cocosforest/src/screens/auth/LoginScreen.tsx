@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Modal,
+  Image,
+  Text,
+  StyleSheet,
 } from 'react-native';
 import { useAuthStore } from '../../store/authStore';
 import { LoginForm } from '../../types/auth';
@@ -23,11 +27,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     email: '',
     password: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Partial<LoginForm>>({}); // 추가: 에러 상태
-  
-  const { login } = useAuthStore();
+  const [errors, setErrors] = useState<Partial<LoginForm>>({});
+  const [loadingDots, setLoadingDots] = useState('.');
+
+  const { login, isLoading } = useAuthStore();
+
+  // 로딩 애니메이션 효과
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const interval = setInterval(() => {
+      setLoadingDots(prev => {
+        if (prev === '.') return '..';
+        if (prev === '..') return '...';
+        return '.';
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const handleInputChange = (field: keyof LoginForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -59,73 +78,107 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
-    // 유효성 검사 먼저 실행
     if (!validateForm()) {
       return;
     }
 
     try {
-      setIsLoading(true);
       await login(form);
-      // 네비게이션은 AuthStore의 상태 변화로 자동 처리됨
     } catch (error) {
       Alert.alert('로그인 실패', error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const handleSignup = () => {
     navigation.navigate('SignupStep1');
   };
 
-  const handleForgotPassword = () => {
-    Alert.alert('비밀번호 찾기', '개발 중인 기능입니다.');
-  };
-
-  const handleGoogleLogin = () => {
-    Alert.alert('구글 로그인', '개발 중인 기능입니다.');
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={loginStyles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={loginStyles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <>
+      <KeyboardAvoidingView
+        style={loginStyles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <LoginHeader />
+        <ScrollView
+          contentContainerStyle={loginStyles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <LoginHeader />
 
-        <View style={loginStyles.formContainer}>
-          <EmailInput
-            value={form.email}
-            onChangeText={(value) => handleInputChange('email', value)}
-            error={errors.email}
-          />
+          <View style={loginStyles.formContainer}>
+            <EmailInput
+              value={form.email}
+              onChangeText={(value) => handleInputChange('email', value)}
+              error={errors.email}
+            />
 
-          <PasswordInput
-            value={form.password}
-            onChangeText={(value) => handleInputChange('password', value)}
-            showPassword={showPassword}
-            onTogglePassword={() => setShowPassword(!showPassword)}
-            error={errors.password}
-            showForgotPassword
-            onForgotPassword={handleForgotPassword}
-          />
+            <PasswordInput
+              value={form.password}
+              onChangeText={(value) => handleInputChange('password', value)}
+              showPassword={showPassword}
+              onTogglePassword={() => setShowPassword(!showPassword)}
+              error={errors.password}
+              showForgotPassword
+            />
 
-          <LoginButtons
-            isLoading={isLoading}
-            onLogin={handleLogin}
-            onGoogleLogin={handleGoogleLogin}
-            onSignup={handleSignup}
-          />
+            <LoginButtons
+              isLoading={isLoading}
+              onLogin={handleLogin}
+              onSignup={handleSignup}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* 로딩 오버레이 */}
+      <Modal visible={isLoading} transparent animationType="fade">
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContent}>
+            <Image
+              source={require('../../../assets/coco-loading-unscreen.gif')}
+              style={styles.loadingGif}
+              resizeMode="contain"
+            />
+            <Text style={styles.loadingText}>로딩중{loadingDots}</Text>
+          </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContent: {
+    backgroundColor: '#ededed',
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingGif: {
+    width: 200,
+    height: 200,
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 18,
+    color: '#1f2937',
+    fontWeight: '600',
+  },
+});
 
 export default LoginScreen;

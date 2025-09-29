@@ -117,10 +117,10 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   paymentCard: {
-    backgroundColor: '#f0f9ff',
+    backgroundColor: '#E8F5E9',
   },
   carbonCard: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: '#E8F5E9',
   },
   cardIcon: {
     width: 40,
@@ -146,12 +146,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   additionalStats: {
-    backgroundColor: '#fefdf8',
+    backgroundColor: '#E8F5E9',
     borderRadius: 16,
     padding: 20,
     gap: 12,
     borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderColor: '#C8E6C9',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

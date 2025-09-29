@@ -46,23 +46,31 @@ export const SignupStep2Screen: React.FC<SignupStep2ScreenProps> = ({ navigation
 
   const validatePassword = (password: string): string[] => {
     const errors: string[] = [];
-    
-    if (password.length < 6) {
-      errors.push('최소 6자 이상 입력해주세요');
+
+    if (password.length < 8) {
+      errors.push('최소 8자 이상 입력해주세요');
     }
-    
-    if (password.length > 20) {
-      errors.push('최대 20자까지 입력 가능합니다');
+
+    if (password.length > 16) {
+      errors.push('최대 16자까지 입력 가능합니다');
     }
-    
+
     if (!/[a-zA-Z]/.test(password)) {
       errors.push('영문자를 포함해야 합니다');
     }
-    
+
     if (!/\d/.test(password)) {
       errors.push('숫자를 포함해야 합니다');
     }
-    
+
+    if (!/\W/.test(password)) {
+      errors.push('특수문자를 포함해야 합니다');
+    }
+
+    if (/\s/.test(password)) {
+      errors.push('공백은 사용할 수 없습니다');
+    }
+
     return errors;
   };
 
@@ -114,7 +122,7 @@ export const SignupStep2Screen: React.FC<SignupStep2ScreenProps> = ({ navigation
             onChangeText={(value) => handleInputChange('password', value)}
             showPassword={showPassword}
             onTogglePassword={() => setShowPassword(!showPassword)}
-            placeholder="비밀번호를 입력하세요 (최소 6자)"
+            placeholder="비밀번호를 입력하세요 (8~16자)"
             error={errors.password}
             showStrengthIndicator
             validatePassword={validatePassword}
@@ -130,7 +138,7 @@ export const SignupStep2Screen: React.FC<SignupStep2ScreenProps> = ({ navigation
           />
 
           <Text style={signupStep2Styles.passwordHint}>
-            비밀번호는 6자 이상이어야 하며, 영문자와 숫자를 포함해야 합니다.
+            비밀번호는 8~16자 영문 대 소문자, 숫자, 특수문자를 사용하세요.
           </Text>
 
           <SignupButtons

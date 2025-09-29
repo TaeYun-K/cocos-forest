@@ -38,6 +38,10 @@ public class CardHttpClient implements CardClient {
 
         var req = new CreditCardCreateRequest(header, cardUniqueNo, withdrawalAccountNo, withdrawalDate);
 
+        // Debug request values (민감정보 없는 필드만 로깅)
+        log.debug("[SSAFY] createCreditCard request - userKey={}, cardUniqueNo={}, withdrawalAccountNo={}, withdrawalDate={}",
+                userKey, cardUniqueNo, withdrawalAccountNo, withdrawalDate);
+
         var res = webClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .pathSegment("edu", "creditCard", "createCreditCard")
@@ -45,6 +49,11 @@ public class CardHttpClient implements CardClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .retrieve()
+                .onStatus(s -> s.is4xxClientError() || s.is5xxServerError(), clientResponse ->
+                        clientResponse.bodyToMono(String.class)
+                                .doOnNext(body -> log.error("[SSAFY] createCreditCard error body: {}", body))
+                                .flatMap(body -> reactor.core.publisher.Mono.error(new RuntimeException("SSAFY createCreditCard error: " + body)))
+                )
                 .bodyToMono(CreditCardCreateResponse.class)
                 .block();
 
@@ -150,4 +159,3 @@ public class CardHttpClient implements CardClient {
             .toList();
     }
 }
-

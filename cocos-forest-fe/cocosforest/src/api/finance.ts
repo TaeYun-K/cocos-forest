@@ -54,12 +54,6 @@ export interface CreateAccountResponse {
   createdAt: string;
 }
 
-export interface ConnectCardRequest {
-  productId: number;
-  withdrawalAccountNo: string;
-  withdrawalDate: string;
-}
-
 export interface UserCard {
   userCardId: number;
   userId: number;
@@ -68,14 +62,22 @@ export interface UserCard {
   issuerCode: string;
   issuerName: string;
   cardName: string;
-  cardNickName: string;
-  lastIs: string;
+  cardMasked: string;
+  last4: string;
+  expiryMM: string;
   withdrawalAccountNo: string;
-  withdrawalDate: string;
+  withdrawalDay: string;
   baselinePerformance: number;
   maxBenefitLimit: number;
+  cardDescription: string;
+  status: 'ACTIVE';
   createdAt: string;
-  status: string;
+}
+
+export interface ConnectCardRequest {
+  productId: number;
+  withdrawalAccountNo: string;
+  withdrawalDate: string;
 }
 
 export interface ApiResponse<T> {
@@ -85,28 +87,6 @@ export interface ApiResponse<T> {
   code: string;
   result: T;
 }
-
-// 사용자 정보 조회 API 추가
-export interface UserProfile {
-  id: number;
-  email: string;
-  nickname: string;
-  phoneNumber?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const fetchUserProfile = async (userId: number): Promise<UserProfile> => {
-  try {
-    console.log(`🔍 사용자 정보 조회 시작 (userId: ${userId})`);
-    const response = await apiClient.get(`/api/user/myprofile`);
-    console.log('✅ 사용자 정보 조회 성공:', response.data);
-    return response.data.result;
-  } catch (error) {
-    console.error('❌ 사용자 정보 조회 실패:', error);
-    throw error;
-  }
-};
 
 /**
  * 백엔드 서버 헬스체크
@@ -139,8 +119,10 @@ export const fetchAccountProducts = async (bankCode: string): Promise<AccountPro
 
 /**
  * 사용자 계좌 목록 조회
+ * 주의: API 변경됨 - 파라미터 없음, 백엔드에서 하드코딩된 사용자 사용
  */
-export const fetchUserAccounts = async (userId: number): Promise<UserAccount[]> => {
+export const fetchUserAccounts = async (userId?: number): Promise<UserAccount[]> => {
+  // userId 파라미터는 더 이상 사용되지 않음 (API 스펙 변경)
   const response = await apiClient.get<ApiResponse<UserAccount[]>>(`/api/finance/accounts/user`);
   return response.data.result;
 };
@@ -155,35 +137,37 @@ export const fetchCardProducts = async (): Promise<CardProduct[]> => {
 
 /**
  * 수시입출금 계좌 생성
+ * 주의: 백엔드에서 userId 파라미터를 받지 않고 하드코딩(userId=1) 사용함
  */
 export const createDemandDepositAccount = async (
   userId: number, 
   accountData: CreateAccountRequest
 ): Promise<CreateAccountResponse> => {
+  // userId 파라미터는 백엔드에서 무시됨 (Controller에서 받지 않음)
   const response = await apiClient.post<ApiResponse<CreateAccountResponse>>(
-    `/api/finance/accounts/demand-deposit?userId=${userId}`,
+    `/api/finance/accounts/demand-deposit`,
     accountData
   );
   return response.data.result;
 };
 
 /**
- * 사용자 연결된 카드 목록 조회 (백엔드 API 없음)
+ * 사용자 연결된 카드 목록 조회
  */
-export const fetchUserCards = async (userId: number): Promise<UserCard[]> => {
-  // 백엔드에 해당 API가 없으므로 빈 배열 반환
-  console.log('사용자 카드 목록 조회 API 미구현 - 빈 배열 반환');
-  return [];
+export const fetchUserCards = async (): Promise<UserCard[]> => {
+  const response = await apiClient.get<ApiResponse<UserCard[]>>('/api/finance/user-cards');
+  return response.data.result;
 };
 
 /**
  * 카드 연결 (사용자에게 카드 등록)
  */
 export const connectUserCard = async (
-  cardData: ConnectCardRequest
+  cardData: ConnectCardRequest,
+  userId: number = 1
 ): Promise<UserCard> => {
   const response = await apiClient.post<ApiResponse<UserCard>>(
-    `/api/finance/user-cards`,
+    `/api/finance/user-cards?userId=${userId}`,
     cardData
   );
   return response.data.result;

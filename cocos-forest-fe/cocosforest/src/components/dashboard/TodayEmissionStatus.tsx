@@ -8,7 +8,8 @@ export const TodayEmissionStatus: React.FC = () => {
 
   const todayEmission = todayData?.totals?.carbonTotalKg ?? 13.01;
   const averageEmission = 26.02;
-  const emissionDifference = averageEmission - todayEmission;
+  // 26.02에서 오늘 배출량을 뺀 값 계산
+  const calculatedValue = 26.02 - todayEmission;
 
   // 배출량에 따른 색상 결정
   const getEmissionColor = () => {
@@ -47,22 +48,10 @@ export const TodayEmissionStatus: React.FC = () => {
       <View style={styles.emissionStatus}>
         <View style={styles.emissionValueContainer}>
           <Text style={[styles.emissionValue, { color: getEmissionColor() }]}>{todayEmission}kg</Text>
-          <Text style={styles.emissionValueLabel}>오늘 배출량</Text>
         </View>
         <View style={styles.emissionAverageContainer}>
-          <Text style={styles.emissionAverage}>{averageEmission}kg</Text>
-          <Text style={styles.emissionAverageLabel}>평균 배출량</Text>
+          <Text style={styles.emissionAverage}>{averageEmission-todayEmission}kg</Text>
         </View>
-      </View>
-
-      {/* 비교 메시지 */}
-      <View style={styles.comparisonMessage}>
-        <View style={styles.comparisonIcon}>
-          <Text style={styles.comparisonIconText}>🎉</Text>
-        </View>
-        <Text style={styles.comparisonText}>
-          평균 배출량보다 <Text style={styles.comparisonHighlight}>{emissionDifference}kg</Text> 적게 배출했어요!
-        </Text>
       </View>
     </Card>
   );
@@ -81,7 +70,7 @@ const styles = StyleSheet.create({
   emissionStatus: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   emissionValueContainer: {
     alignItems: 'center',

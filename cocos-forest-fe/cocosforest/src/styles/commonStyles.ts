@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 // 공통 색상 팔레트
 export const colors = {
   // 기본 색상
-  background: '#fefdf8',
+  background: '#ededed',
   white: '#ffffff',
 
   // 텍스트 색상
@@ -42,6 +42,13 @@ export const commonStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+
+  // 상태바를 고려한 SafeAreaView 컨테이너
+  safeContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: 8, // 상태바와 헤더 사이 추가 여백
   },
 
   scrollView: {

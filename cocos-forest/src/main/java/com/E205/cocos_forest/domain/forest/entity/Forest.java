@@ -53,7 +53,10 @@ public class Forest {
 
     // 양방향 관계 설정 (숲에 속한 나무들)
     @OneToMany(mappedBy = "forest", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tree> trees = new ArrayList<>();
+    private List<Plants> plants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "forest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Decoration> decorations = new ArrayList<>();
 
     @Builder
     public Forest(Long userId, Integer size, Integer pondX, Integer pondY) {
@@ -123,6 +126,55 @@ public class Forest {
         // 숲 범위 내에 있고, 연못이 아니며, 이미 나무가 없어야 함
         return x >= 0 && x < size && y >= 0 && y < size 
                && !isPondArea(x, y)
-               && trees.stream().noneMatch(tree -> tree.getX() == x && tree.getY() == y);
+               && plants.stream().noneMatch(p -> p.getX() == x && p.getY() == y)
+               && decorations.stream().noneMatch(d -> d.getX().equals(x) && d.getY().equals(y));
+    }
+
+    /**
+     * 숲 크기 확장 및 나무들 위치 조정
+     * @param offsetX X 좌표 이동량
+     * @param offsetY Y 좌표 이동량
+     */
+    public void expandSizeAndShiftTrees(int offsetX, int offsetY) {
+        this.size += 2; // 8 -> 10 -> 12 ...
+
+        // 기존 식물들의 위치를 메모리상에서 조정
+        for (Plants plant : this.plants) {
+            plant.updatePosition(plant.getX() + offsetX, plant.getY() + offsetY);
+        }
+
+        // 기존 장식들의 위치를 메모리상에서 조정
+        for (Decoration deco : this.decorations) {
+            deco.moveTo(deco.getX() + offsetX, deco.getY() + offsetY);
+        }
+
+        // 연못을 새로운 중앙으로 이동
+        this.pondX = calculateDefaultPondX(this.size);
+        this.pondY = calculateDefaultPondY(this.size);
+    }
+
+    /**
+     * 나무 위치 일괄 조정을 위한 좌표 계산
+     */
+    public PositionShift calculatePositionShift(int offsetX, int offsetY) {
+        return new PositionShift(this.id, offsetX, offsetY);
+    }
+
+    // 위치 조정 정보를 담는 내부 클래스
+    public static class PositionShift {
+        private final Long forestId;
+        private final int offsetX;
+        private final int offsetY;
+
+        public PositionShift(Long forestId, int offsetX, int offsetY) {
+            this.forestId = forestId;
+            this.offsetX = offsetX;
+            this.offsetY = offsetY;
+        }
+
+        // getters
+        public Long getForestId() { return forestId; }
+        public int getOffsetX() { return offsetX; }
+        public int getOffsetY() { return offsetY; }
     }
 }

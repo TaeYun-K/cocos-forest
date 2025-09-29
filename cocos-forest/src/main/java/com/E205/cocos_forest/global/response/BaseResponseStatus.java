@@ -117,6 +117,7 @@ public enum BaseResponseStatus {
   // ===================================================================================
   // ===== 거래 및 분석 관련 에러 코드 (6000번대) =====
   // ===================================================================================
+  USER_CARD_NOT_LINKED(HttpStatus.BAD_REQUEST, false, 5204, "카드를 연결해주세요"),
   TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, false, 6001, "해당 날짜의 거래 내역을 찾을 수 없습니다.");
 
   private final HttpStatus httpStatus;

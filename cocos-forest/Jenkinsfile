@@ -1,90 +1,173 @@
 pipeline {
   agent any
-
-  stages {
-    // 브랜치별 환경 변수 세팅
-    stage('Prepare Environment') {
-      steps {
-        script {
-          // gitlabTargetBranch가 비어있을 때 dev로 가정
-          def target = env.gitlabTargetBranch ?: 'dev'
-          if (target == 'dev') {
-            echo "### Target branch is 'dev'. Setting DEV environment. ###"
-            env.CREDENTIALS_ID = 'DEV_PROPERTIES'
-            env.IMAGE_NAME     = 'cocos-forest-app-dev'
-            env.CONTAINER_NAME = 'cocos-forest-app-dev'
-          } else {
-            echo "### Target branch is 'master'. Setting PROD environment. ###"
-            env.CREDENTIALS_ID = 'PROD_PROPERTIES'
-            env.IMAGE_NAME     = 'cocos-forest-app'
-            env.CONTAINER_NAME = 'cocos-forest-app'
-          }
-        }
-      }
-    }
-
-    stage('Build') {
-      steps {
-        dir('cocos-forest') {
-          sh 'chmod +x ./gradlew'
-          sh './gradlew clean build -x test'
-        }
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        dir('cocos-forest') {
-          // 쉘이 환경변수를 확장하도록 단따옴표 + $IMAGE_NAME 사용
-          sh 'docker build -t "$IMAGE_NAME" .'
-        }
-      }
-    }
-
-    stage('Deploy') {
-      steps {
-        // credentialsId는 env.CREDENTIALS_ID를 직접 전달 (Groovy 보간 아님)
-        withCredentials([
-          file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
-          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE'),
-          file(credentialsId: 'firebase-service-account-json', variable: 'FIREBASE_CREDENTIALS_FILE')
-        ]) {
-          script {
-            sh 'docker stop "$CONTAINER_NAME" || true'
-            sh 'docker rm "$CONTAINER_NAME" || true'
-
-            def GCP_JSON_IN_CONTAINER = "/run/secrets/gcp.json"
-            def FIREBASE_JSON_IN_CONTAINER = "/run/secrets/firebase.json"
-
-            // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
-            sh '''
-              docker create \
-                --name "$CONTAINER_NAME" \
-                --network=cocos-network \
-                --env-file "$PROPERTIES_FILE_PATH" \
-                -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
-                -e FCM_SERVICE_ACCOUNT_FILE_LOCATION="file:/run/secrets/firebase.json" \
-                "$IMAGE_NAME"
-
-              # 3) 컨테이너 내부에 디렉터리 생성
-              docker start "$CONTAINER_NAME"
-              docker exec "$CONTAINER_NAME" sh -c 'mkdir -p /run/secrets && chmod 700 /run/secrets'
-              docker stop "$CONTAINER_NAME"
-
-              # 4) gcp.json 복사
-              docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
-              docker cp "$FIREBASE_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/firebase.json
-
-              # 5) 권한 강화
-              docker start "$CONTAINER_NAME"
-              docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
-              docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/firebase.json'
-            '''
-          }
-        }
-      }
-    }
+  // 파이프라인 전체에서 사용할 환경 변수 정의
+  environment {
+      // React Native 앱의 Git 저장소 내 상대 경로
+      RN_APP_PATH = 'cocos-forest-fe/cocosforest'
+      // APK를 업로드할 GCS 버킷 이름 (만들어둔 버킷 이름으로 변경 필수)
+      GCS_BUCKET_NAME = 'cocos-forest-daily-deals'
   }
+  stages {
+      // 1. 브랜치에 따라 환경 변수(Dev/Prod) 설정
+      stage('Prepare Environment') {
+          steps {
+              script {
+                  def target = env.gitlabTargetBranch ?: 'dev'
+                  if (target == 'dev') {
+                      echo "### Target branch is 'dev'. Setting DEV environment. ###"
+                      env.CREDENTIALS_ID = 'DEV_PROPERTIES'
+                      env.IMAGE_NAME     = 'cocos-forest-app-dev'
+                      env.CONTAINER_NAME = 'cocos-forest-app-dev'
+                  } else {
+                      echo "### Target branch is 'master'. Setting PROD environment. ###"
+                      env.CREDENTIALS_ID = 'PROD_PROPERTIES'
+                      env.IMAGE_NAME     = 'cocos-forest-app'
+                      env.CONTAINER_NAME = 'cocos-forest-app'
+                  }
+              }
+          }
+      }
+
+      // 2. 백엔드와 모바일 빌드를 병렬로 실행
+      stage('Build and Deploy Services') {
+          parallel {
+              // --- 2-1. 백엔드 서비스 빌드 및 배포 ---
+              stage('Backend Service') {
+                  when { changeset "cocos-forest/**" } // 백엔드 코드 변경 시에만 실행
+                  stages {
+                      stage('Build Backend') {
+                          steps {
+                              dir('cocos-forest') {
+                                  sh 'chmod +x ./gradlew'
+                                  sh './gradlew clean build -x test'
+                              }
+                          }
+                      }
+                      stage('Build Docker Image') {
+                          steps {
+                              dir('cocos-forest') {
+                                  sh 'docker build -t "$IMAGE_NAME" .'
+                              }
+                          }
+                      }
+                      stage('Deploy Backend') {
+                          steps {
+                              withCredentials([
+                                  file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
+                                  file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE'),
+                                  file(credentialsId: 'firebase-service-account-json', variable: 'FIREBASE_CREDENTIALS_FILE')
+                              ]) {
+                                  sh 'docker stop "$CONTAINER_NAME" || true && docker rm "$CONTAINER_NAME" || true'
+                                  sh '''
+                                    docker create \
+                                      --name "$CONTAINER_NAME" \
+                                      --network=cocos-network \
+                                      --env-file "$PROPERTIES_FILE_PATH" \
+                                      -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
+                                      -e FCM_SERVICE_ACCOUNT_FILE_LOCATION="file:/run/secrets/firebase.json" \
+                                      "$IMAGE_NAME"
+
+                                    docker start "$CONTAINER_NAME"
+                                    docker exec "$CONTAINER_NAME" sh -c 'mkdir -p /run/secrets && chmod 700 /run/secrets'
+                                    docker stop "$CONTAINER_NAME"
+                                    docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
+                                    docker cp "$FIREBASE_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/firebase.json
+                                    docker start "$CONTAINER_NAME"
+                                    docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
+                                    docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/firebase.json'
+                                  '''
+                              }
+                          }
+                      }
+                  }
+              } // End of Backend Service Stage
+
+              stage('Mobile App') {
+                  when { changeset "${RN_APP_PATH}/**" }
+                  agent none // 하위 스테이지에서 각자 agent를 지정하므로 여기서는 none
+                  stages {
+                      // --- 빌드 스테이지 ---
+                      stage('Build APK') {
+                          agent { // 안드로이드 빌드 전용 에이전트
+                              docker {
+                                  image 'reactnativecommunity/react-native-android'
+                                  args '-v "$HOME/.gradle":/root/.gradle'
+                              }
+                          }
+                          stages {
+                              stage('Install Dependencies') {
+                                  steps {
+                                      dir(RN_APP_PATH) {
+                                          sh 'mkdir -p .npm-cache'
+                                          sh 'npm ci --cache .npm-cache'
+                                      }
+                                  }
+                              }
+                              stage('Assemble Release APK') {
+                                  steps {
+                                      withCredentials([
+                                          file(credentialsId: 'ANDROID_KEYSTORE_FILE', variable: 'KEYSTORE_FILE'),
+                                          string(credentialsId: 'KEYSTORE_PASSWORD', variable: 'STORE_PASS'),
+                                          string(credentialsId: 'KEY_ALIAS', variable: 'ALIAS_NAME'),
+                                          string(credentialsId: 'KEY_PASSWORD', variable: 'ALIAS_PASS')
+                                      ]) {
+                                          dir("${RN_APP_PATH}/android") {
+                                              withEnv([
+                                                  'CCACHE_DIR=' + pwd() + '/.ccache',
+                                                  'EXPO_HOME=' + pwd() + '/.expo',
+                                                  'EXPO_NO_TELEMETRY=1'
+                                              ]) {
+                                                  sh 'chmod +x ./gradlew'
+                                                  sh 'echo "MYAPP_RELEASE_STORE_FILE=${KEYSTORE_FILE}" >> gradle.properties'
+                                                  sh 'echo "MYAPP_RELEASE_STORE_PASSWORD=${STORE_PASS}" >> gradle.properties'
+                                                  sh 'echo "MYAPP_RELEASE_KEY_ALIAS=${ALIAS_NAME}" >> gradle.properties'
+                                                  sh 'echo "MYAPP_RELEASE_KEY_PASSWORD=${ALIAS_PASS}" >> gradle.properties'
+                                                  sh './gradlew assembleRelease'
+                                              }
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          post {
+                              success {
+                                  // 빌드 성공 시 APK 파일을 임시 저장
+                                  stash name: 'apk', includes: "${RN_APP_PATH}/android/app/build/outputs/apk/release/app-release.apk"
+                              }
+                          }
+                      } // End of Build APK stage
+
+                      // --- 업로드 스테이지 ---
+                      stage('Upload APK to GCS') {
+                          agent { // Google Cloud SDK 전용 에이전트
+                              docker { image 'google/cloud-sdk:latest' }
+                          }
+                          steps {
+                              // 임시 저장된 APK 파일을 가져오기
+                              unstash 'apk'
+                              withCredentials([file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE')]) {
+                                  sh "gcloud auth activate-service-account --key-file=${GCP_CREDENTIALS_FILE}"
+                                  sh "gsutil cp app-release.apk gs://${GCS_BUCKET_NAME}/app-release.apk"
+                              }
+                          }
+                          post {
+                              success {
+                                  // 업로드 성공 시 Mattermost 알림
+                                  withCredentials([string(credentialsId: 'mattermost-webhook', variable: 'MM_URL')]) {
+                                      sh '''
+                                        APK_URL="https://storage.googleapis.com/${GCS_BUCKET_NAME}/app-release.apk"
+                                        JSON=$(printf '{"text":"📱 **새로운 안드로이드 앱이 빌드되었습니다!**\\n🔗 [테스트 버전 APK 다운로드](%s)"}' "$APK_URL")
+                                        curl -sS -X POST -H 'Content-Type: application/json' -d "$JSON" "$MM_URL"
+                                      '''
+                                  }
+                              }
+                          }
+                      } // End of Upload APK stage
+                  }
+              } // End of Mobile App parent stage
+          } // End of Parallel
+      } // End of Build and Deploy Stage
+  } // End of Stages
 
   post {
     success {

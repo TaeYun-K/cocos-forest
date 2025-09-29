@@ -119,7 +119,7 @@ export const DayDetailCard: React.FC = () => {
         {currentDayData && (
           <View style={styles.transactionsSection}>
             <Text style={styles.transactionsTitle}>거래 내역</Text>
-            <ScrollView style={styles.transactionsScrollView} showsVerticalScrollIndicator={false}>
+            <View style={styles.transactionsContainer}>
               {currentDayData.transactions.map((transaction, index) => (
                 <View key={index} style={styles.transactionItem}>
                   <View style={styles.transactionHeader}>
@@ -146,7 +146,7 @@ export const DayDetailCard: React.FC = () => {
                   </View>
                 </View>
               ))}
-            </ScrollView>
+            </View>
           </View>
         )}
       </View>
@@ -271,8 +271,8 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     marginBottom: 16,
   },
-  transactionsScrollView: {
-    maxHeight: 400,
+  transactionsContainer: {
+    // ScrollView를 제거하고 모든 결제내역이 자연스럽게 표시되도록 함
   },
   transactionItem: {
     backgroundColor: '#f9fafb',
