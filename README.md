@@ -34,15 +34,6 @@
 
 ## 🧰 기술 스택
 
-## 🧰 기술 스택
-
-<div align="center">
-<!-- Core -->
-<img src="https://img.shields.io/badge/java-EA2D2E?style=for-the-badge&logo=java&logoColor=white">
-<img src="https://img.shields.io/badge/spring%20boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white">
-<img src="https://img.shields.io/badge/jpa-59666C?style=for-the-badge&logo=hibernate&logoColor=white">
-<img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
-<br/>
 <div align="center">
 <!-- Core -->
 <img src="https://img.shields.io/badge/java-EA2D2E?style=for-the-badge&logo=java&logoColor=white">
@@ -51,12 +42,6 @@
 <img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
 <br/>
 
-<!-- Frontend -->
-<img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">
-<img src="https://img.shields.io/badge/react%20native-61DAFB?style=for-the-badge&logo=react&logoColor=black">
-<img src="https://img.shields.io/badge/figma-F24E1E?style=for-the-badge&logo=figma&logoColor=white">
-<img src="https://img.shields.io/badge/svg-FFB13B?style=for-the-badge&logoColor=white">
-<br/>
 <!-- Frontend -->
 <img src="https://img.shields.io/badge/android%20sdk-3DDC84?style=for-the-badge&logo=android&logoColor=white">
 <img src="https://img.shields.io/badge/react%20native-61DAFB?style=for-the-badge&logo=react&logoColor=black">
@@ -72,31 +57,8 @@
 <img src="https://img.shields.io/badge/vertex%20ai-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white">
 <br/>
 </div>
-<!-- DevOps / Cloud -->
-<img src="https://img.shields.io/badge/docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
-<img src="https://img.shields.io/badge/jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">
-<img src="https://img.shields.io/badge/aws-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
-<img src="https://img.shields.io/badge/redis-DC382D?style=for-the-badge&logo=redis&logoColor=white">
-<img src="https://img.shields.io/badge/vertex%20ai-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white">
-<br/>
-</div>
 
 ## 🛠 기술 스펙
-
-## 🛠 기술 스펙
-
-### 백엔드
-
-- **언어**: Java 17
-- **프레임워크**: Spring Boot 3.x
-- **데이터베이스**: MySQL 8.0.x (InnoDB, utf8mb4)
-- **ORM**: JPA (Spring Data JPA)
-- **캐싱**: Redis 7.x (세션 관리 및 챌린지 캐싱)
-- **실시간 통신**: FCM (Firebase Cloud Messaging) 알림 서비스
-- **서버**: Nginx (Reverse Proxy, SSL 인증서 적용)
-- **배포/CI/CD**: Docker, Jenkins, GitLab
-- **클라우드**: AWS EC2, Google Cloud Platform (Vertex AI 일부 연동)
-- **외부 API**: SSAFY 금융망 API (계좌/카드 내역, 카테고리), Clova OCR (영수증 인증)
 
 ### 백엔드
 
@@ -122,22 +84,7 @@
 - **API 연동**: Retrofit (Android), Axios (React Native)
 - **Wearable**: WearOS 연동 (걸음수 기반 챌린지)
 
-### 프론트엔드
-
-- **언어**: React Native (Android), JavaScript
-- **프레임워크**: Android SDK (Native)
-- **상태 관리**: React Hooks, Context API
-- **UI/스타일링**: XML Layout, Figma 디자인 반영
-- **차트/통계**: Custom Canvas 기반 달력 & 탄소 절감 리포트
-- **게임화 요소**: 2D 아이소메트릭 큐브 맵, 코코 캐릭터 랜더링
-- **API 연동**: Retrofit (Android), Axios (React Native)
-- **Wearable**: WearOS 연동 (걸음수 기반 챌린지)
-
 ---
-
----
-
-## ✨ 주요 기능
 
 ## ✨ 주요 기능
 
