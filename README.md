@@ -114,6 +114,8 @@
 - 걸음 수 / 출석 / 소비 절약 등 다양한 일일 챌린지
 - 성공 시 포인트 적립 → 숲 꾸미기/물주기에 사용
 - 실패 시 숲 HP 감소로 사용자 행동에 직접적인 피드백 반영
+  <img src="images/challenge.gif" width="300"/>
+  <img src="images/tumbler.gif" width="300"/>
 
 ---
 
