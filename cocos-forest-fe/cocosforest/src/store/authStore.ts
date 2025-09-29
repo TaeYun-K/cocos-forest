@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ENV } from '../config/env';
+import { create } from "zustand";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ENV } from "../config/env";
 import {
   User,
   LoginForm,
@@ -10,10 +10,9 @@ import {
   SignupStep3Form,
   AuthResponse,
   TokenInfo,
-  SignupResponseDto
-} from '../types/auth';
-import { authService } from '../services/authService';
-// Mock API import 제거
+  SignupResponseDto,
+} from "../types/auth";
+import { authService } from "../services/authService";
 
 interface AuthState {
   // 기본 인증 상태
@@ -22,27 +21,27 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isInitializing: boolean;
-  
+
   // 회원가입 임시 데이터
   signupData: {
     step1?: SignupStep1Form;
     step2?: SignupStep2Form;
     step3?: SignupStep3Form;
   };
-  
+
   // 기본 액션
   login: (loginData: LoginForm) => Promise<void>;
   signup: (signupData: SignupForm) => Promise<void>;
   logout: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   initialize: () => Promise<void>;
-  
+
   // 회원가입 단계별 액션
   saveSignupStep1: (data: SignupStep1Form) => void;
   saveSignupStep2: (data: SignupStep2Form) => void;
   saveSignupStep3: (data: SignupStep3Form) => void;
   clearSignupData: () => void;
-  
+
   // 유틸리티 액션
   checkEmailAvailability: (email: string) => Promise<boolean>;
   sendVerificationCode: (email: string) => Promise<void>;
@@ -73,7 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await AsyncStorage.setItem(AUTH_TOKEN_KEY, tokenInfo.accessToken);
       await AsyncStorage.setItem(ENV.REFRESH_TOKEN_KEY, tokenInfo.refreshToken);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       set({
         isAuthenticated: true,
@@ -82,11 +81,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
       });
 
-      console.log('로그인 성공:', tokenInfo);
-
+      console.log("로그인 성공:", tokenInfo);
     } catch (error) {
       set({ isLoading: false });
-      console.error('로그인 실패:', error);
+      console.error("로그인 실패:", error);
       throw error;
     }
   },
@@ -97,7 +95,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true });
 
       // 실제 API 호출
-      const signupResponse: SignupResponseDto = await authService.signup(signupData);
+      const signupResponse: SignupResponseDto = await authService.signup(
+        signupData
+      );
 
       // 회원가입 성공 후 자동 로그인 처리
       const loginData: LoginForm = {
@@ -128,11 +128,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         signupData: {}, // 회원가입 완료 후 임시 데이터 초기화
       });
 
-      console.log('회원가입 성공:', user);
-
+      console.log("회원가입 성공:", user);
     } catch (error) {
       set({ isLoading: false });
-      console.error('회원가입 실패:', error);
+      console.error("회원가입 실패:", error);
       throw error;
     }
   },
@@ -146,7 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
           await authService.logout(refreshToken);
         } catch (apiError) {
-          console.error('백엔드 로그아웃 API 호출 실패:', apiError);
+          console.error("백엔드 로그아웃 API 호출 실패:", apiError);
           // 백엔드 호출이 실패해도 로컬 상태는 초기화
         }
       }
@@ -164,10 +163,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         signupData: {}, // 회원가입 데이터도 초기화
       });
 
-      console.log('로그아웃 완료');
-
+      console.log("로그아웃 완료");
     } catch (error) {
-      console.error('로그아웃 실패:', error);
+      console.error("로그아웃 실패:", error);
     }
   },
 
@@ -197,7 +195,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
     } catch (error) {
-      console.error('인증 정보 복원 실패:', error);
+      console.error("인증 정보 복원 실패:", error);
       // 에러 발생 시 저장된 정보 삭제
       await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
       await AsyncStorage.removeItem(AUTH_USER_KEY);
@@ -208,41 +206,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // 회원가입 Step 1 데이터 저장
   saveSignupStep1: (data: SignupStep1Form) => {
-    set(state => ({
+    set((state) => ({
       signupData: {
         ...state.signupData,
-        step1: data
-      }
+        step1: data,
+      },
     }));
-    console.log('Step 1 데이터 저장:', data);
+    console.log("Step 1 데이터 저장:", data);
   },
 
   // 회원가입 Step 2 데이터 저장
   saveSignupStep2: (data: SignupStep2Form) => {
-    set(state => ({
+    set((state) => ({
       signupData: {
         ...state.signupData,
-        step2: data
-      }
+        step2: data,
+      },
     }));
-    console.log('Step 2 데이터 저장');
+    console.log("Step 2 데이터 저장");
   },
 
   // 회원가입 Step 3 데이터 저장
   saveSignupStep3: (data: SignupStep3Form) => {
-    set(state => ({
+    set((state) => ({
       signupData: {
         ...state.signupData,
-        step3: data
-      }
+        step3: data,
+      },
     }));
-    console.log('Step 3 데이터 저장:', data);
+    console.log("Step 3 데이터 저장:", data);
   },
 
   // 회원가입 데이터 초기화
   clearSignupData: () => {
     set({ signupData: {} });
-    console.log('회원가입 데이터 초기화');
+    console.log("회원가입 데이터 초기화");
   },
 
   // 이메일 중복 확인
@@ -251,7 +249,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const isDuplicate = await authService.checkEmailDuplicate(email);
       return !isDuplicate; // 중복이 아니면 available=true
     } catch (error) {
-      console.error('이메일 중복 확인 실패:', error);
+      console.error("이메일 중복 확인 실패:", error);
       throw error;
     }
   },
@@ -260,9 +258,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   sendVerificationCode: async (email: string): Promise<void> => {
     try {
       await authService.sendVerificationCode(email);
-      console.log('인증번호 발송 완료:', email);
+      console.log("인증번호 발송 완료:", email);
     } catch (error) {
-      console.error('인증번호 발송 실패:', error);
+      console.error("인증번호 발송 실패:", error);
       throw error;
     }
   },
@@ -272,7 +270,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       return await authService.verifyCode(email, code);
     } catch (error) {
-      console.error('인증번호 확인 실패:', error);
+      console.error("인증번호 확인 실패:", error);
       throw error;
     }
   },
@@ -283,7 +281,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const isDuplicate = await authService.checkNicknameDuplicate(nickname);
       return !isDuplicate; // 중복이 아니면 available=true
     } catch (error) {
-      console.error('닉네임 중복 확인 실패:', error);
+      console.error("닉네임 중복 확인 실패:", error);
       throw error;
     }
   },

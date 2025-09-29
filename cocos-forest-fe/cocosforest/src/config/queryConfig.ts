@@ -53,6 +53,9 @@ export const QUERY_CONFIG = {
   // 에러 처리 설정
   ERROR_HANDLING: {
     retry: (failureCount: number, error: any) => {
+      // 400 에러 (계좌 연결 필요)는 재시도하지 않음
+      if (error.response?.status === 400) return false;
+
       // 네트워크 에러는 3회까지 재시도
       if (!error.response && failureCount < 3) return true;
 

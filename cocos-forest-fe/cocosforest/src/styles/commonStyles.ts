@@ -44,6 +44,13 @@ export const commonStyles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
+  // 상태바를 고려한 SafeAreaView 컨테이너
+  safeContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingTop: 8, // 상태바와 헤더 사이 추가 여백
+  },
+
   scrollView: {
     flex: 1,
   },
