@@ -115,7 +115,7 @@
 - 성공 시 포인트 적립 → 숲 꾸미기/물주기에 사용
 - 실패 시 숲 HP 감소로 사용자 행동에 직접적인 피드백 반영
   <br>
-  <img src="images/challenge.gif" width="300"/>
+  <img src="images/challenge.gif" width="300"/> &nbsp;&nbsp;&nbsp;
   <img src="images/tumbler.gif" width="300"/>
 
 ---
