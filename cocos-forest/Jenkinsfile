@@ -7,6 +7,7 @@ pipeline {
       // APK를 업로드할 GCS 버킷 이름 (만들어둔 버킷 이름으로 변경 필수)
       GCS_BUCKET_NAME = 'cocos-forest-daily-deals'
   }
+
   stages {
       // 1. 브랜치에 따라 환경 변수(Dev/Prod) 설정
       stage('Prepare Environment') {
