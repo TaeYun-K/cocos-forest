@@ -2,6 +2,10 @@
 pipeline {
   agent any
 
+  tools {
+    nodejs 'NodeJS-18' 
+  }
+
   stages {
     // 브랜치별 환경 변수 세팅
     stage('Prepare Environment') {
@@ -85,31 +89,42 @@ pipeline {
 
     stage('Build & Publish APK') {
       steps {
-        // 프론트엔드 안드로이드 프로젝트 경로로 이동
-        dir('cocos-forest-fe/cocosforest/android') {
-          script {
-            // gradlew 파일에 실행 권한 부여
-            sh 'chmod +x ./gradlew'
+        script {
+          // 1. Global Tool Configuration에 설정된 NodeJS-18 도구의 경로를 가져옵니다.
+          def nodeJS = tool name: 'NodeJS-18'
+          
+          // 2. withEnv를 사용해 이 스테이지의 환경 변수(PATH)에 Node.js 경로를 추가합니다.
+          withEnv(["PATH+NODE=${nodeJS}/bin"]) {
+            
+            // --- Node.js 환경이 설정된 블록 내부에서 모든 관련 작업 수행 ---
 
-            // 캐시 문제 방지를 위해 clean과 함께 릴리스 APK 빌드 실행
-            echo "### Starting Android Release Build... ###"
-            sh './gradlew clean assembleRelease'
+            // 3. (디버깅) Node.js가 잘 설정되었는지 확인합니다.
+            echo "--- Verifying Node.js Environment ---"
+            sh 'node -v'
+            sh 'npm -v'
+            echo "-------------------------------------"
 
-            // 빌드가 완료된 APK 파일 경로 (워크스페이스 루트 기준)
+            // 4. 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
+            dir('cocos-forest-fe/cocosforest') {
+              echo "### Installing NPM dependencies... ###"
+              sh 'npm install'
+            }
+            
+            // 5. 안드로이드 프로젝트 경로로 이동하여 빌드합니다.
+            dir('cocos-forest-fe/cocosforest/android') {
+              sh 'chmod +x ./gradlew'
+              echo "### Starting Android Release Build... ###"
+              sh './gradlew clean assembleRelease'
+            }
+
+            // 6. 빌드된 APK 파일을 게시용 디렉터리로 복사합니다.
             def apkSourcePath = "cocos-forest-fe/cocosforest/android/app/build/outputs/apk/release/app-release.apk"
-
-            // Jenkins 컨테이너 내부에 마운트된 게시용 디렉터리
             def apkPublishDir = "/apk_publish"
-
-            // 빌드 번호를 포함한 파일 이름과 최신 버전 파일 이름 정의
             def versionedApkName = "cocos-forest-v${env.BUILD_NUMBER}.apk"
             def latestApkName = "latest.apk"
 
-            // 빌드된 APK를 게시용 디렉터리로 복사
             echo "### Publishing APK: ${versionedApkName} ###"
             sh "cp ${apkSourcePath} ${apkPublishDir}/${versionedApkName}"
-
-            // 항상 최신 버전을 가리키는 latest.apk 파일 생성/업데이트
             echo "### Updating 'latest.apk' ###"
             sh "cp ${apkPublishDir}/${versionedApkName} ${apkPublishDir}/${latestApkName}"
           }
