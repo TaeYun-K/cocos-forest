@@ -86,10 +86,10 @@ pipeline {
                             TS=$(date +%s)
 
                             COLOR="#2ecc71"
-                            TEXT="### :rocket: Backend Deployed! (Dev)"
+                            TEXT="### :pepe_jam: Dev Updated! :pepe_jam:"
                             if [ "$TARGET" = "master" ]; then
                                 COLOR="#228be6"
-                                TEXT="### :crown: Backend Deployed! (Prod)"
+                                TEXT="### :crown: Backend Deployed! :crown:"
                             fi
 
                             JSON=$(printf '{
