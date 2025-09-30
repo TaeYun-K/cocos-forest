@@ -2,6 +2,10 @@
 pipeline {
   agent any
 
+  tools {
+    nodejs 'NodeJS-18' 
+  }
+
   stages {
     // 브랜치별 환경 변수 세팅
     stage('Prepare Environment') {
@@ -78,6 +82,57 @@ pipeline {
               docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
               docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/firebase.json'
             '''
+          }
+        }
+      }
+    }
+
+    stage('Build & Publish APK') {
+      steps {
+        script {
+          // 1. Global Tool Configuration에 설정된 도구들의 경로를 가져옵니다.
+          // Jenkins Tool 기능 대신, 우리가 직접 공유한 경로를 ANDROID_HOME으로 지정
+          def ANDROID_SDK_ROOT = "/opt/android-sdk" 
+          def nodeJS = tool name: 'NodeJS-20'
+          
+          withEnv([
+            "ANDROID_HOME=${ANDROID_SDK_ROOT}", // 수동으로 설치한 SDK 경로를 사용
+            "PATH+NODE=${nodeJS}/bin"
+          ]) {
+            // (디버깅) 환경 변수가 잘 설정되었는지 확인합니다.
+            echo "--- Verifying Build Environments ---"
+            sh "echo 'ANDROID_HOME is set to:' $ANDROID_HOME"
+            sh 'node -v'
+            sh 'npm -v'
+            sh 'echo $ANDROID_HOME'
+            sh 'ls -l $ANDROID_HOME/platforms'
+            echo "----------------------------------"
+
+            // 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
+            dir('cocos-forest-fe/cocosforest') {
+              echo "### Installing NPM dependencies... ###"
+              sh 'npm install'
+            }
+            
+            // 안드로이드 프로젝트 경로로 이동하여 빌드합니다.
+            dir('cocos-forest-fe/cocosforest/android') {
+              sh 'chmod +x ./gradlew'
+              echo "### Starting Android Release Build... ###"
+              sh './gradlew clean assembleRelease'
+            }
+
+            // 빌드된 APK 파일을 게시용 디렉터리로 복사합니다.
+            def apkSourcePath = "cocos-forest-fe/cocosforest/android/app/build/outputs/apk/release/app-release.apk"
+            def apkPublishDir = "/apk_publish"
+            def versionedApkName = "cocos-forest-v${env.BUILD_NUMBER}.apk"
+            def latestApkName = "latest.apk"
+
+            echo "### Publishing APK: ${versionedApkName} ###"
+            sh "cp ${apkSourcePath} ${apkPublishDir}/${versionedApkName}"
+            echo "### Updating 'latest.apk' ###"
+            sh "cp ${apkPublishDir}/${versionedApkName} ${apkPublishDir}/${latestApkName}"
+
+            // EC2 ~/apk 권한 test
           }
         }
       }
