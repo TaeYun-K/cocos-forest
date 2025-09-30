@@ -90,19 +90,25 @@ pipeline {
     stage('Build & Publish APK') {
       steps {
         script {
-          // 1. Global Tool Configuration에 설정된 NodeJS-18 도구의 경로를 가져옵니다.
-          def nodeJS = tool name: 'NodeJS-18'
+          // 1. Global Tool Configuration에 설정된 도구들의 경로를 가져옵니다.
+          def androidSDK = tool name: 'Android-SDK' // 방금 추가한 Android SDK
+          def nodeJS = tool name: 'NodeJS-18'     // 기존 Node.js
           
-          // 2. withEnv를 사용해 이 스테이지의 환경 변수(PATH)에 Node.js 경로를 추가합니다.
-          withEnv(["PATH+NODE=${nodeJS}/bin"]) {
+          // 2. withEnv를 사용해 두 환경 변수를 모두 설정합니다.
+          withEnv([
+            "ANDROID_HOME=${androidSDK}", // Android SDK 경로 설정
+            "PATH+NODE=${nodeJS}/bin"     // Node.js 경로 추가
+          ]) {
             
-            // --- Node.js 환경이 설정된 블록 내부에서 모든 관련 작업 수행 ---
+            // --- 환경이 모두 설정된 블록 내부에서 모든 관련 작업 수행 ---
 
-            // 3. (디버깅) Node.js가 잘 설정되었는지 확인합니다.
-            echo "--- Verifying Node.js Environment ---"
+            // 3. (디버깅) 환경 변수가 잘 설정되었는지 확인합니다.
+            echo "--- Verifying Build Environments ---"
             sh 'node -v'
             sh 'npm -v'
-            echo "-------------------------------------"
+            sh 'echo $ANDROID_HOME'
+            sh 'ls -l $ANDROID_HOME/platforms' // 설치된 플랫폼 목록 확인
+            echo "----------------------------------"
 
             // 4. 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
             dir('cocos-forest-fe/cocosforest') {
@@ -114,6 +120,7 @@ pipeline {
             dir('cocos-forest-fe/cocosforest/android') {
               sh 'chmod +x ./gradlew'
               echo "### Starting Android Release Build... ###"
+              // ANDROID_HOME이 설정되었으므로 local.properties 파일이 필요 없습니다.
               sh './gradlew clean assembleRelease'
             }
 
