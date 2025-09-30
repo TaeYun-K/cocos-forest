@@ -99,7 +99,6 @@ pipeline {
             "ANDROID_HOME=${ANDROID_SDK_ROOT}", // 수동으로 설치한 SDK 경로를 사용
             "PATH+NODE=${nodeJS}/bin"
           ]) {
-
             // (디버깅) 환경 변수가 잘 설정되었는지 확인합니다.
             echo "--- Verifying Build Environments ---"
             sh "echo 'ANDROID_HOME is set to:' $ANDROID_HOME"
