@@ -93,7 +93,7 @@ pipeline {
           // 1. Global Tool Configuration에 설정된 도구들의 경로를 가져옵니다.
           // Jenkins Tool 기능 대신, 우리가 직접 공유한 경로를 ANDROID_HOME으로 지정
           def ANDROID_SDK_ROOT = "/opt/android-sdk" 
-          def nodeJS = tool name: 'NodeJS-18'
+          def nodeJS = tool name: 'NodeJS-20'
           
           withEnv([
             "ANDROID_HOME=${ANDROID_SDK_ROOT}", // 수동으로 설치한 SDK 경로를 사용
