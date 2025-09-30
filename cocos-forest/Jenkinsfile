@@ -2,141 +2,130 @@
 pipeline {
   agent any
 
-  tools {
-    nodejs 'NodeJS-18' 
-  }
-
   stages {
-    // 브랜치별 환경 변수 세팅
-    stage('Prepare Environment') {
-      steps {
-        script {
-          // gitlabTargetBranch가 비어있을 때 dev로 가정
-          def target = env.gitlabTargetBranch ?: 'dev'
-          if (target == 'dev') {
-            echo "### Target branch is 'dev'. Setting DEV environment. ###"
-            env.CREDENTIALS_ID = 'DEV_PROPERTIES'
-            env.IMAGE_NAME     = 'cocos-forest-app-dev'
-            env.CONTAINER_NAME = 'cocos-forest-app-dev'
-          } else {
-            echo "### Target branch is 'master'. Setting PROD environment. ###"
-            env.CREDENTIALS_ID = 'PROD_PROPERTIES'
-            env.IMAGE_NAME     = 'cocos-forest-app'
-            env.CONTAINER_NAME = 'cocos-forest-app'
+      // =================================================================
+      // 1. 환경 준비 (항상 실행)
+      // =================================================================
+      stage('Prepare Environment') {
+          steps {
+              script {
+                  def target = env.gitlabTargetBranch ?: 'dev'
+                  if (target == 'dev') {
+                      echo "### Target branch is 'dev'. Setting DEV environment. ###"
+                      env.CREDENTIALS_ID = 'DEV_PROPERTIES'
+                      env.IMAGE_NAME     = 'cocos-forest-app-dev'
+                      env.CONTAINER_NAME = 'cocos-forest-app-dev'
+                  } else {
+                      echo "### Target branch is 'master'. Setting PROD environment. ###"
+                      env.CREDENTIALS_ID = 'PROD_PROPERTIES'
+                      env.IMAGE_NAME     = 'cocos-forest-app'
+                      env.CONTAINER_NAME = 'cocos-forest-app'
+                  }
+              }
           }
-        }
       }
-    }
 
-    stage('Build') {
-      steps {
-        dir('cocos-forest') {
-          sh 'chmod +x ./gradlew'
-          sh './gradlew clean build -x test'
-        }
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        dir('cocos-forest') {
-          // 쉘이 환경변수를 확장하도록 단따옴표 + $IMAGE_NAME 사용
-          sh 'docker build -t "$IMAGE_NAME" .'
-        }
-      }
-    }
-
-    stage('Deploy') {
-      steps {
-        // credentialsId는 env.CREDENTIALS_ID를 직접 전달 (Groovy 보간 아님)
-        withCredentials([
-          file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
-          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE'),
-          file(credentialsId: 'firebase-service-account-json', variable: 'FIREBASE_CREDENTIALS_FILE')
-        ]) {
-          script {
-            sh 'docker stop "$CONTAINER_NAME" || true'
-            sh 'docker rm "$CONTAINER_NAME" || true'
-
-            def GCP_JSON_IN_CONTAINER = "/run/secrets/gcp.json"
-            def FIREBASE_JSON_IN_CONTAINER = "/run/secrets/firebase.json"
-
-            // 비밀 노출 경고 방지: 쉘이 확장하게 하고 Groovy 보간 금지
-            sh '''
-              docker create \
-                --name "$CONTAINER_NAME" \
-                --network=cocos-network \
-                --env-file "$PROPERTIES_FILE_PATH" \
-                -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
-                -e FCM_SERVICE_ACCOUNT_FILE_LOCATION="file:/run/secrets/firebase.json" \
-                "$IMAGE_NAME"
-
-              docker start "$CONTAINER_NAME"
-              docker exec "$CONTAINER_NAME" sh -c 'mkdir -p /run/secrets && chmod 700 /run/secrets'
-              docker stop "$CONTAINER_NAME"
-
-              docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
-              docker cp "$FIREBASE_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/firebase.json
-
-              docker start "$CONTAINER_NAME"
-              docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
-              docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/firebase.json'
-            '''
+      // =================================================================
+      // 2. 백엔드 CI/CD (cocos-forest 폴더에 변경이 있을 때만 실행)
+      // =================================================================
+      stage('Backend CI/CD') {
+          when {
+              changeset "cocos-forest/**"
           }
-        }
-      }
-    }
+          stages {
+              stage('Build Backend') {
+                  steps {
+                      dir('cocos-forest') {
+                          sh 'chmod +x ./gradlew'
+                          sh './gradlew clean build -x test'
+                      }
+                  }
+              }
+              stage('Build Docker Image') {
+                  steps {
+                      dir('cocos-forest') {
+                          sh 'docker build -t "$IMAGE_NAME" .'
+                      }
+                  }
+              }
+              stage('Deploy Backend') {
+                  steps {
+                      withCredentials([
+                          file(credentialsId: env.CREDENTIALS_ID, variable: 'PROPERTIES_FILE_PATH'),
+                          file(credentialsId: 'gcp-credentials-json', variable: 'GCP_CREDENTIALS_FILE'),
+                          file(credentialsId: 'firebase-service-account-json', variable: 'FIREBASE_CREDENTIALS_FILE')
+                      ]) {
+                          script {
+                              sh 'docker stop "$CONTAINER_NAME" || true'
+                              sh 'docker rm "$CONTAINER_NAME" || true'
+                              sh '''
+                                docker create \
+                                  --name "$CONTAINER_NAME" \
+                                  --network=cocos-network \
+                                  --env-file "$PROPERTIES_FILE_PATH" \
+                                  -e GCP_CREDENTIALS_LOCATION="/run/secrets/gcp.json" \
+                                  -e FCM_SERVICE_ACCOUNT_FILE_LOCATION="file:/run/secrets/firebase.json" \
+                                  "$IMAGE_NAME"
 
-    stage('Build & Publish APK') {
-      steps {
-        script {
-          // 1. Global Tool Configuration에 설정된 도구들의 경로를 가져옵니다.
-          // Jenkins Tool 기능 대신, 우리가 직접 공유한 경로를 ANDROID_HOME으로 지정
-          def ANDROID_SDK_ROOT = "/opt/android-sdk" 
-          def nodeJS = tool name: 'NodeJS-20'
-          
-          withEnv([
-            "ANDROID_HOME=${ANDROID_SDK_ROOT}", // 수동으로 설치한 SDK 경로를 사용
-            "PATH+NODE=${nodeJS}/bin"
-          ]) {
-            // (디버깅) 환경 변수가 잘 설정되었는지 확인합니다.
-            echo "--- Verifying Build Environments ---"
-            sh "echo 'ANDROID_HOME is set to:' $ANDROID_HOME"
-            sh 'node -v'
-            sh 'npm -v'
-            sh 'echo $ANDROID_HOME'
-            sh 'ls -l $ANDROID_HOME/platforms'
-            echo "----------------------------------"
-
-            // 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
-            dir('cocos-forest-fe/cocosforest') {
-              echo "### Installing NPM dependencies... ###"
-              sh 'npm install'
-            }
-            
-            // 안드로이드 프로젝트 경로로 이동하여 빌드합니다.
-            dir('cocos-forest-fe/cocosforest/android') {
-              sh 'chmod +x ./gradlew'
-              echo "### Starting Android Release Build... ###"
-              sh './gradlew clean assembleRelease'
-            }
-
-            // 빌드된 APK 파일을 게시용 디렉터리로 복사합니다.
-            def apkSourcePath = "cocos-forest-fe/cocosforest/android/app/build/outputs/apk/release/app-release.apk"
-            def apkPublishDir = "/apk_publish"
-            def versionedApkName = "cocos-forest-v${env.BUILD_NUMBER}.apk"
-            def latestApkName = "latest.apk"
-
-            echo "### Publishing APK: ${versionedApkName} ###"
-            sh "cp ${apkSourcePath} ${apkPublishDir}/${versionedApkName}"
-            echo "### Updating 'latest.apk' ###"
-            sh "cp ${apkPublishDir}/${versionedApkName} ${apkPublishDir}/${latestApkName}"
-
-            // EC2 ~/apk 권한 test
+                                docker start "$CONTAINER_NAME"
+                                docker exec "$CONTAINER_NAME" sh -c 'mkdir -p /run/secrets && chmod 700 /run/secrets'
+                                docker stop "$CONTAINER_NAME"
+                                docker cp "$GCP_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/gcp.json
+                                docker cp "$FIREBASE_CREDENTIALS_FILE" "$CONTAINER_NAME":/run/secrets/firebase.json
+                                docker start "$CONTAINER_NAME"
+                                docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/gcp.json'
+                                docker exec "$CONTAINER_NAME" sh -c 'chmod 600 /run/secrets/firebase.json'
+                              '''
+                          }
+                      }
+                  }
+              }
           }
-        }
       }
-    }
+
+      // =================================================================
+      // 3. APK 빌드 및 게시 (cocos-forest-fe 폴더에 변경이 있을 때만 실행)
+      // =================================================================
+      stage('Build & Publish APK') {
+          when {
+              changeset "cocos-forest-fe/**"
+          }
+          steps {
+              script {
+                  def ANDROID_SDK_ROOT = "/opt/android-sdk"
+                  def nodeJS = tool name: 'NodeJS-20'
+                  
+                  withEnv([
+                      "ANDROID_HOME=${ANDROID_SDK_ROOT}",
+                      "PATH+NODE=${nodeJS}/bin"
+                  ]) {
+                      // 프론트엔드 프로젝트 루트로 이동하여 의존성 설치
+                      dir('cocos-forest-fe/cocosforest') {
+                          echo "### Installing NPM dependencies... ###"
+                          sh 'npm install'
+                      }
+                      
+                      // 안드로이드 프로젝트 경로로 이동하여 빌드
+                      dir('cocos-forest-fe/cocosforest/android') {
+                          sh 'chmod +x ./gradlew'
+                          echo "### Starting Android Release Build... ###"
+                          sh './gradlew clean assembleRelease'
+                      }
+
+                      // 빌드된 APK 파일을 게시용 디렉터리로 복사
+                      def apkSourcePath = "cocos-forest-fe/cocosforest/android/app/build/outputs/apk/release/app-release.apk"
+                      def apkPublishDir = "/apk_publish"
+                      def versionedApkName = "cocos-forest-v${env.BUILD_NUMBER}.apk"
+                      def latestApkName = "latest.apk"
+
+                      echo "### Publishing APK: ${versionedApkName} ###"
+                      sh "cp ${apkSourcePath} ${apkPublishDir}/${versionedApkName}"
+                      echo "### Updating 'latest.apk' ###"
+                      sh "cp ${apkPublishDir}/${versionedApkName} ${apkPublishDir}/${latestApkName}"
+                  }
+              }
+          }
+      }
   }
 
   post {
@@ -164,7 +153,7 @@ pipeline {
               "color": "%s",
               "title": "%s #%s",
               "title_link": "%s",
-              "text": "브랜치: `%s`\\n커밋: `%s`\\n이미지: `%s`",
+              "text": "브랜치: `%s`\\n커밋: `%s`\\n이미지: `%s`\\n[**APK 다운로드**](%s/download/latest.apk)",
               "fields": [
                 {"title":"Job","value":"%s","short":true},
                 {"title":"Build","value":"#%s","short":true},
