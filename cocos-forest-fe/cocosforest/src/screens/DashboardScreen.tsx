@@ -12,7 +12,8 @@ import {
   TodayEmissionStatus,
   MonthlyCalendar,
   CategoryReport,
-  DayDetailCard
+  DayDetailCard,
+  TabSelector
 } from '../components/dashboard';
 import { ErrorBoundary, UnifiedHeader } from '../components/common';
 import { redirectToAccountLinking, isAccountLinkingError } from '../utils/accountLinkingUtils';
@@ -146,24 +147,11 @@ const DashboardScreen = memo(() => {
         <View style={commonStyles.section}>
           <View style={commonStyles.card}>
             {/* 탭 헤더 */}
-            <View style={tabStyles.tabContainer}>
-              <TouchableOpacity
-                style={[tabStyles.tab, activeTab === 0 && tabStyles.activeTab]}
-                onPress={() => handleTabChange(0)}
-              >
-                <Text style={[tabStyles.tabText, activeTab === 0 && tabStyles.activeTabText]}>
-                  일별
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[tabStyles.tab, activeTab === 1 && tabStyles.activeTab]}
-                onPress={() => handleTabChange(1)}
-              >
-                <Text style={[tabStyles.tabText, activeTab === 1 && tabStyles.activeTabText]}>
-                  카테고리별
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TabSelector
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              tabs={['일별', '카테고리별']}
+            />
 
             {/* 탭 컨텐츠 */}
             {activeTab === 0 ? (

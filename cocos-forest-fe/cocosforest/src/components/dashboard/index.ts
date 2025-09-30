@@ -7,3 +7,4 @@ export { CategoryPieChart } from './CategoryPieChart';
 export { CategoryItem } from './CategoryItem';
 export { CategoryDetailModal } from './CategoryDetailModal';
 export { DayDetailCard } from './DayDetailCard';
+export { default as TabSelector } from './TabSelector';
