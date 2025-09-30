@@ -99,9 +99,8 @@ pipeline {
             "ANDROID_HOME=${ANDROID_SDK_ROOT}", // 수동으로 설치한 SDK 경로를 사용
             "PATH+NODE=${nodeJS}/bin"
           ]) {
-            // 2. ANDROID_HOME 환경 변수를 설정합니다.
 
-            // 3. (디버깅) 환경 변수가 잘 설정되었는지 확인합니다.
+            // (디버깅) 환경 변수가 잘 설정되었는지 확인합니다.
             echo "--- Verifying Build Environments ---"
             sh "echo 'ANDROID_HOME is set to:' $ANDROID_HOME"
             sh 'node -v'
@@ -110,20 +109,20 @@ pipeline {
             sh 'ls -l $ANDROID_HOME/platforms' // 설치된 플랫폼 목록 확인
             echo "----------------------------------"
 
-            // 4. 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
+            // 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
             dir('cocos-forest-fe/cocosforest') {
               echo "### Installing NPM dependencies... ###"
               sh 'npm install'
             }
             
-            // 5. 안드로이드 프로젝트 경로로 이동하여 빌드합니다.
+            // 안드로이드 프로젝트 경로로 이동하여 빌드합니다.
             dir('cocos-forest-fe/cocosforest/android') {
               sh 'chmod +x ./gradlew'
               echo "### Starting Android Release Build... ###"
               sh './gradlew clean assembleRelease'
             }
 
-            // 6. 빌드된 APK 파일을 게시용 디렉터리로 복사합니다.
+            // 빌드된 APK 파일을 게시용 디렉터리로 복사합니다.
             def apkSourcePath = "cocos-forest-fe/cocosforest/android/app/build/outputs/apk/release/app-release.apk"
             def apkPublishDir = "/apk_publish"
             def versionedApkName = "cocos-forest-v${env.BUILD_NUMBER}.apk"
