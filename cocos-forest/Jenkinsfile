@@ -106,7 +106,7 @@ pipeline {
             sh 'node -v'
             sh 'npm -v'
             sh 'echo $ANDROID_HOME'
-            sh 'ls -l $ANDROID_HOME/platforms' // 설치된 플랫폼 목록 확인
+            sh 'ls -l $ANDROID_HOME/platforms'
             echo "----------------------------------"
 
             // 프론트엔드 프로젝트의 루트 경로로 이동하여 의존성을 설치합니다.
