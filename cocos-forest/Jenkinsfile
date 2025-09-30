@@ -131,6 +131,8 @@ pipeline {
             sh "cp ${apkSourcePath} ${apkPublishDir}/${versionedApkName}"
             echo "### Updating 'latest.apk' ###"
             sh "cp ${apkPublishDir}/${versionedApkName} ${apkPublishDir}/${latestApkName}"
+
+            // EC2 ~/apk 권한 test
           }
         }
       }
