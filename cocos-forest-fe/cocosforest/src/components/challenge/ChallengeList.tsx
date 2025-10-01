@@ -14,11 +14,9 @@ interface ChallengeListProps {
     cafeTransactions: Transaction[];
   };
   isAttendanceLoading: boolean;
-  isStepsLoading: boolean;
   tumblerVerificationFailed: boolean;
   onInitializeChallenges: () => void;
   onAttendanceCheck: () => void;
-  onRefreshSteps: () => void;
   onTumblerVerification: () => void;
   onClaimReward: (challenge: Challenge) => void;
 }
@@ -28,11 +26,9 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
   isLoading,
   challengeDetectionResult,
   isAttendanceLoading,
-  isStepsLoading,
   tumblerVerificationFailed,
   onInitializeChallenges,
   onAttendanceCheck,
-  onRefreshSteps,
   onTumblerVerification,
   onClaimReward,
 }) => {
@@ -66,10 +62,8 @@ const ChallengeList: React.FC<ChallengeListProps> = ({
           challenge={challenge}
           challengeDetectionResult={challengeDetectionResult}
           isAttendanceLoading={isAttendanceLoading}
-          isStepsLoading={isStepsLoading}
           tumblerVerificationFailed={tumblerVerificationFailed}
           onAttendanceCheck={onAttendanceCheck}
-          onRefreshSteps={onRefreshSteps}
           onTumblerVerification={onTumblerVerification}
           onClaimReward={onClaimReward}
         />

@@ -185,8 +185,6 @@ const ProfileScreen = ({ route }: ProfileScreenProps) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              setIsLogoutModalVisible(false);
-
               // authStore의 logout 메서드 호출
               await logout();
 

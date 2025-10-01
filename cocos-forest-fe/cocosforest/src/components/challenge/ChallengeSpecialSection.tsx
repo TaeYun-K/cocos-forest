@@ -13,10 +13,8 @@ interface ChallengeSpecialSectionProps {
     cafeTransactions: Transaction[];
   };
   isAttendanceLoading: boolean;
-  isStepsLoading: boolean;
   tumblerVerificationFailed: boolean;
   onAttendanceCheck: () => void;
-  onRefreshSteps: () => void;
   onTumblerVerification: () => void;
 }
 
@@ -24,10 +22,8 @@ const ChallengeSpecialSection: React.FC<ChallengeSpecialSectionProps> = ({
   challenge,
   challengeDetectionResult,
   isAttendanceLoading,
-  isStepsLoading,
   tumblerVerificationFailed,
   onAttendanceCheck,
-  onRefreshSteps,
   onTumblerVerification,
 }) => {
   const renderAttendanceSection = () => (
@@ -54,14 +50,6 @@ const ChallengeSpecialSection: React.FC<ChallengeSpecialSectionProps> = ({
         <Text style={styles.stepsLabel}>
           현재 걸음수: {challenge.progress.toLocaleString()} / {challenge.maxProgress.toLocaleString()} 보
         </Text>
-        <TouchableOpacity 
-          style={[styles.refreshButton, isStepsLoading && styles.refreshButtonDisabled]}
-          onPress={onRefreshSteps}
-          disabled={isStepsLoading}
-        >
-          <Text style={styles.refreshIcon}>{isStepsLoading ? '⏳' : '🔄'}</Text>
-          <Text style={styles.refreshText}>{isStepsLoading ? '로딩중...' : '새로고침'}</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

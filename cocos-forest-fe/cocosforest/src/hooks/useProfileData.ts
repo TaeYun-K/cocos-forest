@@ -10,6 +10,8 @@ import {
   fetchUserCards,
   connectUserCard,
   createDemandDepositAccount,
+  checkUserLinkage,
+  registerUserLinkage,
   type Bank,
   type AccountProduct,
   type UserAccount,
@@ -154,6 +156,21 @@ export const useProfileData = (userId: number) => {
     try {
       setIsLoading(true);
 
+      // 1. 사용자 등록 여부 확인
+      const isRegistered = await checkUserLinkage();
+
+      // 2. 미등록 시 사용자 등록
+      if (!isRegistered) {
+        try {
+          await registerUserLinkage();
+          Alert.alert('금융 연동 등록', 'SSAFY 금융 서비스에 등록되었습니다.');
+        } catch (error: any) {
+          Alert.alert('등록 실패', 'SSAFY 금융 연동 등록에 실패했습니다.');
+          return false;
+        }
+      }
+
+      // 3. 계좌 생성
       const result = await createDemandDepositAccount(userId, {
         accountTypeUniqueNo
       });

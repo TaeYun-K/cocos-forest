@@ -15,10 +15,8 @@ interface ChallengeCardProps {
     cafeTransactions: Transaction[];
   };
   isAttendanceLoading: boolean;
-  isStepsLoading: boolean;
   tumblerVerificationFailed: boolean;
   onAttendanceCheck: () => void;
-  onRefreshSteps: () => void;
   onTumblerVerification: () => void;
   onClaimReward: (challenge: Challenge) => void;
 }
@@ -38,15 +36,13 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
   challenge,
   challengeDetectionResult,
   isAttendanceLoading,
-  isStepsLoading,
   tumblerVerificationFailed,
   onAttendanceCheck,
-  onRefreshSteps,
   onTumblerVerification,
   onClaimReward,
 }) => {
   return (
-    <View 
+    <View
       style={[
         styles.challengeCard,
         {
@@ -94,10 +90,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
         challenge={challenge}
         challengeDetectionResult={challengeDetectionResult}
         isAttendanceLoading={isAttendanceLoading}
-        isStepsLoading={isStepsLoading}
         tumblerVerificationFailed={tumblerVerificationFailed}
         onAttendanceCheck={onAttendanceCheck}
-        onRefreshSteps={onRefreshSteps}
         onTumblerVerification={onTumblerVerification}
       />
 

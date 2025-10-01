@@ -565,11 +565,9 @@ const ChallengeScreen = () => {
           isLoading={isLoading}
           challengeDetectionResult={challengeDetectionResult}
           isAttendanceLoading={isAttendanceLoading}
-          isStepsLoading={isStepsLoading}
           tumblerVerificationFailed={tumblerVerificationFailed}
           onInitializeChallenges={initializeChallenges}
           onAttendanceCheck={handleAttendanceCheck}
-          onRefreshSteps={handleRefreshSteps}
           onTumblerVerification={handleTumblerVerification}
           onClaimReward={handleClaimReward}
         />

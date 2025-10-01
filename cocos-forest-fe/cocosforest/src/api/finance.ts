@@ -172,3 +172,31 @@ export const connectUserCard = async (
   );
   return response.data.result;
 };
+
+/**
+ * SSAFY 금융 연동 사용자 등록 여부 확인
+ */
+export const checkUserLinkage = async (): Promise<boolean> => {
+  const response = await apiClient.post<ApiResponse<boolean>>(
+    '/api/finance/ssafy/linkages/search'
+  );
+  return response.data.result;
+};
+
+/**
+ * SSAFY 금융 연동 사용자 등록
+ */
+export interface LinkageResponse {
+  linkageId: number;
+  userId: number;
+  orgCode: string;
+  fintechAppNo: string;
+  createdAt: string;
+}
+
+export const registerUserLinkage = async (): Promise<LinkageResponse> => {
+  const response = await apiClient.post<ApiResponse<LinkageResponse>>(
+    '/api/finance/ssafy/linkages/register'
+  );
+  return response.data.result;
+};
