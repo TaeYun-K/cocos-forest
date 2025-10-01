@@ -1,92 +1,17 @@
 // src/api/finance.ts
 import apiClient from './axios';
-
-// 타입 정의
-export interface Bank {
-  bankCode: string;
-  bankName: string;
-}
-
-export interface AccountProduct {
-  productId: number;
-  accountTypeUniqueNo: string;
-  bankCode: string;
-  bankName: string;
-  accountTypeCode: string;
-  accountTypeName: string;
-  accountName: string;
-  accountDescription: string;
-  accountType: 'DOMESTIC';
-  createdAt: string;
-}
-
-export interface UserAccount {
-  accountId: number;
-  userId: number;
-  accountNo: string;
-  bankCode: string;
-  accountTypeUniqueNo: string;
-  currency: string;
-  currencyName: string;
-  status: 'ACTIVE';
-  createdAt: string;
-}
-
-export interface CardProduct {
-  productId: number;
-  issuerCode: string;
-  cardUniqueNo: string;
-  name: string;
-  description: string;
-  baselinePerformance: number;
-  maxBenefitLimit: number;
-}
-
-export interface CreateAccountRequest {
-  accountTypeUniqueNo: string;
-}
-
-export interface CreateAccountResponse {
-  bankCode: string;
-  accountNo: string;
-  currency: string;
-  currencyName: string;
-  createdAt: string;
-}
-
-export interface UserCard {
-  userCardId: number;
-  userId: number;
-  productId: number;
-  cardUniqueNo: string;
-  issuerCode: string;
-  issuerName: string;
-  cardName: string;
-  cardMasked: string;
-  last4: string;
-  expiryMM: string;
-  withdrawalAccountNo: string;
-  withdrawalDay: string;
-  baselinePerformance: number;
-  maxBenefitLimit: number;
-  cardDescription: string;
-  status: 'ACTIVE';
-  createdAt: string;
-}
-
-export interface ConnectCardRequest {
-  productId: number;
-  withdrawalAccountNo: string;
-  withdrawalDate: string;
-}
-
-export interface ApiResponse<T> {
-  httpStatus: string;
-  isSuccess: boolean;
-  message: string;
-  code: string;
-  result: T;
-}
+import type {
+  Bank,
+  AccountProduct,
+  UserAccount,
+  CardProduct,
+  UserCard,
+  ConnectCardRequest,
+  CreateAccountRequest,
+  CreateAccountResponse,
+  LinkageResponse,
+  ApiResponse
+} from '../types/finance';
 
 /**
  * 백엔드 서버 헬스체크
@@ -186,14 +111,6 @@ export const checkUserLinkage = async (): Promise<boolean> => {
 /**
  * SSAFY 금융 연동 사용자 등록
  */
-export interface LinkageResponse {
-  linkageId: number;
-  userId: number;
-  orgCode: string;
-  fintechAppNo: string;
-  createdAt: string;
-}
-
 export const registerUserLinkage = async (): Promise<LinkageResponse> => {
   const response = await apiClient.post<ApiResponse<LinkageResponse>>(
     '/api/finance/ssafy/linkages/register'

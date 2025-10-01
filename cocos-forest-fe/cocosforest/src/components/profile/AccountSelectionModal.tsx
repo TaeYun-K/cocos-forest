@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { fetchUserAccounts } from '../../api/finance';
-import type { Bank, CardProduct, UserAccount } from '../../api/finance';
+import type { Bank, CardProduct, UserAccount } from '../../types/finance';
 import { getBankColor, getBankIcon } from '../../utils/bankUtils';
 import { colors } from '../../styles/commonStyles';
 

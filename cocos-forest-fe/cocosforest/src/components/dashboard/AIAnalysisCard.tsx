@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { fetchTodayData, fetchAIAnalysis } from '../../api/dashboard';
+import { fetchAIAnalysis } from '../../api/dashboard';
+import { useTodayData } from '../../hooks/useDashboardQueries';
 import logger from '../../utils/logger';
 
 export const AIAnalysisCard: React.FC = () => {
   const [aiAdvice, setAiAdvice] = useState<string>('AI 분석을 준비 중입니다...');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // React Query로 오늘 데이터 가져오기 (DashboardScreen과 공유)
+  const { data: todayData, isLoading: isTodayDataLoading, error: todayDataError } = useTodayData();
+
   useEffect(() => {
     const loadAIAnalysis = async () => {
+      // todayData가 로드될 때까지 대기
+      if (isTodayDataLoading || !todayData) {
+        return;
+      }
+
       try {
         setIsLoading(true);
+        logger.info('AI 분석 시작', { carbonTotal: todayData.totals?.carbonTotalKg });
 
-        // 1. 오늘의 데이터 가져오기
-        const todayData = await fetchTodayData();
-        logger.info('오늘 데이터 로드 완료', { carbonTotal: todayData.totals?.carbonTotalKg });
-
-        // 2. AI 분석 요청
+        // AI 분석 요청
         const analysisResult = await fetchAIAnalysis(todayData);
         setAiAdvice(analysisResult);
 
@@ -30,7 +36,29 @@ export const AIAnalysisCard: React.FC = () => {
     };
 
     loadAIAnalysis();
-  }, []);
+  }, [todayData, isTodayDataLoading]);
+
+  // 데이터 로드 에러 처리
+  if (todayDataError) {
+    return (
+      <View style={styles.speechBubbleContainer}>
+        <View style={styles.speechBubbleOuter}>
+          <View style={styles.speechBubble}>
+            <View style={styles.aiResultContent}>
+              <Text style={styles.aiResultText}>
+                데이터를 불러올 수 없습니다. 계좌 연결을 확인해주세요.
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.speechTailContainer}>
+          <View style={styles.speechTailShadow} />
+          <View style={styles.speechTail} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.speechBubbleContainer}>
       <View style={styles.speechBubbleOuter}>

@@ -1,5 +1,5 @@
-import React, { memo, useRef, useState, useCallback, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, RefreshControl } from 'react-native';
+import React, { memo, useRef, useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native';
 import { useDashboard } from '../hooks/useDashboard';
@@ -175,6 +175,5 @@ const DashboardScreen = memo(() => {
 
 DashboardScreen.displayName = 'DashboardScreen';
 
-const styles = StyleSheet.create({});
 
 export default DashboardScreen;

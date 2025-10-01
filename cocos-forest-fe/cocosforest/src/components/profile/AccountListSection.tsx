@@ -7,7 +7,7 @@ import {
   Image,
   ActivityIndicator
 } from 'react-native';
-import type { Bank, UserAccount } from '../../api/finance';
+import type { Bank, UserAccount } from '../../types/finance';
 import { getBankIcon } from '../../utils/bankUtils';
 import { colors } from '../../styles/commonStyles';
 

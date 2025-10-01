@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ENV } from '../config/env';
+import apiClient from '../api/axios';
 import {
   fetchBanks,
   fetchAccountProducts,
@@ -11,16 +10,20 @@ import {
   connectUserCard,
   createDemandDepositAccount,
   checkUserLinkage,
-  registerUserLinkage,
-  type Bank,
-  type AccountProduct,
-  type UserAccount,
-  type CardProduct,
-  type UserCard,
-  type UserProfile,
-  type ConnectCardRequest
+  registerUserLinkage
 } from '../api/finance';
-import { fetchForestInfo, fetchPoints, type ForestInfoDto } from '../api/home';
+import type {
+  Bank,
+  AccountProduct,
+  UserAccount,
+  CardProduct,
+  UserCard,
+  UserProfile,
+  ConnectCardRequest,
+  ApiResponse
+} from '../types/finance';
+import { fetchForestInfo, fetchPoints } from '../api/home';
+import type { ForestInfoDto } from "../types/forest";
 import { getErrorMessage, handleApiError } from '../utils/errorUtils';
 
 export const useProfileData = (userId: number) => {
@@ -39,30 +42,19 @@ export const useProfileData = (userId: number) => {
     try {
       setIsLoadingProfile(true);
 
-      const response = await fetch('https://j13e205.p.ssafy.io/dev/api/user/myprofile', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await AsyncStorage.getItem(ENV.AUTH_TOKEN_KEY)}`
-        }
-      });
+      const response = await apiClient.get<ApiResponse<{
+        nickname: string;
+        currentBalance: number;
+      }>>('/api/user/myprofile');
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.isSuccess && data.result) {
-        const profile = data.result;
+      if (response.data.isSuccess && response.data.result) {
+        const profile = response.data.result;
         setUserProfile({
           nickname: profile.nickname,
-          currentBalance: profile.currentBalance,
-          phoneNumber: '',
-          email: ''
+          currentBalance: profile.currentBalance
         });
       } else {
-        throw new Error(data.message || '프로필 정보를 가져올 수 없습니다.');
+        throw new Error(response.data.message || '프로필 정보를 가져올 수 없습니다.');
       }
     } catch (error) {
       Alert.alert('알림', '사용자 정보를 불러오는데 실패했습니다.');
@@ -228,16 +220,13 @@ export const useProfileData = (userId: number) => {
         loadUserProfile(),
         loadUserAccounts(),
         loadBanks(),
-        loadHomeData()
+        loadHomeData(),
+        loadUserCards() // 여기로 통합
       ]);
     };
 
     initializeData();
-  }, []);
-
-  useEffect(() => {
-    loadUserCards();
-  }, [userId]);
+  }, []); // userId 의존성 제거 - 초기화는 한 번만
 
   return {
     // State

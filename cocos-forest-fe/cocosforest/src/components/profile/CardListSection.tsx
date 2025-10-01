@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity
 } from 'react-native';
-import type { UserCard } from '../../api/finance';
+import type { UserCard } from '../../types/finance';
 import { getCardColor } from '../../utils/bankUtils';
 
 interface CardListSectionProps {

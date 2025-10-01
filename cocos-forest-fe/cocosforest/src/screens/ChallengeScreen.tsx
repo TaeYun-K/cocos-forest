@@ -91,45 +91,29 @@ const ChallengeScreen = () => {
     }, 500);
   }, []);
 
-  // 탭 진입(포커스) 시마다 오늘의 챌린지 새로고침 및 최상단 스크롤
+  // 탭 진입(포커스) 시 데이터 새로고침 (통합)
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
-      let hasExecuted = false; // 한 번만 실행되도록 플래그 추가
 
-      // 최상단으로 스크롤
-      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      const refreshOnFocus = async () => {
+        if (!isActive) return;
 
-      const refreshTodayChallenges = async () => {
+        // 최상단으로 스크롤
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+
         try {
-          if (!isActive || hasExecuted) return;
-          hasExecuted = true; // 실행 플래그 설정
-          await loadTodayChallenges();
-        } catch (e) {
-          console.error('포커스 시 오늘의 챌린지 로드 실패:', e);
-        }
-      };
-      refreshTodayChallenges();
-      return () => {
-        isActive = false;
-      };
-    }, []) // 의존성 배열 비우기
-  );
+          // 병렬로 실행하여 성능 최적화
+          const [_, detectionResult] = await Promise.all([
+            loadTodayChallenges(),
+            challengeDetectionService.detectTodayChallenges()
+          ]);
 
-  // 탭 진입(포커스) 시마다 결제내역 기반 챌린지 감지 갱신 (한 번만 실행)
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true;
-      let hasExecuted = false; // 한 번만 실행되도록 플래그 추가
-      
-      const detectOnFocus = async () => {
-        try {
-          if (!alive || hasExecuted) return;
-          hasExecuted = true; // 실행 플래그 설정
-          
-          const detectionResult = await challengeDetectionService.detectTodayChallenges();
+          if (!isActive) return;
+
           setChallengeDetectionResult(detectionResult);
 
+          // 대중교통 챌린지 자동 완료 처리
           if (detectionResult.transportUsed) {
             checkTransportUsage(true);
             const transportChallenge = challenges.find(c => c.type === 'transport');
@@ -142,21 +126,25 @@ const ChallengeScreen = () => {
                   await challengeApi.completeChallenge(todayInstance.instanceId);
                 }
               } catch (syncErr) {
-                console.warn('대중교통 챌린지 완료 동기화 실패(포커스):', syncErr);
+                console.warn('대중교통 챌린지 완료 동기화 실패:', syncErr);
               }
             }
           }
 
+          // 텀블러 인증 실패 상태 초기화
           if (detectionResult.cafeUsed && tumblerVerificationFailed) {
             setTumblerVerificationFailed(false);
           }
         } catch (e) {
-          console.error('포커스 시 챌린지 감지 실패:', e);
+          console.error('포커스 시 챌린지 데이터 로드 실패:', e);
         }
       };
-      detectOnFocus();
-      return () => { alive = false; };
-    }, []) // 의존성 배열 비우기
+
+      refreshOnFocus();
+      return () => {
+        isActive = false;
+      };
+    }, [loadTodayChallenges, challenges, todayChallenges, tumblerVerificationFailed, checkTransportUsage, updateChallengeProgress, completeChallenge, setTumblerVerificationFailed])
   );
 
   useEffect(() => {
@@ -272,45 +260,6 @@ const ChallengeScreen = () => {
     fetchTodaySteps();
   }, [isPedometerAvailable]);
 
-  useEffect(() => {
-    const detectChallengesFromTransactions = async () => {
-      try {
-        const detectionResult = await challengeDetectionService.detectTodayChallenges();
-        setChallengeDetectionResult(detectionResult);
-        
-        if (detectionResult.transportUsed) {
-          checkTransportUsage(true);
-          
-          const transportChallenge = challenges.find(c => c.type === 'transport');
-          
-          if (transportChallenge && transportChallenge.status !== 'completed') {
-            updateChallengeProgress('transport', 1);
-            completeChallenge('transport');
-            // 백엔드 동기화 (오늘의 챌린지 인스턴스가 있는 경우)
-            try {
-              const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
-              if (todayInstance) {
-                await challengeApi.completeChallenge(todayInstance.instanceId);
-              }
-            } catch (syncErr) {
-              console.warn('대중교통 챌린지 완료 동기화 실패:', syncErr);
-            }
-          } else {
-          }
-        }
-        
-        if (detectionResult.cafeUsed && tumblerVerificationFailed) {
-          setTumblerVerificationFailed(false);
-        }
-        
-      } catch (error) {
-        console.error('챌린지 감지 중 에러:', error);
-      }
-    };
-
-    detectChallengesFromTransactions();
-  }, []);
-
   const handleAttendanceCheck = async () => {
     setIsAttendanceLoading(true);
     try {
@@ -375,34 +324,6 @@ const ChallengeScreen = () => {
     }
   };
 
-  const handleRefreshSteps = async () => {
-    if (!isPedometerAvailable) {
-      Alert.alert('알림', '이 기기에서는 걸음수 측정이 지원되지 않습니다.');
-      return;
-    }
-
-    setIsStepsLoading(true);
-    try {
-      
-      const stepData = await healthService.getTodaySteps();
-      const response = await challengeApi.updateSteps(stepData.steps);
-      
-      if (response.success) {
-        updateSteps(response.progress);
-        
-        if (response.isCompleted) {
-          Alert.alert('챌린지 완료!', `만보기 챌린지를 완료했습니다! ${response.pointsEarned}포인트를 획득했습니다!`);
-        }
-      } else {
-        Alert.alert('오류', response.message || '걸음수 업데이트 중 오류가 발생했습니다.');
-      }
-    } catch (error) {
-      console.error('걸음수 데이터 가져오기 실패:', error);
-      Alert.alert('오류', '걸음수 데이터를 가져오는 중 오류가 발생했습니다.');
-    } finally {
-      setIsStepsLoading(false);
-    }
-  };
 
   const handleClaimReward = (challenge: Challenge) => {
     setSelectedChallenge(challenge);

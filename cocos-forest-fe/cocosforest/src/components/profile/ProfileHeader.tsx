@@ -6,7 +6,7 @@ import {
   Image,
   ActivityIndicator
 } from 'react-native';
-import type { UserProfile } from '../../api/finance';
+import type { UserProfile } from '../../types/finance';
 import { colors } from '../../styles/commonStyles';
 
 interface ProfileHeaderProps {

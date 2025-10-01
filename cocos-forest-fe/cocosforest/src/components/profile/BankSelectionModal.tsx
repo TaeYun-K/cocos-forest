@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import type { Bank, CardProduct } from '../../api/finance';
+import type { Bank, CardProduct } from '../../types/finance';
 import { getBankIcon } from '../../utils/bankUtils';
 
 interface BankSelectionModalProps {

@@ -5,8 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import type { UserAccount } from '../../api/finance';
-import type { Bank } from '../../api/finance';
+import type { UserAccount, Bank } from '../../types/finance';
 import { getBankColor } from '../../utils/bankUtils';
 
 interface AccountCardProps {

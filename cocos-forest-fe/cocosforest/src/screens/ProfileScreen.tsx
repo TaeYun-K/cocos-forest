@@ -10,22 +10,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { commonStyles } from '../styles/commonStyles';
 import { profileScreenStyles as styles } from '../styles/profile/profileScreenStyles';
-import {
-  type Bank,
-  type AccountProduct,
-  type UserAccount,
-  type CardProduct,
-  type UserCard as UserCardType,
-  type UserProfile,
-  type ConnectCardRequest
-} from '../api/finance';
-import { type ForestInfoDto } from '../api/home';
+import type {
+  Bank,
+  AccountProduct,
+  UserAccount,
+  CardProduct,
+  UserCard as UserCardType,
+  ConnectCardRequest
+} from '../types/finance';
 import { useAuthStore } from '../store/authStore';
 import { useProfileData } from '../hooks/useProfileData';
 import BankSelectionModal from '../components/profile/BankSelectionModal';
 import AccountProductModal from '../components/profile/AccountProductModal';
 import AccountSelectionModal from '../components/profile/AccountSelectionModal';
-import AccountMenuModal from '../components/profile/AccountMenuModal';
 import ProfileEditModal from '../components/profile/ProfileEditModal';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import AccountListSection from '../components/profile/AccountListSection';
@@ -70,8 +67,6 @@ const ProfileScreen = ({ route }: ProfileScreenProps) => {
   const [selectedAccountType, setSelectedAccountType] = React.useState<'온라인계좌' | '신용카드'>('온라인계좌');
   const [selectedBank, setSelectedBank] = React.useState<Bank | null>(null);
   const [isAccountProductModalVisible, setIsAccountProductModalVisible] = React.useState(false);
-  const [isAccountMenuModalVisible, setIsAccountMenuModalVisible] = React.useState(false);
-  const [selectedAccountForMenu, setSelectedAccountForMenu] = React.useState<UserAccount | null>(null);
   const [isAccountSelectionModalVisible, setIsAccountSelectionModalVisible] = React.useState(false);
   const [selectedCardForConnection, setSelectedCardForConnection] = React.useState<CardProduct | null>(null);
 
