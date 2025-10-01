@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { colors } from '../../styles/commonStyles';
 
 interface SignupButtonsProps {
   isLoading: boolean;
@@ -38,7 +39,7 @@ export const SignupButtons: React.FC<SignupButtonsProps> = ({
           disabled={disabled || isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
+            <ActivityIndicator color={colors.white} size="small" />
           ) : (
             <Text style={styles.nextButtonText}>{nextButtonText}</Text>
           )}
@@ -65,27 +66,27 @@ const styles = StyleSheet.create({
   backButton: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#7CB342',
+    borderColor: colors.primary,
     borderRadius: 25,
     paddingVertical: 16,
     alignItems: 'center',
     minHeight: 52,
   },
   backButtonText: {
-    color: '#7CB342',
+    color: colors.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   nextButton: {
     flex: 1,
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     borderRadius: 25,
     paddingVertical: 16,
     alignItems: 'center',
     minHeight: 52,
   },
   nextButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   },
   loginLink: {
     fontSize: 14,
-    color: '#7CB342',
+    color: colors.primary,
     fontWeight: 'bold',
   },
 });
