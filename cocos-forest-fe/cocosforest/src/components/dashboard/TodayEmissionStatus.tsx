@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTodayData } from '../../hooks/useDashboardQueries';
 import { Card } from '../common';
+import { colors } from '../../styles/commonStyles';
 
 export const TodayEmissionStatus: React.FC = () => {
   const { data: todayData, isLoading, error } = useTodayData();
@@ -14,7 +15,7 @@ export const TodayEmissionStatus: React.FC = () => {
   // 배출량에 따른 색상 결정
   const getEmissionColor = () => {
     if (todayEmission < 13.01) {
-      return '#15803d'; // 녹색 - 좋음
+      return colors.primary; // 녹색 - 좋음
     } else if (todayEmission > averageEmission) {
       return '#ef4444'; // 빨간색 - 나쁨
     } else {
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
   },
   comparisonHighlight: {
     fontWeight: 'bold',
-    color: '#15803d',
+    color: colors.primary,
   },
   loadingText: {
     fontSize: 14,

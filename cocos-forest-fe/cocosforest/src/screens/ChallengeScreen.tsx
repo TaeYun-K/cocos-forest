@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { ScrollView, SafeAreaView, Alert, RefreshControl } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { commonStyles } from '../styles/commonStyles';
+import { commonStyles, colors } from '../styles/commonStyles';
 import type { Transaction } from '../types/dashboard';
 import { useChallengeStore } from '../store/challengeStore';
 import type { Challenge } from '../types/challenge';
@@ -545,8 +545,8 @@ const ChallengeScreen = () => {
           <RefreshControl
             refreshing={isPullRefreshing}
             onRefresh={onPullRefresh}
-            tintColor="#15803d"
-            colors={['#15803d']}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >

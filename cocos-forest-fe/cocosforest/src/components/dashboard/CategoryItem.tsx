@@ -4,6 +4,7 @@ import type { CategoryData } from '../../types/dashboard';
 import { Card } from '../common';
 import { fetchCategoryMonthlyDetails } from '../../api/dashboard';
 import useDashboardStore from '../../store/dashboardStore';
+import { colors } from '../../styles/commonStyles';
 
 interface CategoryItemProps {
   item: CategoryData;
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
   },
   emissionBar: {
     height: 6,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.gray100,
     borderRadius: 3,
     overflow: 'hidden',
   },

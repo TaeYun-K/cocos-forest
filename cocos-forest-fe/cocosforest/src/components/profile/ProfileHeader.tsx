@@ -7,6 +7,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import type { UserProfile } from '../../api/finance';
+import { colors } from '../../styles/commonStyles';
 
 interface ProfileHeaderProps {
   userProfile: UserProfile | null;
@@ -32,7 +33,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       </View>
       <View style={styles.profileInfo}>
         {isLoading ? (
-          <ActivityIndicator size="small" color="#15803d" />
+          <ActivityIndicator size="small" color={colors.primary} />
         ) : (
           <>
             <Text style={styles.userName}>
@@ -52,14 +53,14 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
 const styles = StyleSheet.create({
   profileCard: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     marginHorizontal: 20,
     marginVertical: 16,
     padding: 20,
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.black,
     marginBottom: 4,
   },
   userTitle: {
@@ -94,12 +95,12 @@ const styles = StyleSheet.create({
   },
   pointsText: {
     fontSize: 14,
-    color: '#10B981',
+    color: colors.success,
     fontWeight: '600',
   },
   treeCountText: {
     fontSize: 14,
-    color: '#059669',
+    color: colors.successDark,
     fontWeight: '600',
   },
 });

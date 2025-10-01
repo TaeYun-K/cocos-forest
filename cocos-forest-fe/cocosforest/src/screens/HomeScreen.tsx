@@ -9,6 +9,7 @@ import Board from "../components/homescreen/Forest";
 import ExpandForestModal from "../components/homescreen/ExpandForestModal";
 import CellInfoModal from "../components/homescreen/CellInfoModal";
 import { homeStyles as s } from "../styles/homeStyles";
+import { colors } from "../styles/commonStyles";
 import { computeTopMargin, computeBoardHeight, computeBoardWidth } from "../utils/iso";
 import { useCells, projectMarkers, useMarkerSet } from "../hooks/useForestData";
 import type { Marker } from "../types/forest";
@@ -240,7 +241,7 @@ export default function HomeScreen() {
             width: 44,
             height: 44,
             borderRadius: 22,
-            backgroundColor: "#374151",
+            backgroundColor: colors.gray700,
             alignItems: "center",
             justifyContent: "center",
           }}

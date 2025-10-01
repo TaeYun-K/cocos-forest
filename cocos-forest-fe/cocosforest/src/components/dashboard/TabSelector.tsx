@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '../../styles/commonStyles';
 
 interface TabSelectorProps {
   activeTab: number;
@@ -28,7 +29,7 @@ const TabSelector: React.FC<TabSelectorProps> = ({ activeTab, onTabChange, tabs 
 const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.gray100,
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
@@ -40,8 +41,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeTab: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
+    backgroundColor: colors.white,
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -50,10 +51,10 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   activeTabText: {
-    color: '#15803d',
+    color: colors.primary,
   },
 });
 

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type { Bank, UserAccount } from '../../api/finance';
 import { getBankIcon } from '../../utils/bankUtils';
+import { colors } from '../../styles/commonStyles';
 
 interface AccountListSectionProps {
   userAccounts: UserAccount[];
@@ -33,7 +34,7 @@ const AccountListSection: React.FC<AccountListSectionProps> = ({
 
       {isLoading && userAccounts.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#15803d" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>계좌 정보를 불러오는 중...</Text>
         </View>
       ) : userAccounts.length === 0 ? (
@@ -89,12 +90,12 @@ const AccountListSection: React.FC<AccountListSectionProps> = ({
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     marginHorizontal: 20,
     marginBottom: 16,
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.black,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -133,16 +134,16 @@ const styles = StyleSheet.create({
   },
   accountCard: {
     padding: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     margin: 8,
     borderRadius: 16,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
     borderLeftWidth: 4,
-    borderLeftColor: '#15803d',
+    borderLeftColor: colors.primary,
   },
   accountCardHeader: {
     flexDirection: 'row',
@@ -160,9 +161,9 @@ const styles = StyleSheet.create({
     height: 36,
     marginRight: 12,
     borderRadius: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     padding: 2,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -179,19 +180,19 @@ const styles = StyleSheet.create({
   },
   accountCardText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   menuButton: {
     padding: 4,
     borderRadius: 6,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.gray100,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   menuButtonText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: 'bold',
   },
   addAccountButton: {
@@ -210,19 +211,19 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#15803d',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
   },
   addAccountIconText: {
-    color: '#fff',
+    color: colors.white,
     fontSize: 16,
     fontWeight: 'bold',
   },
   addAccountText: {
     fontSize: 16,
-    color: '#15803d',
+    color: colors.primary,
     fontWeight: '600',
   },
 });

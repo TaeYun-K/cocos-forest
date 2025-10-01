@@ -5,17 +5,27 @@ export const colors = {
   // 기본 색상
   background: '#ededed',
   white: '#ffffff',
+  black: '#000000',
 
   // 텍스트 색상
   textPrimary: '#1f2937',
   textSecondary: '#6b7280',
+  textTertiary: '#9ca3af',
+  textWhite: '#ffffff',
 
   // 테마 색상
-  primary: '#15803d',
-  secondary: '#3b82f6',
-  warning: '#eab308',
-  danger: '#ef4444',
-  success: '#10b981',
+  primary: '#15803d',        // 메인 그린
+  primaryLight: '#16a34a',   // 밝은 그린
+  primaryDark: '#166534',    // 어두운 그린
+  secondary: '#3b82f6',      // 블루
+  secondaryLight: '#0ea5e9', // 밝은 블루
+  warning: '#eab308',        // 경고 (노란색)
+  warningLight: '#fbbf24',
+  danger: '#ef4444',         // 위험 (빨간색)
+  dangerDark: '#dc2626',
+  success: '#10b981',        // 성공 (초록)
+  successDark: '#059669',
+  info: '#84cc16',           // 정보 (라임)
 
   // 회색 계열
   gray50: '#f9fafb',
@@ -33,7 +43,12 @@ export const colors = {
   greenLight: '#f0fdf4',
   blueLight: '#f0f9ff',
   yellowLight: '#fef3c7',
+  redLight: '#fef2f2',
   grayLight: '#f8fafc',
+
+  // 투명도
+  transparentBlack: 'rgba(0, 0, 0, 0.5)',
+  transparentWhite: 'rgba(255, 255, 255, 0.1)',
 };
 
 // 공통 스타일
@@ -116,6 +131,7 @@ export const commonStyles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
 
   buttonPrimary: {
@@ -124,6 +140,25 @@ export const commonStyles = StyleSheet.create({
 
   buttonSecondary: {
     backgroundColor: colors.gray100,
+  },
+
+  buttonDanger: {
+    backgroundColor: colors.danger,
+  },
+
+  buttonSuccess: {
+    backgroundColor: colors.success,
+  },
+
+  buttonOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+
+  buttonDisabled: {
+    backgroundColor: colors.gray300,
+    opacity: 0.6,
   },
 
   buttonText: {
@@ -137,6 +172,20 @@ export const commonStyles = StyleSheet.create({
 
   buttonTextSecondary: {
     color: colors.textSecondary,
+  },
+
+  buttonTextOutline: {
+    color: colors.primary,
+  },
+
+  buttonLarge: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+
+  buttonSmall: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 
   // 배지 스타일
@@ -374,5 +423,129 @@ export const statsStyles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '600',
+  },
+});
+
+// 모달 관련 스타일
+export const modalStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: colors.transparentBlack,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+
+  container: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  containerSmall: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 320,
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+
+  message: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+
+  buttonFlex: {
+    flex: 1,
+  },
+
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: colors.gray100,
+  },
+
+  closeButtonText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: 'bold',
+  },
+});
+
+// 입력 필드 관련 스타일
+export const inputStyles = StyleSheet.create({
+  container: {
+    marginBottom: 16,
+  },
+
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 8,
+  },
+
+  input: {
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.gray200,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+
+  inputFocused: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+  },
+
+  inputError: {
+    borderColor: colors.danger,
+  },
+
+  errorText: {
+    fontSize: 12,
+    color: colors.danger,
+    marginTop: 4,
+  },
+
+  helperText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
   },
 });

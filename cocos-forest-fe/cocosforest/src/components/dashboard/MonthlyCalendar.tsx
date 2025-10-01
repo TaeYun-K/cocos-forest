@@ -4,6 +4,7 @@ import { Calendar, DateData, LocaleConfig } from 'react-native-calendars';
 import useDashboardStore from '../../store/dashboardStore';
 import { useMonthlyReport } from '../../hooks/useDashboardQueries';
 import { LoadingSpinner, ErrorMessage } from '../common';
+import { colors } from '../../styles/commonStyles';
 
 // 한국어 로케일 설정
 LocaleConfig.locales['ko'] = {
@@ -60,7 +61,7 @@ export const MonthlyCalendar: React.FC = () => {
   const getEmissionColor = useMemo(() => (emission: number) => {
     if (emission >= 26.02) return '#ef4444'; // 26.02kg 이상: 높음 (빨강)
     if (emission >= 13.01) return '#eab308';  // 13.01-26.02kg: 보통 (노랑)
-    return '#15803d'; // 13.01kg 미만: 낮음 (초록)
+    return colors.primary; // 13.01kg 미만: 낮음 (초록)
   }, []);
 
   // 탄소배출량 데이터를 markedDates로 변환
@@ -79,7 +80,7 @@ export const MonthlyCalendar: React.FC = () => {
             borderRadius: 8,
           },
           text: {
-            color: '#ffffff',
+            color: colors.white,
             fontWeight: '600',
           },
         },
@@ -208,10 +209,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.gray100,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
   monthButtonText: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#374151',
+    color: colors.gray700,
   },
   monthText: {
     fontSize: 18,

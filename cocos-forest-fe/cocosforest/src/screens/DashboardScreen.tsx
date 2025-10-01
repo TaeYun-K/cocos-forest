@@ -6,7 +6,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { useQueryClient } from '@tanstack/react-query';
 import { dashboardQueryKeys, useTodayData, useMonthlyReport } from '../hooks/useDashboardQueries';
 import { DASHBOARD_STYLE_CONSTANTS } from '../constants/dashboardStyles';
-import { commonStyles, tabStyles } from '../styles/commonStyles';
+import { commonStyles, tabStyles, colors } from '../styles/commonStyles';
 import {
   AIAnalysisCard,
   TodayEmissionStatus,
@@ -109,8 +109,8 @@ const DashboardScreen = memo(() => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor="#15803d"
-                colors={['#15803d']}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
               />
             }
           >

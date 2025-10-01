@@ -12,6 +12,7 @@ import {
 import { fetchUserAccounts } from '../../api/finance';
 import type { Bank, CardProduct, UserAccount } from '../../api/finance';
 import { getBankColor, getBankIcon } from '../../utils/bankUtils';
+import { colors } from '../../styles/commonStyles';
 
 interface AccountSelectionModalProps {
   visible: boolean;
@@ -98,7 +99,7 @@ const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
             
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#15803d" />
+                <ActivityIndicator size="large" color={colors.primary} />
                 <Text style={styles.loadingText}>계좌 정보를 불러오는 중...</Text>
               </View>
             ) : accounts.length > 0 ? (
@@ -136,8 +137,8 @@ const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
                           <Text style={styles.accountNumber}>{account.accountNo}</Text>
                           <Text style={styles.accountCurrency}>{account.currencyName}</Text>
                           <View style={[
-                            styles.accountStatusBadge, 
-                            { backgroundColor: account.status === 'ACTIVE' ? '#10B981' : '#EF4444' }
+                            styles.accountStatusBadge,
+                            { backgroundColor: account.status === 'ACTIVE' ? colors.success : colors.danger }
                           ]}>
                             <Text style={styles.accountStatusText}>
                               {account.status === 'ACTIVE' ? '활성' : '비활성'}
@@ -168,7 +169,7 @@ const AccountSelectionModal: React.FC<AccountSelectionModalProps> = ({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
   },
   modalContent: {
     flex: 1,
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   bankModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.black,
   },
   bankModalCloseButton: {
     fontSize: 18,
@@ -194,14 +195,14 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   selectedCardInfo: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.gray100,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
   selectedCardTitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     marginBottom: 8,
     fontWeight: '500',
   },
@@ -220,11 +221,11 @@ const styles = StyleSheet.create({
   },
   selectedCardDescription: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   debugText: {
     fontSize: 12,
-    color: '#EF4444',
+    color: colors.danger,
     backgroundColor: '#FEF2F2',
     padding: 8,
     borderRadius: 6,
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
   },
   accountSelectionSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     marginBottom: 16,
     lineHeight: 20,
   },
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   accountListWrapper: {
@@ -264,7 +265,7 @@ const styles = StyleSheet.create({
   },
   accountCountInfo: {
     fontSize: 16,
-    color: '#15803d',
+    color: colors.primary,
     fontWeight: '600',
     marginBottom: 16,
     textAlign: 'center',
@@ -278,12 +279,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     marginHorizontal: 8,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
   accountName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#000',
+    color: colors.black,
     marginBottom: 2,
   },
   accountNumber: {
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   accountStatusBadge: {
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
   },
   accountStatusText: {
     fontSize: 10,
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '500',
   },
   accountSelectionArrow: {
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   },
   noAccountText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
