@@ -1,4 +1,4 @@
-import React, { memo, useRef, useState, useCallback } from 'react';
+import React, { memo, useRef, useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native';

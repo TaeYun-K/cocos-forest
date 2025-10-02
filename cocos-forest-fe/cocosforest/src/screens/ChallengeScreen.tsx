@@ -53,7 +53,7 @@ const ChallengeScreen = () => {
   const [hasShownAccountError, setHasShownAccountError] = useState(false);
 
   // 챌린지 화면에서도 데이터 에러 감지를 위해 쿼리 구독
-  const { error: todayDataError } = useTodayData();
+  const { data: todayData, error: todayDataError } = useTodayData();
 
   const getCurrentDate = () => {
     const today = new Date();
@@ -91,60 +91,46 @@ const ChallengeScreen = () => {
     }, 500);
   }, []);
 
-  // 탭 진입(포커스) 시 데이터 새로고침 (통합)
+  // todayData 변경 시 챌린지 감지 (무한 루프 방지: todayData만 dependency)
+  useEffect(() => {
+    if (!todayData) return;
+
+    const detectionResult = challengeDetectionService.detectFromData(todayData);
+    setChallengeDetectionResult(detectionResult);
+
+    // 대중교통 챌린지 자동 완료 처리
+    if (detectionResult.transportUsed) {
+      checkTransportUsage(true);
+      const transportChallenge = challenges.find(c => c.type === 'transport');
+      if (transportChallenge && transportChallenge.status !== 'completed') {
+        updateChallengeProgress('transport', 1);
+        completeChallenge('transport');
+        const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
+        if (todayInstance) {
+          challengeApi.completeChallenge(todayInstance.instanceId).catch(err =>
+            console.warn('대중교통 챌린지 완료 동기화 실패:', err)
+          );
+        }
+      }
+    }
+
+    // 텀블러 인증 실패 상태 초기화
+    if (detectionResult.cafeUsed && tumblerVerificationFailed) {
+      setTumblerVerificationFailed(false);
+    }
+  }, [todayData]); // todayData만 dependency로 설정하여 무한 루프 방지
+
+  // 탭 진입(포커스) 시 데이터 새로고침 (간소화)
   useFocusEffect(
     useCallback(() => {
-      let isActive = true;
+      // 최상단으로 스크롤
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
 
-      const refreshOnFocus = async () => {
-        if (!isActive) return;
-
-        // 최상단으로 스크롤
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-
-        try {
-          // 병렬로 실행하여 성능 최적화
-          const [_, detectionResult] = await Promise.all([
-            loadTodayChallenges(),
-            challengeDetectionService.detectTodayChallenges()
-          ]);
-
-          if (!isActive) return;
-
-          setChallengeDetectionResult(detectionResult);
-
-          // 대중교통 챌린지 자동 완료 처리
-          if (detectionResult.transportUsed) {
-            checkTransportUsage(true);
-            const transportChallenge = challenges.find(c => c.type === 'transport');
-            if (transportChallenge && transportChallenge.status !== 'completed') {
-              updateChallengeProgress('transport', 1);
-              completeChallenge('transport');
-              try {
-                const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
-                if (todayInstance) {
-                  await challengeApi.completeChallenge(todayInstance.instanceId);
-                }
-              } catch (syncErr) {
-                console.warn('대중교통 챌린지 완료 동기화 실패:', syncErr);
-              }
-            }
-          }
-
-          // 텀블러 인증 실패 상태 초기화
-          if (detectionResult.cafeUsed && tumblerVerificationFailed) {
-            setTumblerVerificationFailed(false);
-          }
-        } catch (e) {
-          console.error('포커스 시 챌린지 데이터 로드 실패:', e);
-        }
-      };
-
-      refreshOnFocus();
-      return () => {
-        isActive = false;
-      };
-    }, [loadTodayChallenges, challenges, todayChallenges, tumblerVerificationFailed, checkTransportUsage, updateChallengeProgress, completeChallenge, setTumblerVerificationFailed])
+      // 챌린지 상태만 로드 (챌린지 감지는 useEffect에서 처리)
+      loadTodayChallenges().catch(e => {
+        console.error('포커스 시 챌린지 데이터 로드 실패:', e);
+      });
+    }, []) // dependency 최소화
   );
 
   useEffect(() => {
@@ -153,33 +139,16 @@ const ChallengeScreen = () => {
     }
   }, [challenges.length, isLoading]);
 
-  // Pull-to-refresh 함수
+  // Pull-to-refresh 함수 (간소화: React Query 캐시만 무효화)
   const onPullRefresh = useCallback(async () => {
     setIsPullRefreshing(true);
     try {
-      // React Query 캐시 무효화하여 새로운 데이터 받아오기
-      await queryClient.invalidateQueries({ queryKey: ['todayData'] });
-      await queryClient.invalidateQueries({ queryKey: ['dayDetails'] });
-
-      // 챌린지 상태 새로고침
-      await loadTodayChallenges();
-
-      // 챌린지 감지 서비스 재실행
-      const detectionResult = await challengeDetectionService.detectTodayChallenges();
-      setChallengeDetectionResult(detectionResult);
-
-      if (detectionResult.transportUsed) {
-        checkTransportUsage(true);
-        const transportChallenge = challenges.find(c => c.type === 'transport');
-        if (transportChallenge && transportChallenge.status !== 'completed') {
-          updateChallengeProgress('transport', 1);
-          completeChallenge('transport');
-        }
-      }
-
-      if (detectionResult.cafeUsed && tumblerVerificationFailed) {
-        setTumblerVerificationFailed(false);
-      }
+      // React Query 캐시 무효화 → todayData 자동 재로드 → useEffect에서 챌린지 감지
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['todayData'] }),
+        queryClient.invalidateQueries({ queryKey: ['dayDetails'] }),
+        loadTodayChallenges()
+      ]);
     } catch (error) {
       console.error('Pull refresh error:', error);
 
@@ -190,17 +159,7 @@ const ChallengeScreen = () => {
     } finally {
       setIsPullRefreshing(false);
     }
-  }, [
-    queryClient,
-    loadTodayChallenges,
-    challenges,
-    checkTransportUsage,
-    updateChallengeProgress,
-    completeChallenge,
-    tumblerVerificationFailed,
-    setTumblerVerificationFailed,
-    navigation
-  ]);
+  }, [queryClient, loadTodayChallenges, navigation]);
 
   useEffect(() => {
     const checkHealthAvailability = async () => {
@@ -407,36 +366,11 @@ const ChallengeScreen = () => {
       // 출석체크 상태 보존
       const attendanceChallenge = challenges.find(c => c.type === 'attendance');
       const wasAttendanceCompleted = attendanceChallenge?.status === 'completed';
-      
-      // React Query 캐시 무효화하여 새로운 데이터 받아오기
+
+      // React Query 캐시 무효화 → todayData 재로드 → useEffect에서 자동 감지
       await queryClient.invalidateQueries({ queryKey: ['todayData'] });
       await queryClient.invalidateQueries({ queryKey: ['dayDetails'] });
-      
-      const detectionResult = await challengeDetectionService.detectTodayChallenges();
-      setChallengeDetectionResult(detectionResult);
-      
-      if (detectionResult.transportUsed) {
-        checkTransportUsage(true);
-        
-        const transportChallenge = challenges.find(c => c.type === 'transport');
-        if (transportChallenge && transportChallenge.status !== 'completed') {
-          updateChallengeProgress('transport', 1);
-          completeChallenge('transport');
-          try {
-            const todayInstance = todayChallenges.find(tc => tc.challengeId === 'transport');
-            if (todayInstance) {
-              await challengeApi.completeChallenge(todayInstance.instanceId);
-            }
-          } catch (syncErr) {
-            console.warn('대중교통 챌린지 완료 동기화 실패:', syncErr);
-          }
-        }
-      }
-      
-      if (detectionResult.cafeUsed && tumblerVerificationFailed) {
-        setTumblerVerificationFailed(false);
-      }
-      
+
       // 출석체크 상태 복원
       if (wasAttendanceCompleted) {
         const updatedAttendanceChallenge = challenges.find(c => c.type === 'attendance');
@@ -445,9 +379,9 @@ const ChallengeScreen = () => {
           completeChallenge('attendance');
         }
       }
-      
+
       Alert.alert('새로고침 완료', '결제내역을 다시 확인했습니다.');
-      
+
     } catch (error) {
       console.error('결제내역 새로고침 중 에러:', error);
       Alert.alert('오류', '결제내역을 새로고침하는 중 오류가 발생했습니다.');

@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { File } from 'expo-file-system';
 import { axiosInstance } from '../api/axios';
 
 export interface OCRResult {
@@ -11,6 +12,16 @@ export interface OCRResult {
   points?: number;
   userChallengeId?: number;
   reason?: string;
+}
+
+interface CompressionMetrics {
+  originalSize: number;
+  compressedSize: number;
+  compressionRatio: number;
+  compressionTime: number;
+  quality: number;
+  maxWidth: number;
+  timestamp: number;
 }
 
 class OCRService {
@@ -25,6 +36,9 @@ class OCRService {
     '스타벅스', 'starbucks', '이디야', 'ediya', '투썸', 'twosome',
     '커피빈', 'coffeebean', '빽다방', 'paik', '카페', 'cafe', '커피', 'coffee'
   ];
+
+  // 압축 메트릭 저장소 (성능 분석용)
+  private compressionMetrics: CompressionMetrics[] = [];
 
   /**
    * 이미지에서 텍스트를 추출하고 텀블러 사용 여부를 판단합니다.
@@ -81,30 +95,137 @@ class OCRService {
   }
 
   /**
-   * 이미지를 압축합니다 (파일 크기 제한 해결)
+   * 적응형 이미지 압축 (파일 크기 기반 동적 품질 조정)
    */
   private async compressImage(imageUri: string): Promise<string> {
     try {
-      console.log('🔄 이미지 압축 시작:', imageUri);
+      const startTime = Date.now();
+      console.log('🔄 적응형 이미지 압축 시작:', imageUri);
 
+      // 1. 원본 파일 정보 가져오기 (최신 File API 사용)
+      const file = new File(imageUri);
+      const fileInfo = file.info();
+      const originalSize = fileInfo?.size || 0;
+
+      console.log('📊 원본 파일 크기:', (originalSize / 1024).toFixed(2), 'KB');
+
+      // 파일 크기를 알 수 없는 경우 기본 압축 전략 사용
+      if (originalSize === 0) {
+        console.log('⚠️ 파일 크기를 알 수 없음, 기본 압축 전략 사용');
+        const compressedImage = await ImageManipulator.manipulateAsync(
+          imageUri,
+          [{ resize: { width: 1024 } }],
+          {
+            compress: 0.7,
+            format: ImageManipulator.SaveFormat.JPEG,
+          }
+        );
+        console.log('✅ 기본 압축 완료:', compressedImage.uri);
+        return compressedImage.uri;
+      }
+
+      // 2. 파일 크기에 따른 압축 전략 선택
+      let compressQuality: number;
+      let maxWidth: number;
+
+      if (originalSize < 500 * 1024) {
+        // 500KB 미만: 최소 압축 (OCR 정확도 우선)
+        compressQuality = 0.85;
+        maxWidth = 1536;
+        console.log('📌 전략: 최소 압축 (작은 파일)');
+      } else if (originalSize < 1024 * 1024) {
+        // 500KB~1MB: 균형 압축
+        compressQuality = 0.7;
+        maxWidth = 1024;
+        console.log('📌 전략: 균형 압축 (중간 파일)');
+      } else if (originalSize < 3 * 1024 * 1024) {
+        // 1MB~3MB: 높은 압축
+        compressQuality = 0.6;
+        maxWidth = 1024;
+        console.log('📌 전략: 높은 압축 (큰 파일)');
+      } else {
+        // 3MB 이상: 매우 높은 압축
+        compressQuality = 0.5;
+        maxWidth = 800;
+        console.log('📌 전략: 매우 높은 압축 (초대형 파일)');
+      }
+
+      // 3. 압축 실행
       const compressedImage = await ImageManipulator.manipulateAsync(
         imageUri,
-        [
-          { resize: { width: 1024, height: 1024 } }, // 최대 1024x1024로 리사이즈
-        ],
+        [{ resize: { width: maxWidth } }],
         {
-          compress: 0.7, // 70% 품질로 압축
+          compress: compressQuality,
           format: ImageManipulator.SaveFormat.JPEG,
         }
       );
 
-      console.log('✅ 이미지 압축 완료:', compressedImage.uri);
+      // 4. 압축 결과 분석
+      const compressedFile = new File(compressedImage.uri);
+      const compressedInfo = compressedFile.info();
+      const compressedSize = compressedInfo?.size || 0;
+      const compressionTime = Date.now() - startTime;
+      const compressionRatio = ((1 - compressedSize / originalSize) * 100);
+
+      console.log('✅ 압축 완료');
+      console.log('├─ 압축 전:', (originalSize / 1024).toFixed(2), 'KB');
+      console.log('├─ 압축 후:', (compressedSize / 1024).toFixed(2), 'KB');
+      console.log('├─ 압축률:', compressionRatio.toFixed(1), '%');
+      console.log('├─ 압축 시간:', compressionTime, 'ms');
+      console.log('└─ 설정: 품질', compressQuality, '/ 최대폭', maxWidth, 'px');
+
+      // 5. 메트릭 저장 (성능 분석용)
+      this.saveCompressionMetrics({
+        originalSize,
+        compressedSize,
+        compressionRatio,
+        compressionTime,
+        quality: compressQuality,
+        maxWidth,
+        timestamp: Date.now(),
+      });
+
       return compressedImage.uri;
     } catch (error) {
       console.error('❌ 이미지 압축 실패:', error);
-      // 압축 실패 시 원본 반환
       return imageUri;
     }
+  }
+
+  /**
+   * 압축 메트릭 저장 (성능 분석용)
+   */
+  private saveCompressionMetrics(metrics: CompressionMetrics): void {
+    this.compressionMetrics.push(metrics);
+
+    // 최근 100개만 유지 (메모리 관리)
+    if (this.compressionMetrics.length > 100) {
+      this.compressionMetrics.shift();
+    }
+  }
+
+  /**
+   * 압축 성능 통계 조회
+   */
+  getCompressionStats() {
+    if (this.compressionMetrics.length === 0) {
+      return null;
+    }
+
+    const total = this.compressionMetrics.length;
+    const avgCompressionRatio = this.compressionMetrics.reduce((sum, m) => sum + m.compressionRatio, 0) / total;
+    const avgCompressionTime = this.compressionMetrics.reduce((sum, m) => sum + m.compressionTime, 0) / total;
+    const avgOriginalSize = this.compressionMetrics.reduce((sum, m) => sum + m.originalSize, 0) / total;
+    const avgCompressedSize = this.compressionMetrics.reduce((sum, m) => sum + m.compressedSize, 0) / total;
+
+    return {
+      totalImages: total,
+      averageCompressionRatio: avgCompressionRatio.toFixed(1) + '%',
+      averageCompressionTime: avgCompressionTime.toFixed(0) + 'ms',
+      averageOriginalSize: (avgOriginalSize / 1024).toFixed(2) + 'KB',
+      averageCompressedSize: (avgCompressedSize / 1024).toFixed(2) + 'KB',
+      totalDataSaved: ((avgOriginalSize - avgCompressedSize) * total / 1024 / 1024).toFixed(2) + 'MB',
+    };
   }
 
   /**
