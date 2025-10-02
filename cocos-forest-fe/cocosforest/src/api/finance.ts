@@ -88,11 +88,10 @@ export const fetchUserCards = async (): Promise<UserCard[]> => {
  * 카드 연결 (사용자에게 카드 등록)
  */
 export const connectUserCard = async (
-  cardData: ConnectCardRequest,
-  userId: number = 1
+  cardData: ConnectCardRequest
 ): Promise<UserCard> => {
   const response = await apiClient.post<ApiResponse<UserCard>>(
-    `/api/finance/user-cards?userId=${userId}`,
+    `/api/finance/user-cards`,
     cardData
   );
   return response.data.result;

@@ -359,7 +359,7 @@ const ProfileScreen = ({ route }: ProfileScreenProps) => {
     const connectRequest: ConnectCardRequest = {
       productId: selectedCardForConnection.productId,
       withdrawalAccountNo: account.accountNo,
-      withdrawalDate: '25'
+      withdrawalDate: '1'
     };
 
     const success = await connectCard(connectRequest, selectedCardForConnection.name);

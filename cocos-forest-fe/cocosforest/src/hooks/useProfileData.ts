@@ -148,21 +148,23 @@ export const useProfileData = (userId: number) => {
     try {
       setIsLoading(true);
 
-      // 1. 사용자 등록 여부 확인
-      const isRegistered = await checkUserLinkage();
-
-      // 2. 미등록 시 사용자 등록
-      if (!isRegistered) {
-        try {
-          await registerUserLinkage();
-          Alert.alert('금융 연동 등록', 'SSAFY 금융 서비스에 등록되었습니다.');
-        } catch (error: any) {
+      // 1. 사용자 등록 (search 없이 바로 register 시도)
+      try {
+        await registerUserLinkage();
+        console.log('✅ SSAFY 금융 서비스에 등록되었습니다.');
+      } catch (error: any) {
+        // 중복 등록 에러는 무시하고 계속 진행
+        if (error.response?.status === 400 || error.response?.data?.message?.includes('중복') || error.response?.data?.message?.includes('이미')) {
+          console.log('ℹ️ 중복된 계정이 있습니다. 이미 등록된 사용자입니다.');
+        } else {
+          // 다른 에러는 실패 처리
+          console.error('등록 실패:', error);
           Alert.alert('등록 실패', 'SSAFY 금융 연동 등록에 실패했습니다.');
           return false;
         }
       }
 
-      // 3. 계좌 생성
+      // 2. 계좌 생성
       const result = await createDemandDepositAccount(userId, {
         accountTypeUniqueNo
       });
@@ -185,7 +187,7 @@ export const useProfileData = (userId: number) => {
     try {
       setIsLoading(true);
 
-      await connectUserCard(connectRequest, userId);
+      await connectUserCard(connectRequest);
 
       Alert.alert('성공', `${cardName} 카드가 성공적으로 연결되었습니다.`);
 
