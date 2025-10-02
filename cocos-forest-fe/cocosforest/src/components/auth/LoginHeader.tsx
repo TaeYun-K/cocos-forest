@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import { colors } from '../../styles/commonStyles';
 
 export const LoginHeader: React.FC = () => {
   return (
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 17,
-    color: '#374151',
+    color: colors.gray700,
     fontFamily: 'Hakgyoansim_EohangkkumigiOTFB',
     fontWeight: '400',
     marginBottom: 6,

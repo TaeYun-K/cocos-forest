@@ -5,7 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import type { UserCard } from '../../api/finance';
+import type { UserCard } from '../../types/finance';
 
 interface UserCardProps {
   card: UserCard;

@@ -8,7 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import type { Bank, AccountProduct } from '../../api/finance';
+import type { Bank, AccountProduct } from '../../types/finance';
 
 interface AccountProductModalProps {
   visible: boolean;

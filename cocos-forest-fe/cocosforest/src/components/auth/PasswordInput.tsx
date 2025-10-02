@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
+import { colors } from '../../styles/commonStyles';
 
 interface PasswordInputProps {
   value: string;
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
   },
   forgotPassword: {
     fontSize: 14,
-    color: '#15803d',
+    color: colors.primary,
     textAlign: 'right',
     marginTop: 8,
   },

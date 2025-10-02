@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import useDashboardStore from '../../store/dashboardStore';
 import { useDayDetails } from '../../hooks/useDashboardQueries';
 import type { DayData } from '../../types/dashboard';
+import { colors } from '../../styles/commonStyles';
 
 export const DayDetailCard: React.FC = () => {
   const {
@@ -161,11 +162,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   detailCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.white,
     borderRadius: 16,
     padding: 24,
     paddingTop: 12,
-    shadowColor: '#000',
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#10b981',
+    backgroundColor: colors.success,
   },
   syncText: {
     fontSize: 12,
@@ -213,7 +214,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.gray100,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
   totalEmissionValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#15803d',
+    color: colors.primary,
   },
   totalStatsGrid: {
     flexDirection: 'row',
@@ -309,7 +310,7 @@ const styles = StyleSheet.create({
   },
   carbonValue: {
     fontSize: 12,
-    color: '#15803d',
+    color: colors.primary,
     fontWeight: '600',
   },
   transactionDetails: {

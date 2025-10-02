@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type { CategoryMonthlyDetails } from '../../types/dashboard';
 import { Card } from '../common';
+import { colors } from '../../styles/commonStyles';
 
 interface CategoryDetailModalProps {
   visible: boolean;
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: colors.gray100,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -174,17 +175,17 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: '#ef4444',
+    color: colors.danger,
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#ef4444',
+    color: colors.danger,
     marginBottom: 12,
   },
   errorMessage: {
     fontSize: 16,
-    color: '#ef4444',
+    color: colors.danger,
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
   },
   transactionCarbon: {
     fontSize: 12,
-    color: '#059669',
+    color: colors.successDark,
     fontWeight: '500',
   },
   cardInfo: {

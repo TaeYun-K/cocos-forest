@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { colors } from '../../styles/commonStyles';
 
 interface EmailVerificationInputProps {
   email: string;
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkButton: {
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 8,
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   checkedButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.success,
   },
   checkButtonText: {
     color: '#FFFFFF',
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   verifyButton: {
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 8,
@@ -236,14 +237,14 @@ const styles = StyleSheet.create({
   },
   successText: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: colors.success,
     marginTop: 4,
   },
   sendCodeContainer: {
     marginTop: 10,
   },
   sendCodeButton: {
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,

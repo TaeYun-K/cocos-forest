@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { colors } from '../../styles/commonStyles';
 
 interface SignupHeaderProps {
   currentStep: number;
@@ -9,7 +10,11 @@ interface SignupHeaderProps {
 export const SignupHeader: React.FC<SignupHeaderProps> = ({ currentStep, stepTitle }) => {
   return (
     <View style={styles.header}>
-      <Text style={styles.logo}>logo</Text>
+      <Image
+        source={require('../../../assets/logotree.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
 
       <View style={styles.stepContainer}>
         <View style={[styles.step, currentStep >= 1 && styles.activeStep]}>
@@ -37,10 +42,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    fontStyle: 'italic',
+    width: 120,
+    height: 120,
     marginBottom: 30,
   },
   stepContainer: {
@@ -52,7 +55,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 3,
@@ -62,30 +65,30 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   activeStep: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
   },
   stepLine: {
     width: 60,
     height: 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.gray300,
     marginHorizontal: 10,
   },
   completedStepLine: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.primary,
   },
   stepText: {
     fontSize: 16,
-    color: '#7CB342',
+    color: colors.gray400,
     fontWeight: 'bold',
   },
   activeStepText: {
     fontSize: 16,
-    color: '#7CB342',
+    color: colors.primary,
     fontWeight: 'bold',
   },
   stepTitle: {
     fontSize: 18,
-    color: '#FFFFFF',
+    color: colors.textPrimary,
     fontWeight: '500',
   },
 });

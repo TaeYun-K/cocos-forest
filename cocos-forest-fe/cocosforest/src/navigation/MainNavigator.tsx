@@ -12,6 +12,7 @@ import HomeScreen from '../screens/HomeScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import ChallengeScreen from '../screens/ChallengeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+// import BenchmarkTestScreen from '../screens/BenchmarkTestScreen'; 
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -26,6 +27,7 @@ export const MainNavigator: React.FC = () => {
             case 'Dashboard': iconName = focused ? 'analytics' : 'analytics-outline'; break;
             case 'Challenge': iconName = focused ? 'trophy' : 'trophy-outline'; break;
             case 'Profile': iconName = focused ? 'person' : 'person-outline'; break;
+            // case 'Benchmark': iconName = focused ? 'person' : 'person-outline'; break;
             default: iconName = 'home-outline';
           }
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -64,6 +66,20 @@ export const MainNavigator: React.FC = () => {
           tabBarLabel: '프로필',
         }}
       />
+      {/* <Tab.Screen
+        name="Benchmark"
+        component={BenchmarkTestScreen}
+        options={{
+          tabBarLabel: '벤치마크',
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'flask' : 'flask-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      /> */}
     </Tab.Navigator>
   );
 };

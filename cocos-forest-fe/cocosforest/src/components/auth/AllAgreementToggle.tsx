@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../styles/commonStyles';
 
 interface AllAgreementToggleProps {
   isAllAgreed: boolean;
@@ -49,8 +50,8 @@ const styles = StyleSheet.create({
     borderColor: '#E9ECEF',
   },
   containerActive: {
-    backgroundColor: '#E8F5E8',
-    borderColor: '#7CB342',
+    backgroundColor: colors.greenLight,
+    borderColor: colors.primary,
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -68,8 +69,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   checkboxChecked: {
-    backgroundColor: '#7CB342',
-    borderColor: '#7CB342',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   text: {
     fontSize: 16,
@@ -77,6 +78,6 @@ const styles = StyleSheet.create({
     color: '#495057',
   },
   textActive: {
-    color: '#7CB342',
+    color: colors.primary,
   },
 });

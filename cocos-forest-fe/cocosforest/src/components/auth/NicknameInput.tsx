@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { colors } from '../../styles/commonStyles';
 
 interface NicknameInputProps {
   value: string;
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkButton: {
-    backgroundColor: '#7CB342',
+    backgroundColor: colors.primary,
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 8,
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   checkedButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: colors.success,
   },
   checkButtonText: {
     color: '#FFFFFF',
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 12,
-    color: '#7CB342',
+    color: colors.success,
     marginTop: 5,
   },
 });

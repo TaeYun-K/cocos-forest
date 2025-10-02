@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../styles/commonStyles';
 
 interface IndividualAgreementItemProps {
   isChecked: boolean;
@@ -69,8 +70,8 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   checkedCheckbox: {
-    backgroundColor: '#7CB342',
-    borderColor: '#7CB342',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   text: {
     fontSize: 14,
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   optional: {
-    color: '#7CB342',
+    color: colors.primary,
     fontWeight: '500',
   },
   viewButton: {
@@ -90,11 +91,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#7CB342',
+    borderColor: colors.primary,
   },
   viewButtonText: {
     fontSize: 12,
-    color: '#7CB342',
+    color: colors.primary,
     fontWeight: '500',
   },
 });
