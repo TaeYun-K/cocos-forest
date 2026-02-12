@@ -140,3 +140,8 @@
   - Docker 기반 컨테이너화로 일관된 실행 환경 확보
   - Redis 세션 캐싱을 통해 인증 및 챌린지 처리 성능 최적화
 - <img src="images/architecture.png" />
+
+## ERD
+
+<img width="1694" height="779" alt="image" src="https://github.com/user-attachments/assets/49ce07b6-874e-4102-9b98-d2c0595f1c43" />
+
